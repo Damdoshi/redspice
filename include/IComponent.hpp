@@ -1,0 +1,45 @@
+// Jason Brillante "Damdoshi"
+// Hanged Bunny Studio 2014-2018
+//
+// RED Spice
+
+#ifndef				__ICOMPONENT_HPP__
+# define			__ICOMPONENT_HPP__
+# include			<iosfwd>
+# include			<sys/types.h>
+
+namespace			nts
+{
+  enum				Tristate
+    {
+      BROKEN			= -2,
+      UNDEFINED			= -1,
+      FALSE			= +0,
+      TRUE			= +1
+    };
+
+  class				IComponent
+  {
+  public:
+    /// Compute value of the precised pin
+    virtual nts::Tristate	Compute(size_t			pin_num_this = 1) = 0;
+
+    /// Useful to link IComponent together
+    virtual void		SetLink(size_t			pin_num_this,
+					nts::IComponent		&component,
+					size_t			pin_num_target) = 0;
+
+    ///// Print on terminal the name of the component and
+    //// the state of every pin of the current component
+    /// The output won't be tested, but it may help you
+    // as a trace.
+    virtual void		Dump(void) const = 0;
+
+    virtual ~IComponent(void) {}
+  };
+}
+
+std::ostream			&operator<<(std::ostream	&os,
+					    nts::Tristate	t);
+
+#endif	//			__ICOMPONENT_HPP__
