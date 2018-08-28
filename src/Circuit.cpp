@@ -58,7 +58,7 @@ static bool		CheckChar(const std::string			&code,
   return (j != i);
 }
 
-bool			nts::Circuit::ReadChipsetsInside(const std::string &code,
+bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
 							 int		&i)
 {
   std::string		type;
@@ -73,7 +73,7 @@ bool			nts::Circuit::ReadChipsetsInside(const std::string &code,
       ReadWhitespace(code, j);
       i = j;
       if (ReadChar(code, j) == false)
-       throw nts::SyntaxError("Expected component name after type.");
+       throw hbs::SyntaxError("Expected component name after type.");
       name = code.substr(i, j - i);
       ReadWhitespace(code, j);
       if (code[j] == '(')
@@ -83,21 +83,21 @@ bool			nts::Circuit::ReadChipsetsInside(const std::string &code,
 	    value = code.substr(i, j - i);
 	  ReadWhitespace(code, j);
 	  if (code[j] != ')')
-	    throw nts::SyntaxError("Missing ')'.");
+	    throw hbs::SyntaxError("Missing ')'.");
 	  j += 1;
 	}
       circuit[name] = Create(type, value);
       if (type == "input" || type == "clock")
-	inputs[name] = dynamic_cast<nts::Input*>(circuit[name]);
+	inputs[name] = dynamic_cast<hbs::Input*>(circuit[name]);
       else if (type == "output" || type == "terminal")
-	outputs[name] = dynamic_cast<nts::Output*>(circuit[name]);
+	outputs[name] = dynamic_cast<hbs::Output*>(circuit[name]);
       ReadWhitespace(code, j);
       i = j;
     }
   return (true);
 }
 
-bool			nts::Circuit::ReadChipsets(const std::string	&code,
+bool			hbs::Circuit::ReadChipsets(const std::string	&code,
 						   int			&i)
 {
   if (ReadText(code, i, ".chipsets:") == false)
@@ -106,7 +106,7 @@ bool			nts::Circuit::ReadChipsets(const std::string	&code,
   return (ReadChipsetsInside(code, i));
 }
 
-bool			nts::Circuit::ReadOneLink(const std::string	&code,
+bool			hbs::Circuit::ReadOneLink(const std::string	&code,
 						  int			&i,
 						  std::string		&cmp,
 						  int			&pin)
@@ -117,9 +117,9 @@ bool			nts::Circuit::ReadOneLink(const std::string	&code,
   ReadChar(code, j);
   cmp = code.substr(i, j - i);
   if (code[j] != ':')
-    throw nts::SyntaxError("Expected ':' and pin specification.");
+    throw hbs::SyntaxError("Expected ':' and pin specification.");
   if (code[++j] < '0' || code[j] > '9')
-    throw nts::SyntaxError("Expected pin specification after component.");
+    throw hbs::SyntaxError("Expected pin specification after component.");
   pin = std::atoi(&code.c_str()[j]);
   ReadChar(code, j);
   ReadWhitespace(code, j);
@@ -127,7 +127,7 @@ bool			nts::Circuit::ReadOneLink(const std::string	&code,
   return (true);
 }
 
-bool			nts::Circuit::ReadLinksInside(const std::string	&code,
+bool			hbs::Circuit::ReadLinksInside(const std::string	&code,
 						      int		&i)
 {
   std::string		lcom;
@@ -140,13 +140,13 @@ bool			nts::Circuit::ReadLinksInside(const std::string	&code,
       ReadOneLink(code, i, lcom, lpin);
       ReadOneLink(code, i, rcom, rpin);
       if (circuit[lcom] == NULL)
-	throw nts::UnknownComponent(lcom);
+	throw hbs::UnknownComponent(lcom);
       circuit[lcom]->SetLink(lpin, *circuit[rcom], rpin);
     }
   return (true);
 }
 
-bool			nts::Circuit::ReadLinks(const std::string	&code,
+bool			hbs::Circuit::ReadLinks(const std::string	&code,
 						int			&i)
 {
   if (ReadText(code, i, ".links:") == false)
@@ -155,7 +155,7 @@ bool			nts::Circuit::ReadLinks(const std::string	&code,
   return (ReadLinksInside(code, i));
 }
 
-nts::Tristate		nts::Circuit::Compute(size_t			output)
+hbs::Tristate		hbs::Circuit::Compute(size_t			output)
 {
   std::map<std::string, Output*>::iterator	it;
 
@@ -163,23 +163,23 @@ nts::Tristate		nts::Circuit::Compute(size_t			output)
   return (it->second->Compute());
 }
 
-nts::Tristate		nts::Circuit::Compute(void)
+hbs::Tristate		hbs::Circuit::Compute(void)
 {
   std::map<std::string, Output*>::iterator	it;
 
   for (it = outputs.begin(); it != outputs.end(); ++it)
     it->second->Compute();
-  return (nts::UNDEFINED);
+  return (hbs::UNDEFINED);
 }
 
-void			nts::Circuit::SetLink(size_t			pnthis,
-					      nts::IComponent		&com,
+void			hbs::Circuit::SetLink(size_t			pnthis,
+					      hbs::IComponent		&com,
 					      size_t			pntarg)
 {
   (void)pnthis; (void)com; (void)pntarg;
 }
 
-void			nts::Circuit::Dump(void) const
+void			hbs::Circuit::Dump(void) const
 {
   std::map<std::string, IComponent*>::const_iterator	it;
 
@@ -190,32 +190,32 @@ void			nts::Circuit::Dump(void) const
     }
 }
 
-const std::string	&nts::Circuit::GetOutputName(size_t		n) const
+const std::string	&hbs::Circuit::GetOutputName(size_t		n) const
 {
   std::map<std::string, Output*>::const_iterator	it;
 
   for (it = outputs.begin(); it != outputs.end() && n > 1; --n, ++it);
   if (it == outputs.end())
-    throw nts::MissingOutputs("Cannot found output.");
+    throw hbs::MissingOutputs("Cannot found output.");
   return (it->first);
 }
 
-bool			nts::Circuit::GetDisplayable(size_t		n) const
+bool			hbs::Circuit::GetDisplayable(size_t		n) const
 {
   std::map<std::string, Output*>::const_iterator	it;
 
   for (it = outputs.begin(); it != outputs.end() && n > 1; --n, ++it);
   if (it == outputs.end())
-    throw nts::MissingOutputs("Cannot found output.");
+    throw hbs::MissingOutputs("Cannot found output.");
   return (it->second->Displayable());
 }
 
-size_t			nts::Circuit::GetOutputNum(void) const
+size_t			hbs::Circuit::GetOutputNum(void) const
 {
   return (outputs.size());
 }
 
-bool			nts::Circuit::Load(const std::string		&file)
+bool			hbs::Circuit::Load(const std::string		&file)
 {
   std::ifstream		ss((char*)file.c_str(), std::ios::in | std::ios::binary);
 
@@ -247,21 +247,21 @@ bool			nts::Circuit::Load(const std::string		&file)
   return (ReadLinks(content, i));
 }
 
-void			nts::Circuit::SetValue(const std::string		&input,
-					       nts::Tristate			value)
+void			hbs::Circuit::SetValue(const std::string		&input,
+					       hbs::Tristate			value)
 {
   std::map<std::string, Input*>::iterator	it;
 
   if ((it = inputs.find(input)) == inputs.end())
-    throw nts::MissingInputs("Cannot found input " + input + ".");
+    throw hbs::MissingInputs("Cannot found input " + input + ".");
   it->second->SetValue(value);
 }
 
-nts::Circuit::Circuit(nts::Timer		&tim)
+hbs::Circuit::Circuit(hbs::Timer		&tim)
   : timer(tim)
 {}
 
-nts::Circuit::~Circuit(void)
+hbs::Circuit::~Circuit(void)
 {
   std::map<std::string, IComponent*>::iterator	it;
 

@@ -6,34 +6,34 @@
 #include		<unistd.h>
 #include		"Terminal.hpp"
 
-const std::string	&nts::Terminal::GetType(void) const
+const std::string	&hbs::Terminal::GetType(void) const
 {
-  return (nts::AComponent<9>::type = typeid(*this).name());
+  return (hbs::AComponent<9>::type = typeid(*this).name());
 }
 
-void			nts::Terminal::SetLink(size_t		a,
-					     nts::IComponent	&b,
+void			hbs::Terminal::SetLink(size_t		a,
+					     hbs::IComponent	&b,
 					     size_t		c)
 {
-  nts::AComponent<9>::SetLink(a, b, c);
+  hbs::AComponent<9>::SetLink(a, b, c);
 }
 
-void			nts::Terminal::Dump(void) const
+void			hbs::Terminal::Dump(void) const
 {
-  nts::AComponent<9>::Dump();
+  hbs::AComponent<9>::Dump();
 }
 
-nts::Tristate		nts::Terminal::Compute(size_t		n)
+hbs::Tristate		hbs::Terminal::Compute(size_t		n)
 {
   int			i;
 
   (void)n;
-  if (nts::AComponent<9>::GetPrevious(9) == nts::FALSE &&
-      nts::AComponent<9>::GetPin(9) == nts::TRUE &&
-      last_tick != nts::AComponent<9>::timer.GetTime())
+  if (hbs::AComponent<9>::GetPrevious(9) == hbs::FALSE &&
+      hbs::AComponent<9>::GetPin(9) == hbs::TRUE &&
+      last_tick != hbs::AComponent<9>::timer.GetTime())
     {
       c = 0;
-      last_tick = nts::AComponent<9>::timer.GetTime();
+      last_tick = hbs::AComponent<9>::timer.GetTime();
       for (i = 0; i < 7; ++i)
 	c |= AComponent<9>::GetPin(i + 1) << i;
       if (write(2, &c, 1)) {}
@@ -41,20 +41,20 @@ nts::Tristate		nts::Terminal::Compute(size_t		n)
   else
     for (i = 1; i < 8; ++i)
       AComponent<9>::GetPin(i);
-  return (nts::TRUE);
+  return (hbs::TRUE);
 }
 
-bool			nts::Terminal::Displayable(void) const
+bool			hbs::Terminal::Displayable(void) const
 {
   return (false);
 }
 
-nts::Terminal::Terminal(const nts::Timer	&timer)
+hbs::Terminal::Terminal(const hbs::Timer	&timer)
   : AComponent<1>(timer), AComponent<9>(timer), Output(timer),
     last_tick(0),
     c('\0')
 {}
 
-nts::Terminal::~Terminal(void)
+hbs::Terminal::~Terminal(void)
 {}
 

@@ -7,17 +7,17 @@
 # define			__NTS_FALSE_HPP__
 # include			"AComponent.hpp"
 
-namespace			nts
+namespace			hbs
 {
-  class				False : public nts::AComponent<1>
+  class				False : public hbs::AComponent<1>
   {
   private:
     const std::string		&GetType(void) const;
 
   public:
-    nts::Tristate		Compute(size_t		pin = 1);
+    hbs::Tristate		Compute(size_t		pin = 1);
 
-    False(nts::Timer		&timer);
+    False(hbs::Timer		&timer);
     virtual ~False(void);
   };
 }

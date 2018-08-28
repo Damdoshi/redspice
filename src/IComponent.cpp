@@ -7,13 +7,13 @@
 #include		"IComponent.hpp"
 
 std::ostream		&operator<<(std::ostream	&os,
-				    nts::Tristate	t)
+				    hbs::Tristate	t)
 {
-  if (t == nts::TRUE)
+  if (t == hbs::TRUE)
     os << "1";
-  else if (t == nts::FALSE)
+  else if (t == hbs::FALSE)
     os << "0";
-  else if (t == nts::UNDEFINED)
+  else if (t == hbs::UNDEFINED)
     os << "U";
   else
     os << "B";

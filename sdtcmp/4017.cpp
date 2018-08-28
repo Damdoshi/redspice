@@ -7,7 +7,7 @@
 #define			XXX					0
 #define			PIN					-1 + 
 
-const std::string	&nts::CMP_4017::GetType(void) const
+const std::string	&hbs::CMP_4017::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
@@ -32,10 +32,10 @@ static const size_t	pinstrenght[16] =
     [PIN 16] = XXX
   };
 
-nts::Tristate		nts::CMP_4017::Compute(size_t		n)
+hbs::Tristate		hbs::CMP_4017::Compute(size_t		n)
 {
   /// Check if it already computed (Maybe temporary...)
-  nts::Tristate		tri;
+  hbs::Tristate		tri;
 
   if (AlreadyComputed(n, tri))
     return (tri);
@@ -46,17 +46,17 @@ nts::Tristate		nts::CMP_4017::Compute(size_t		n)
 
   if ((n >= 1 && n <= 7) || (n >= 9 && n <= 11))
     {
-      if (GetPin(15) == nts::TRUE)
+      if (GetPin(15) == hbs::TRUE)
 	{
 	  value.reset();
 	  value.set(0);
-	  p->second = nts::FALSE;
+	  p->second = hbs::FALSE;
 	  return (p->second);
 	}
       tick = false;
-      if (GetPin(14) == nts::TRUE && GetPrevious(14) == nts::FALSE)
+      if (GetPin(14) == hbs::TRUE && GetPrevious(14) == hbs::FALSE)
 	tick = true;
-      else if (GetPin(13) == nts::FALSE && GetPrevious(13) == nts::TRUE)
+      else if (GetPin(13) == hbs::FALSE && GetPrevious(13) == hbs::TRUE)
 	tick = true;
       if (tick && last_tick != timer.GetTime())
 	{
@@ -65,32 +65,32 @@ nts::Tristate		nts::CMP_4017::Compute(size_t		n)
 	    value.set(0);
 	}
       if (value[pinstrenght[n - 1]])
-	p->second = nts::TRUE;
+	p->second = hbs::TRUE;
       else
-	p->second = nts::FALSE;
+	p->second = hbs::FALSE;
       return (p->second);
     }
   else if (n == 12)
     {
-      if (GetPin(15) == nts::TRUE)
-	p->second = nts::TRUE;
+      if (GetPin(15) == hbs::TRUE)
+	p->second = hbs::TRUE;
       else if ((value >> 5).any())
-	p->second = nts::FALSE;
+	p->second = hbs::FALSE;
       else
-	p->second = nts::TRUE;
+	p->second = hbs::TRUE;
       return (p->second);
     }
   else if (n == 8 || n == 16)
-    return (nts::UNDEFINED);
+    return (hbs::UNDEFINED);
   return (GetPin(n));
 }
 
-nts::CMP_4017::CMP_4017(const nts::Timer		&time)
+hbs::CMP_4017::CMP_4017(const hbs::Timer		&time)
   : AComponent(time),
     value(1),
     last_tick(0)
 {}
 
-nts::CMP_4017::~CMP_4017(void)
+hbs::CMP_4017::~CMP_4017(void)
 {}
 

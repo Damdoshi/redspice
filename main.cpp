@@ -16,8 +16,8 @@ void			handler(int		unused)
   std::cout << std::endl;
 }
 
-static int		Shell(nts::Circuit	&circuit,
-			      nts::Timer	&timer)
+static int		Shell(hbs::Circuit	&circuit,
+			      hbs::Timer	&timer)
 {
   std::string		str;
   int			l;
@@ -68,7 +68,7 @@ static int		Shell(nts::Circuit	&circuit,
 	  signal(SIGINT, NULL);
 	}
       else if ((i = str.find('=', 0)) != std::string::npos)
-	circuit.SetValue(str.substr(0, i), atoi(&str.c_str()[i + 1]) ? nts::TRUE : nts::FALSE);
+	circuit.SetValue(str.substr(0, i), atoi(&str.c_str()[i + 1]) ? hbs::TRUE : hbs::FALSE);
       else if (str != "exit")
 	std::cout << "Unrecognized command '" << str << "'" << std::endl;
     }
@@ -79,14 +79,14 @@ static int		Shell(nts::Circuit	&circuit,
 int			main(int		argc,
 			     char		**argv)
 {
-  nts::Timer		timer;
-  nts::Circuit		circuit(timer);
+  hbs::Timer		timer;
+  hbs::Circuit		circuit(timer);
   int			i;
   int			j;
 
   if (argc < 2)
     {
-      std::cout << argv[0] << " circuit.nts [input=value]*" << std::endl;
+      std::cout << argv[0] << " circuit.hbs [input=value]*" << std::endl;
       return (EXIT_FAILURE);
     }
   if (circuit.Load(argv[1]) == false)
@@ -95,8 +95,8 @@ int			main(int		argc,
     {
       for (j = 0; argv[i][j] && argv[i][j] != '='; ++j);
       if (argv[i][j] != '=')
-	throw nts::InvalidCommandLine("Expected '=' after input name.");
-      circuit.SetValue(std::string(argv[i]).substr(0, j), atoi(&argv[i][j + 1]) ? nts::TRUE : nts::FALSE);
+	throw hbs::InvalidCommandLine("Expected '=' after input name.");
+      circuit.SetValue(std::string(argv[i]).substr(0, j), atoi(&argv[i][j + 1]) ? hbs::TRUE : hbs::FALSE);
     }
   for (i = 1; i <= (int)circuit.GetOutputNum(); ++i)
     if (circuit.GetDisplayable(i))

@@ -8,9 +8,9 @@
 # include			<bitset>
 # include			"Output.hpp"
 
-namespace			nts
+namespace			hbs
 {
-  class				Terminal : public nts::AComponent<9>, public nts::Output
+  class				Terminal : public hbs::AComponent<9>, public hbs::Output
   {
   private:
     const std::string		&GetType(void) const;
@@ -19,14 +19,14 @@ namespace			nts
 
   public:
     void			SetLink(size_t				pnthis,
-					nts::IComponent			&component,
+					hbs::IComponent			&component,
 					size_t				pntarg);
 
-    nts::Tristate		Compute(size_t				n);
+    hbs::Tristate		Compute(size_t				n);
     void			Dump(void) const;
     bool			Displayable(void) const;
 
-    Terminal(const nts::Timer	&timer);
+    Terminal(const hbs::Timer	&timer);
     virtual ~Terminal(void);
   };
 }

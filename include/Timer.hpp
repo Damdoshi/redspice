@@ -7,7 +7,7 @@
 # define			__NTS_TIMER_HPP__
 # include			<sys/types.h>
 
-namespace			nts
+namespace			hbs
 {
   class				Timer
   {

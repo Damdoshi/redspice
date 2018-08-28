@@ -13,14 +13,14 @@
 # include				"Exception.hpp"
 # include				"Timer.hpp"
 
-namespace				nts
+namespace				hbs
 {
   template <int				Pin>
-  class					AComponent: public virtual nts::IComponent
+  class					AComponent: public virtual hbs::IComponent
   {
   protected:
     virtual const std::string		&GetType(void) const = 0;
-    const nts::Timer			&timer;
+    const hbs::Timer			&timer;
 
     typedef std::pair<IComponent*, size_t> Link;
     typedef std::map<size_t, Tristate>	PinState;
@@ -41,7 +41,7 @@ namespace				nts
     //// Check if the pin was already computed at this current timeline
     /// This may be a preset, but that the purpose of presets
     bool				AlreadyComputed(size_t		n,
-							nts::Tristate	&out)
+							hbs::Tristate	&out)
     {
       std::map<size_t, PinState>::iterator				pin;
       std::map<size_t, Tristate>::iterator				tri;
@@ -51,7 +51,7 @@ namespace				nts
 
       /// Bad pin
       if (n < 1 || n > Pin)
-	throw nts::BadPin(GetType() + ":Bad pin.");
+	throw hbs::BadPin(GetType() + ":Bad pin.");
 
       /// If already computed
       if ((pin = timeline.find(timer.GetTime())) != timeline.end())
@@ -74,9 +74,9 @@ namespace				nts
       if (timer.GetTime() == 0)
 	{
 	  if ((it = timeline.find(timer.GetTime())) == timeline.end())
-	    timeline[timer.GetTime()][n] = nts::UNDEFINED;
+	    timeline[timer.GetTime()][n] = hbs::UNDEFINED;
 	  else if ((itx = it->second.find(n)) == it->second.end())
-	    it->second[n] = nts::UNDEFINED;
+	    it->second[n] = hbs::UNDEFINED;
 	  else
 	    return (itx);
 	  return (timeline[timer.GetTime()].find(n));
@@ -92,32 +92,32 @@ namespace				nts
 
       if ((it = timeline.rbegin()) == timeline.rend())
 	{
-	  timeline[timer.GetTime()][n] = nts::UNDEFINED;
+	  timeline[timer.GetTime()][n] = hbs::UNDEFINED;
 	  return ;
 	}
       timeline[timer.GetTime()][n] = timeline[timer.GetTime() - 1][n];
     }
 
-    nts::Tristate			GetPrevious(size_t		n)
+    hbs::Tristate			GetPrevious(size_t		n)
     {
       std::map<size_t,  PinState>::reverse_iterator			it;
 
       if (timer.GetTime() == 0)
-	return (nts::UNDEFINED);
+	return (hbs::UNDEFINED);
       return (timeline[timer.GetTime() - 1][n]);
     }
 
     //// Get a pin value
-    nts::Tristate			GetPin(size_t			n)
+    hbs::Tristate			GetPin(size_t			n)
     {
       std::map<size_t, std::list<Link> >::iterator			lnk;
       std::list<Link>::iterator						it;
-      nts::Tristate							out;
-      nts::Tristate							tmp;
+      hbs::Tristate							out;
+      hbs::Tristate							tmp;
 
       /// If not linked
       if ((lnk = links.find(n)) == links.end())
-	return (timeline[timer.GetTime()][n] = nts::UNDEFINED);
+	return (timeline[timer.GetTime()][n] = hbs::UNDEFINED);
 
       /// Linked
       it = lnk->second.begin();
@@ -125,17 +125,17 @@ namespace				nts
       for (++it; it != lnk->second.end(); ++it)
 	{
 	  tmp = it->first->Compute(it->second);
-	  if (out == nts::UNDEFINED)
+	  if (out == hbs::UNDEFINED)
 	    out = tmp;
-	  else if (tmp != nts::UNDEFINED)
-	    return (timeline[timer.GetTime()][n] = nts::BROKEN);
+	  else if (tmp != hbs::UNDEFINED)
+	    return (timeline[timer.GetTime()][n] = hbs::BROKEN);
 	}
       return (timeline[timer.GetTime()][n] = out);
     }
 
   public:
     void				SetLink(size_t			pin_num_this,
-						nts::IComponent		&component,
+						hbs::IComponent		&component,
 						size_t			pin_num_target)
     {
       std::map<size_t, std::list<Link> >::iterator			it;
@@ -143,7 +143,7 @@ namespace				nts
 
       /// If the pin is out of bound
       if (pin_num_this > Pin || pin_num_this == 0)
-	throw nts::BadPin(GetType() + ": Bad pin.");
+	throw hbs::BadPin(GetType() + ": Bad pin.");
 
       /// Already linked
       if ((it = links.find(pin_num_this)) != links.end())
@@ -152,7 +152,7 @@ namespace				nts
 	    return ;
 
       /// Linked and signal to the other component the link
-      links[pin_num_this].push_back(std::pair<nts::IComponent*, size_t>(&component, pin_num_target));
+      links[pin_num_this].push_back(std::pair<hbs::IComponent*, size_t>(&component, pin_num_target));
       component.SetLink(pin_num_target, *this, pin_num_this);
     }
 
@@ -169,9 +169,9 @@ namespace				nts
       for (it = itx->second.begin(); it != itx->second.end(); ++it)
 	{
 	  std::cout << "Pin " << it->first << ": ";
-	  if (it->second == nts::UNDEFINED)
+	  if (it->second == hbs::UNDEFINED)
 	    std::cout << "U";
-	  else if (it->second == nts::FALSE)
+	  else if (it->second == hbs::FALSE)
 	    std::cout << "0";
 	  else
 	    std::cout << "1";
@@ -179,7 +179,7 @@ namespace				nts
 	}
     }
 
-    AComponent(const nts::Timer		&tim)
+    AComponent(const hbs::Timer		&tim)
       : timer(tim)
     {}
     virtual ~AComponent(void) {}

@@ -7,18 +7,18 @@
 # define			__NTS_OUTPUT_HPP__
 # include			"AComponent.hpp"
 
-namespace			nts
+namespace			hbs
 {
-  class				Output : public virtual nts::AComponent<1>
+  class				Output : public virtual hbs::AComponent<1>
   {
   private:
     virtual const std::string	&GetType(void) const;
 
   public:
-    virtual nts::Tristate	Compute(size_t			pin = 1);
+    virtual hbs::Tristate	Compute(size_t			pin = 1);
     virtual bool		Displayable(void) const;
 
-    Output(const nts::Timer	&timer);
+    Output(const hbs::Timer	&timer);
     ~Output(void);
   };
 }

@@ -8,19 +8,19 @@
 # include			<bitset>
 # include			"AComponent.hpp"
 
-namespace			nts
+namespace			hbs
 {
-  class				CMP_4013 : public nts::AComponent<14>
+  class				CMP_4013 : public hbs::AComponent<14>
   {
   private:
     const std::string		&GetType(void) const;
-    nts::Tristate		val[2];
+    hbs::Tristate		val[2];
     size_t			last_tick[2];
 
   public:
-    nts::Tristate		Compute(size_t				n);
+    hbs::Tristate		Compute(size_t				n);
 
-    CMP_4013(const nts::Timer	&timer);
+    CMP_4013(const hbs::Timer	&timer);
     virtual ~CMP_4013(void);
   };
 }

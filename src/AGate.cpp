@@ -5,10 +5,10 @@
 
 #include		"AGate.hpp"
 
-nts::Tristate		nts::AGate::Compute(size_t		n)
+hbs::Tristate		hbs::AGate::Compute(size_t		n)
 {
   /// Check if it already computed (Maybe temporary...)
-  nts::Tristate		tri;
+  hbs::Tristate		tri;
 
   if (AlreadyComputed(n, tri))
     return (tri);
@@ -25,14 +25,14 @@ nts::Tristate		nts::AGate::Compute(size_t		n)
   else if (n == 11)
     return (itx->second = Logic(GetPin(12), GetPin(13)));
   else if (n == 7 || n == 14)
-    return (nts::UNDEFINED);
+    return (hbs::UNDEFINED);
   return (GetPin(n));
 }
 
-nts::AGate::AGate(const nts::Timer	&_timer)
+hbs::AGate::AGate(const hbs::Timer	&_timer)
   : AComponent(_timer)
 {}
 
-nts::AGate::~AGate(void)
+hbs::AGate::~AGate(void)
 {}
 

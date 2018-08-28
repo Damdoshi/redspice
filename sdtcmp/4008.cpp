@@ -5,15 +5,15 @@
 
 #include		"4008.hpp"
 
-const std::string	&nts::CMP_4008::GetType(void) const
+const std::string	&hbs::CMP_4008::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
 
-nts::Tristate		nts::CMP_4008::Compute(size_t		n)
+hbs::Tristate		hbs::CMP_4008::Compute(size_t		n)
 {
   /// Check if it already computed (Maybe temporary...)
-  nts::Tristate		tri;
+  hbs::Tristate		tri;
 
   if (AlreadyComputed(n, tri))
     return (tri);
@@ -29,47 +29,47 @@ nts::Tristate		nts::CMP_4008::Compute(size_t		n)
       val0 = 0;
       val1 = 0;
       carry = 0;
-      if (GetPin(7) == nts::TRUE)
+      if (GetPin(7) == hbs::TRUE)
 	val0 |= 1 << 0;
-      if (GetPin(5) == nts::TRUE)
+      if (GetPin(5) == hbs::TRUE)
 	val0 |= 1 << 1;
-      if (GetPin(3) == nts::TRUE)
+      if (GetPin(3) == hbs::TRUE)
 	val0 |= 1 << 2;
-      if (GetPin(1) == nts::TRUE)
+      if (GetPin(1) == hbs::TRUE)
 	val0 |= 1 << 3;
 
-      if (GetPin(6) == nts::TRUE)
+      if (GetPin(6) == hbs::TRUE)
 	val1 |= 1 << 0;
-      if (GetPin(4) == nts::TRUE)
+      if (GetPin(4) == hbs::TRUE)
 	val1 |= 1 << 1;
-      if (GetPin(2) == nts::TRUE)
+      if (GetPin(2) == hbs::TRUE)
 	val1 |= 1 << 2;
-      if (GetPin(15) == nts::TRUE)
+      if (GetPin(15) == hbs::TRUE)
 	val1 |= 1 << 3;
 
-      if (GetPin(9) == nts::TRUE)
+      if (GetPin(9) == hbs::TRUE)
 	carry = 1;
       else
 	carry = 0;
 
       if ((carry += val0 + val1) == 0)
-	p->second = nts::FALSE;
+	p->second = hbs::FALSE;
       else if ((carry >> (n - 10)) & 1)
-	p->second = nts::TRUE;
+	p->second = hbs::TRUE;
       else
-	p->second = nts::FALSE;
+	p->second = hbs::FALSE;
 
       return (p->second);
     }
   else if (n == 8 || n == 16)
-    return (nts::UNDEFINED);
+    return (hbs::UNDEFINED);
   return (GetPin(n));
 }
 
-nts::CMP_4008::CMP_4008(const nts::Timer		&time)
+hbs::CMP_4008::CMP_4008(const hbs::Timer		&time)
   : AComponent(time)
 {}
 
-nts::CMP_4008::~CMP_4008(void)
+hbs::CMP_4008::~CMP_4008(void)
 {}
 

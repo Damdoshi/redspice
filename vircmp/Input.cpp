@@ -5,34 +5,34 @@
 
 #include		"Input.hpp"
 
-const std::string	&nts::Input::GetType(void) const
+const std::string	&hbs::Input::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
 
-nts::Tristate		nts::Input::Compute(size_t			pin_num_this)
+hbs::Tristate		hbs::Input::Compute(size_t			pin_num_this)
 {
   if (pin_num_this != 1)
-    throw nts::BadPin(GetType() + ":Bad pin.");
+    throw hbs::BadPin(GetType() + ":Bad pin.");
   return (value);
 }
 
-void			nts::Input::SetValue(nts::Tristate		tristate)
+void			hbs::Input::SetValue(hbs::Tristate		tristate)
 {
   value = tristate;
 }
 
-nts::Input::Input(nts::Timer		&timer,
+hbs::Input::Input(hbs::Timer		&timer,
 		  const std::string	&val)
   : AComponent(timer),
-    value(nts::UNDEFINED)
+    value(hbs::UNDEFINED)
 {
   if (val == "1")
-    value = nts::TRUE;
+    value = hbs::TRUE;
   else if (val == "0")
-    value = nts::FALSE;
+    value = hbs::FALSE;
 }
 
-nts::Input::~Input(void)
+hbs::Input::~Input(void)
 {}
 

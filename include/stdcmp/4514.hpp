@@ -7,17 +7,17 @@
 # define			__NTS_4514_HPP__
 # include			"AComponent.hpp"
 
-namespace			nts
+namespace			hbs
 {
-  class				CMP_4514 : public nts::AComponent<24>
+  class				CMP_4514 : public hbs::AComponent<24>
   {
   private:
     const std::string		&GetType(void) const;
 
   public:
-    nts::Tristate		Compute(size_t				n);
+    hbs::Tristate		Compute(size_t				n);
 
-    CMP_4514(const nts::Timer	&timer);
+    CMP_4514(const hbs::Timer	&timer);
     virtual ~CMP_4514(void);
   };
 }

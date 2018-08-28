@@ -25,52 +25,52 @@
 
 #include		"Terminal.hpp"
 
-nts::IComponent		*nts::Circuit::Create(const std::string		&type,
+hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
 					      const std::string		&value)
 {
   if (type == "input")
-    return (new nts::Input(timer, value));
+    return (new hbs::Input(timer, value));
   if (type == "clock")
-    return (new nts::Clock(timer, value));
+    return (new hbs::Clock(timer, value));
   if (type == "output")
-    return (new nts::Output(timer));
+    return (new hbs::Output(timer));
   if (type == "true")
-    return (new nts::True(timer));
+    return (new hbs::True(timer));
   if (type == "false")
-    return (new nts::False(timer));
+    return (new hbs::False(timer));
 
   if (type == "4001")
-    return (new nts::CMP_4001(timer));
+    return (new hbs::CMP_4001(timer));
   if (type == "4008")
-    return (new nts::CMP_4008(timer));
+    return (new hbs::CMP_4008(timer));
   if (type == "4011")
-    return (new nts::CMP_4011(timer));
+    return (new hbs::CMP_4011(timer));
   if (type == "4013")
-    return (new nts::CMP_4013(timer));
+    return (new hbs::CMP_4013(timer));
   if (type == "4017")
-    return (new nts::CMP_4017(timer));
+    return (new hbs::CMP_4017(timer));
   if (type == "4030")
-    return (new nts::CMP_4030(timer));
+    return (new hbs::CMP_4030(timer));
   if (type == "4040")
-    return (new nts::CMP_4040(timer));
+    return (new hbs::CMP_4040(timer));
   if (type == "4069")
-    return (new nts::CMP_4069(timer));
+    return (new hbs::CMP_4069(timer));
   if (type == "4071")
-    return (new nts::CMP_4071(timer));
+    return (new hbs::CMP_4071(timer));
   if (type == "4081")
-    return (new nts::CMP_4081(timer));
+    return (new hbs::CMP_4081(timer));
   if (type == "4094")
-    return (new nts::CMP_4094(timer));
+    return (new hbs::CMP_4094(timer));
   if (type == "4514")
-    return (new nts::CMP_4514(timer));
+    return (new hbs::CMP_4514(timer));
 
   if (type == "2716")
-    return (new nts::CMP_2716(timer, value));
+    return (new hbs::CMP_2716(timer, value));
 
   if (type == "terminal")
-    return (new nts::Terminal(timer));
+    return (new hbs::Terminal(timer));
 
-  throw nts::BadComponent(std::string("Unknown component ") + type);
+  throw hbs::BadComponent(std::string("Unknown component ") + type);
   return (NULL);
 }
 

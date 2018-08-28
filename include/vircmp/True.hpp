@@ -7,17 +7,17 @@
 # define			__NTS_TRUE_HPP__
 # include			"AComponent.hpp"
 
-namespace			nts
+namespace			hbs
 {
-  class				True : public nts::AComponent<1>
+  class				True : public hbs::AComponent<1>
   {
   private:
     const std::string		&GetType(void) const;
 
   public:
-    nts::Tristate		Compute(size_t		pin = 1);
+    hbs::Tristate		Compute(size_t		pin = 1);
 
-    True(nts::Timer		&timer);
+    True(hbs::Timer		&timer);
     virtual ~True(void);
   };
 }

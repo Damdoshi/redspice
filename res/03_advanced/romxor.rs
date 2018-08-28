@@ -12,7 +12,7 @@
 #                     [__________]==[_________]       [__________]
 #
 # Note that the XOR gate schematic is incomplete, there is 8 xor gate
-# Components 4040 8 first outputs takes one to one the 8 output of ROM and
+# Componehbs 4040 8 first outputs takes one to one the 8 output of ROM and
 # XOR them before sending the result on the terminal component.
 
 .chipsets:

@@ -7,17 +7,17 @@
 # define			__NTS_4069_HPP__
 # include			"AComponent.hpp"
 
-namespace			nts
+namespace			hbs
 {
-  class				CMP_4069 : public nts::AComponent<14>
+  class				CMP_4069 : public hbs::AComponent<14>
   {
   private:
     const std::string		&GetType(void) const;
 
   public:
-    nts::Tristate		Compute(size_t			n);
+    hbs::Tristate		Compute(size_t			n);
 
-    CMP_4069(const nts::Timer	&timer);
+    CMP_4069(const hbs::Timer	&timer);
     virtual ~CMP_4069(void);
   };
 }

@@ -5,15 +5,15 @@
 
 #include		"Output.hpp"
 
-const std::string	&nts::Output::GetType(void) const
+const std::string	&hbs::Output::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
 
-nts::Tristate		nts::Output::Compute(size_t		pin)
+hbs::Tristate		hbs::Output::Compute(size_t		pin)
 {
   /// Check if it already computed (Maybe temporary...)
-  nts::Tristate		tri;
+  hbs::Tristate		tri;
 
   if (AlreadyComputed(pin, tri))
     return (tri);
@@ -23,15 +23,15 @@ nts::Tristate		nts::Output::Compute(size_t		pin)
   return (GetPin(pin));
 }
 
-bool			nts::Output::Displayable(void) const
+bool			hbs::Output::Displayable(void) const
 {
   return (true);
 }
 
-nts::Output::Output(const nts::Timer		&timer)
+hbs::Output::Output(const hbs::Timer		&timer)
   : AComponent(timer)
 {}
 
-nts::Output::~Output(void)
+hbs::Output::~Output(void)
 {}
 

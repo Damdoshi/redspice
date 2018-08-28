@@ -7,7 +7,7 @@
 # define			__NTS_4030_HPP__
 # include			"AGate.hpp"
 
-namespace			nts
+namespace			hbs
 {
   class				CMP_4030 : public AGate
   {
@@ -15,11 +15,11 @@ namespace			nts
     const std::string		&GetType(void) const;
 
   protected:
-    virtual nts::Tristate	Logic(nts::Tristate		a,
-				      nts::Tristate		b) const;
+    virtual hbs::Tristate	Logic(hbs::Tristate		a,
+				      hbs::Tristate		b) const;
 
   public:
-    CMP_4030(const nts::Timer	&timer);
+    CMP_4030(const hbs::Timer	&timer);
     virtual ~CMP_4030(void);
   };
 }

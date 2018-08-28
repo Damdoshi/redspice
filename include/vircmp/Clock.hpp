@@ -7,17 +7,17 @@
 # define			__NTS_CLOCK_HPP__
 # include			"Input.hpp"
 
-namespace			nts
+namespace			hbs
 {
-  class				Clock : public nts::Input
+  class				Clock : public hbs::Input
   {
   private:
     const std::string		&GetType(void) const;
 
   public:
-    virtual nts::Tristate	Compute(size_t		pin_num_this = 1);
+    virtual hbs::Tristate	Compute(size_t		pin_num_this = 1);
 
-    Clock(nts::Timer		&timer,
+    Clock(hbs::Timer		&timer,
 	  const std::string	&value = "");
     virtual ~Clock(void);
   };

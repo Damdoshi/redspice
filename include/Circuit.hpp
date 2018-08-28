@@ -9,12 +9,12 @@
 # include				"Input.hpp"
 # include				"Output.hpp"
 
-namespace				nts
+namespace				hbs
 {
-  class					Circuit : public nts::IComponent
+  class					Circuit : public hbs::IComponent
   {
   protected:
-    nts::Timer				&timer;
+    hbs::Timer				&timer;
 
     std::map<std::string, IComponent*>	circuit;
     std::map<std::string, Input*>	inputs;
@@ -39,11 +39,11 @@ namespace				nts
 						const std::string		&value);
 
   public:
-    nts::Tristate			Compute(size_t				output);
-    nts::Tristate			Compute(void);
+    hbs::Tristate			Compute(size_t				output);
+    hbs::Tristate			Compute(void);
 
     void				SetLink(size_t				pnthis,
-						nts::IComponent			&component,
+						hbs::IComponent			&component,
 						size_t				pntarg);
     void				Dump(void) const;
 
@@ -53,9 +53,9 @@ namespace				nts
 
     bool				Load(const std::string			&file);
     void				SetValue(const std::string		&input,
-						 nts::Tristate			value);
+						 hbs::Tristate			value);
 
-    Circuit(nts::Timer	&timer);
+    Circuit(hbs::Timer	&timer);
     virtual ~Circuit(void);
   };
 }

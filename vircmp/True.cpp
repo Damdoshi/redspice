@@ -5,22 +5,22 @@
 
 #include		"True.hpp"
 
-const std::string	&nts::True::GetType(void) const
+const std::string	&hbs::True::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
 
-nts::Tristate		nts::True::Compute(size_t			pin_num_this)
+hbs::Tristate		hbs::True::Compute(size_t			pin_num_this)
 {
   if (pin_num_this != 1)
-    throw nts::BadPin(GetType() + ":Bad pin.");
-  return (nts::TRUE);
+    throw hbs::BadPin(GetType() + ":Bad pin.");
+  return (hbs::TRUE);
 }
 
-nts::True::True(nts::Timer		&timer)
+hbs::True::True(hbs::Timer		&timer)
   : AComponent(timer)
 {}
 
-nts::True::~True(void)
+hbs::True::~True(void)
 {}
 

@@ -7,21 +7,21 @@
 # define			__NTS_INPUT_HPP__
 # include			"AComponent.hpp"
 
-namespace			nts
+namespace			hbs
 {
-  class				Input : public nts::AComponent<1>
+  class				Input : public hbs::AComponent<1>
   {
   private:
     virtual const std::string	&GetType(void) const;
 
   protected:
-    nts::Tristate		value;
+    hbs::Tristate		value;
 
   public:
-    virtual nts::Tristate	Compute(size_t		pin_num_this = 1);
-    void			SetValue(nts::Tristate	tristate);
+    virtual hbs::Tristate	Compute(size_t		pin_num_this = 1);
+    void			SetValue(hbs::Tristate	tristate);
 
-    Input(nts::Timer		&timer,
+    Input(hbs::Timer		&timer,
 	  const std::string	&value = "");
     virtual ~Input(void);
   };

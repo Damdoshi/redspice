@@ -5,29 +5,29 @@
 
 #include		"4011.hpp"
 
-const std::string	&nts::CMP_4011::GetType(void) const
+const std::string	&hbs::CMP_4011::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
 
-nts::Tristate		nts::CMP_4011::Logic(nts::Tristate	a,
-					     nts::Tristate	b) const
+hbs::Tristate		hbs::CMP_4011::Logic(hbs::Tristate	a,
+					     hbs::Tristate	b) const
 {
   switch (CMP_4081::Logic(a, b))
     {
-    case nts::TRUE:
-      return (nts::FALSE);
-    case nts::FALSE:
-      return (nts::TRUE);
+    case hbs::TRUE:
+      return (hbs::FALSE);
+    case hbs::FALSE:
+      return (hbs::TRUE);
     default:
-      return (nts::UNDEFINED);
+      return (hbs::UNDEFINED);
     }
-  return (nts::UNDEFINED);
+  return (hbs::UNDEFINED);
 }
 
-nts::CMP_4011::CMP_4011(const nts::Timer	&timer)
+hbs::CMP_4011::CMP_4011(const hbs::Timer	&timer)
   : CMP_4081(timer)
 {}
-nts::CMP_4011::~CMP_4011(void)
+hbs::CMP_4011::~CMP_4011(void)
 {}
 

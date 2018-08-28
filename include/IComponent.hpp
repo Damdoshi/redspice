@@ -8,7 +8,7 @@
 # include			<iosfwd>
 # include			<sys/types.h>
 
-namespace			nts
+namespace			hbs
 {
   enum				Tristate
     {
@@ -22,11 +22,11 @@ namespace			nts
   {
   public:
     /// Compute value of the precised pin
-    virtual nts::Tristate	Compute(size_t			pin_num_this = 1) = 0;
+    virtual hbs::Tristate	Compute(size_t			pin_num_this = 1) = 0;
 
     /// Useful to link IComponent together
     virtual void		SetLink(size_t			pin_num_this,
-					nts::IComponent		&component,
+					hbs::IComponent		&component,
 					size_t			pin_num_target) = 0;
 
     ///// Print on terminal the name of the component and
@@ -40,6 +40,6 @@ namespace			nts
 }
 
 std::ostream			&operator<<(std::ostream	&os,
-					    nts::Tristate	t);
+					    hbs::Tristate	t);
 
 #endif	//			__ICOMPONENT_HPP__

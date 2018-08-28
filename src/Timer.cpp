@@ -5,20 +5,20 @@
 
 #include		"Timer.hpp"
 
-size_t			nts::Timer::GetTime(void) const
+size_t			hbs::Timer::GetTime(void) const
 {
   return (cnt);
 }
 
-void			nts::Timer::Tick(void)
+void			hbs::Timer::Tick(void)
 {
   cnt += 1;
 }
 
-nts::Timer::Timer(void)
+hbs::Timer::Timer(void)
   : cnt(0)
 {}
 
-nts::Timer::~Timer(void)
+hbs::Timer::~Timer(void)
 {}
 

@@ -7,17 +7,17 @@
 # define			__AGATE_HPP__
 # include			"AComponent.hpp"
 
-namespace			nts
+namespace			hbs
 {
-  class				AGate : public nts::AComponent<14>
+  class				AGate : public hbs::AComponent<14>
   {
   protected:
-    virtual nts::Tristate	Logic(nts::Tristate		a,
-				      nts::Tristate		b) const = 0;
+    virtual hbs::Tristate	Logic(hbs::Tristate		a,
+				      hbs::Tristate		b) const = 0;
 
-    nts::Tristate		Compute(size_t			n);
+    hbs::Tristate		Compute(size_t			n);
 
-    AGate(const nts::Timer	&timer);
+    AGate(const hbs::Timer	&timer);
     virtual ~AGate(void);
   };
 }

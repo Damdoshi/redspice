@@ -5,24 +5,24 @@
 
 #include		"4069.hpp"
 
-const std::string	&nts::CMP_4069::GetType(void) const
+const std::string	&hbs::CMP_4069::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
 
-static nts::Tristate	Reverse(nts::Tristate			n)
+static hbs::Tristate	Reverse(hbs::Tristate			n)
 {
-  if (n == nts::TRUE)
-    return (nts::FALSE);
-  if (n == nts::FALSE)
-    return (nts::TRUE);
+  if (n == hbs::TRUE)
+    return (hbs::FALSE);
+  if (n == hbs::FALSE)
+    return (hbs::TRUE);
   return (n);
 }
 
-nts::Tristate		nts::CMP_4069::Compute(size_t		n)
+hbs::Tristate		hbs::CMP_4069::Compute(size_t		n)
 {
   /// Check if it already computed (Maybe temporary...)
-  nts::Tristate		tri;
+  hbs::Tristate		tri;
 
   if (AlreadyComputed(n, tri))
     return (tri);
@@ -43,14 +43,14 @@ nts::Tristate		nts::CMP_4069::Compute(size_t		n)
   if (n == 12)
     return (p->second = Reverse(GetPin(13)));
   if (n == 7 || n == 14)
-    return (nts::UNDEFINED);
+    return (hbs::UNDEFINED);
   return (GetPin(n));
 }
 
-nts::CMP_4069::CMP_4069(const nts::Timer	&tim)
+hbs::CMP_4069::CMP_4069(const hbs::Timer	&tim)
   : AComponent(tim)
 {}
 
-nts::CMP_4069::~CMP_4069(void)
+hbs::CMP_4069::~CMP_4069(void)
 {}
 

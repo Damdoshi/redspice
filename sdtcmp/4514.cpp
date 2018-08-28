@@ -5,7 +5,7 @@
 
 #include		"4514.hpp"
 
-const std::string	&nts::CMP_4514::GetType(void) const
+const std::string	&hbs::CMP_4514::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
@@ -17,10 +17,10 @@ static const size_t	pinstrenght[24] =
     13, 12, 15, 14, 9, 8, 11, 10, 0, 0, 0, 0
   };
 
-nts::Tristate		nts::CMP_4514::Compute(size_t		n)
+hbs::Tristate		hbs::CMP_4514::Compute(size_t		n)
 {
   /// Check if it already computed (Maybe temporary...)
-  nts::Tristate		tri;
+  hbs::Tristate		tri;
 
   if (AlreadyComputed(n, tri))
     return (tri);
@@ -33,29 +33,29 @@ nts::Tristate		nts::CMP_4514::Compute(size_t		n)
   if ((n >= 4 && n <= 11) || (n >= 13 && n <= 20))
     {
       /// STROBE
-      if (GetPin(1) == nts::FALSE)
+      if (GetPin(1) == hbs::FALSE)
 	{
 	  KeepOld(n);
-	  if (GetPin(23) == nts::TRUE)
-	    return (nts::FALSE);
+	  if (GetPin(23) == hbs::TRUE)
+	    return (hbs::FALSE);
 	  return (GetPin(n));
 	}
 
       /// INHIBIT
-      if (GetPin(23) == nts::TRUE)
+      if (GetPin(23) == hbs::TRUE)
 	{
-	  p->second = nts::FALSE;
-	  return (nts::FALSE);
+	  p->second = hbs::FALSE;
+	  return (hbs::FALSE);
 	}
 
       val = 0;
-      if (GetPin(2) == nts::TRUE)
+      if (GetPin(2) == hbs::TRUE)
 	val |= 1 << 0;
-      if (GetPin(3) == nts::TRUE)
+      if (GetPin(3) == hbs::TRUE)
 	val |= 1 << 1;
-      if (GetPin(21) == nts::TRUE)
+      if (GetPin(21) == hbs::TRUE)
        	val |= 1 << 2;
-      if (GetPin(22) == nts::TRUE)
+      if (GetPin(22) == hbs::TRUE)
 	val |= 1 << 3;
       if (val == 0)
 	active = 10;
@@ -63,21 +63,21 @@ nts::Tristate		nts::CMP_4514::Compute(size_t		n)
 	for (active = 0; pinstrenght[active] != val; ++active);
       
       if (active + 1 == p->first)
-	p->second = nts::TRUE;
+	p->second = hbs::TRUE;
       else
-	p->second = nts::FALSE;
+	p->second = hbs::FALSE;
 
       return (p->second);
     }
   else if (n == 12 || n == 24)
-    return (nts::UNDEFINED);
+    return (hbs::UNDEFINED);
   return (GetPin(n));
 }
 
-nts::CMP_4514::CMP_4514(const nts::Timer	&time)
+hbs::CMP_4514::CMP_4514(const hbs::Timer	&time)
   : AComponent(time)
 {}
 
-nts::CMP_4514::~CMP_4514(void)
+hbs::CMP_4514::~CMP_4514(void)
 {}
 

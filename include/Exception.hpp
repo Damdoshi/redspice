@@ -7,7 +7,7 @@
 # define			__EXCEPTION_HPP__
 # include			<stdexcept>
 
-namespace			nts
+namespace			hbs
 {
   class				BadPin : public std::runtime_error
   {

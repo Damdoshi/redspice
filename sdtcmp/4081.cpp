@@ -5,24 +5,24 @@
 
 #include		"4081.hpp"
 
-const std::string	&nts::CMP_4081::GetType(void) const
+const std::string	&hbs::CMP_4081::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
 
-nts::Tristate		nts::CMP_4081::Logic(nts::Tristate	a,
-					     nts::Tristate	b) const
+hbs::Tristate		hbs::CMP_4081::Logic(hbs::Tristate	a,
+					     hbs::Tristate	b) const
 {
-  if (a == nts::FALSE || b == nts::FALSE)
-    return (nts::FALSE);
-  if (a == nts::UNDEFINED || b == nts::UNDEFINED)
-    return (nts::UNDEFINED);
-  return (nts::TRUE);
+  if (a == hbs::FALSE || b == hbs::FALSE)
+    return (hbs::FALSE);
+  if (a == hbs::UNDEFINED || b == hbs::UNDEFINED)
+    return (hbs::UNDEFINED);
+  return (hbs::TRUE);
 }
 
-nts::CMP_4081::CMP_4081(const nts::Timer	&timer)
+hbs::CMP_4081::CMP_4081(const hbs::Timer	&timer)
   : AGate(timer)
 {}
-nts::CMP_4081::~CMP_4081(void)
+hbs::CMP_4081::~CMP_4081(void)
 {}
 

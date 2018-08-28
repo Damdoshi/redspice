@@ -7,7 +7,7 @@
 # define			__NTS_4011_HPP__
 # include			"4081.hpp"
 
-namespace			nts
+namespace			hbs
 {
   class				CMP_4011 : public CMP_4081
   {
@@ -15,11 +15,11 @@ namespace			nts
     const std::string		&GetType(void) const;
 
   protected:
-    virtual nts::Tristate	Logic(nts::Tristate		a,
-				      nts::Tristate		b) const;
+    virtual hbs::Tristate	Logic(hbs::Tristate		a,
+				      hbs::Tristate		b) const;
 
   public:
-    CMP_4011(const nts::Timer	&timer);
+    CMP_4011(const hbs::Timer	&timer);
     virtual ~CMP_4011(void);
   };
 }

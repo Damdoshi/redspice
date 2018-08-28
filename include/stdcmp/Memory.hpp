@@ -8,11 +8,11 @@
 # include			<stdint.h>
 # include			"AComponent.hpp"
 
-namespace			nts
+namespace			hbs
 {
   template<int			Capacity,
 	   int			Pin>
-  class				Memory : public nts::AComponent<Pin>
+  class				Memory : public hbs::AComponent<Pin>
   {
   protected:
     std::array<uint8_t, Capacity> memory;
@@ -20,7 +20,7 @@ namespace			nts
     uint8_t			GetData(size_t		pos)
     {
       if (pos >= Capacity)
-	throw nts::MemoryOverflow("Asked for an outside location in a memory component");
+	throw hbs::MemoryOverflow("Asked for an outside location in a memory component");
       return (memory[pos]);
     }
 
@@ -28,7 +28,7 @@ namespace			nts
 					uint8_t		dat)
     {
       if (pos >= Capacity)
-	throw nts::MemoryOverflow("Asked for an outside location in a memory component");
+	throw hbs::MemoryOverflow("Asked for an outside location in a memory component");
       memory[pos] = dat;
     }
 
@@ -37,7 +37,7 @@ namespace			nts
       return (Capacity);
     }
 
-    Memory(const nts::Timer	&timer)
+    Memory(const hbs::Timer	&timer)
       : AComponent<Pin>(timer)
     {}
     virtual ~Memory(void)

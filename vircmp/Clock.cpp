@@ -5,37 +5,37 @@
 
 #include		"Clock.hpp"
 
-const std::string	&nts::Clock::GetType(void) const
+const std::string	&hbs::Clock::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
 
-nts::Tristate		nts::Clock::Compute(size_t			pin_num_this)
+hbs::Tristate		hbs::Clock::Compute(size_t			pin_num_this)
 {
   std::map<size_t, PinState>::iterator	it;
-  nts::Tristate		old;
+  hbs::Tristate		old;
   size_t		tim;
 
   if (pin_num_this != 1)
-    throw nts::BadPin(GetType() + ":Bad pin.");
+    throw hbs::BadPin(GetType() + ":Bad pin.");
   tim = timer.GetTime();
   if ((it = timeline.find(tim)) == timeline.end())
     {
       old = value;
-      if (value == nts::TRUE)
-	value = nts::FALSE;
-      else if (value == nts::FALSE)
-	value = nts::TRUE;
+      if (value == hbs::TRUE)
+	value = hbs::FALSE;
+      else if (value == hbs::FALSE)
+	value = hbs::TRUE;
       return (timeline[tim][1] = old);
     }
   return (timeline[tim][1]);
 }
 
-nts::Clock::Clock(nts::Timer		&timer,
+hbs::Clock::Clock(hbs::Timer		&timer,
 		  const std::string	&value)
   : Input(timer, value)
 {}
 
-nts::Clock::~Clock(void)
+hbs::Clock::~Clock(void)
 {}
 

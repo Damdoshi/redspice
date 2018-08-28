@@ -8,7 +8,7 @@
 #define			XXX					0
 #define			PIN					-1 + 
 
-const std::string	&nts::CMP_2716::GetType(void) const
+const std::string	&hbs::CMP_2716::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
@@ -46,10 +46,10 @@ static const size_t	pinstrenght[24] =
     [PIN 24] = XXX
   };
 
-nts::Tristate		nts::CMP_2716::Compute(size_t		n)
+hbs::Tristate		hbs::CMP_2716::Compute(size_t		n)
 {
   /// Check if it already computed (Maybe temporary...)
-  nts::Tristate		tri;
+  hbs::Tristate		tri;
 
   if (AlreadyComputed(n, tri))
     return (tri);
@@ -63,37 +63,37 @@ nts::Tristate		nts::CMP_2716::Compute(size_t		n)
   if ((n >= 9 && n <= 11) || (n >= 13 && n <= 17))
     {
       /// /CE
-      if (GetPin(18) != nts::FALSE)
-	return (nts::UNDEFINED);
+      if (GetPin(18) != hbs::FALSE)
+	return (hbs::UNDEFINED);
 
       /// /OE
-      if (GetPin(20) != nts::FALSE)
-	return (nts::UNDEFINED);
+      if (GetPin(20) != hbs::FALSE)
+	return (hbs::UNDEFINED);
       
       address = 0;
       for (i = 0; i < sizeof(addresspin) / sizeof(addresspin[0]); ++i)
 	address |= (GetPin(addresspin[i]) ? 1 : 0) << i;
       value = GetData(address);
-      p->second = (value >> (pinstrenght[n - 1])) & 1 ? nts::TRUE : nts::FALSE;
+      p->second = (value >> (pinstrenght[n - 1])) & 1 ? hbs::TRUE : hbs::FALSE;
       return (p->second);
     }
-  return (nts::UNDEFINED);
+  return (hbs::UNDEFINED);
 }
 
-nts::CMP_2716::CMP_2716(const nts::Timer		&time,
+hbs::CMP_2716::CMP_2716(const hbs::Timer		&time,
 			const std::string		&file)
   : Memory(time)
 {
   std::ifstream		ss((char*)file.c_str(), std::ios::in | std::ios::binary);
 
   if (!ss)
-    throw nts::CannotOpenFile(file);
+    throw hbs::CannotOpenFile(file);
   std::string		content;
   size_t		i;
 
   ss.seekg(0,  std::ios::end);
   if (ss.tellg() > (int)GetMemorySize())
-    throw nts::FileIsTooBig(file);
+    throw hbs::FileIsTooBig(file);
   content.resize(ss.tellg());
   ss.seekg(0, std::ios::beg);
   ss.read(&content[0], content.size());
@@ -103,6 +103,6 @@ nts::CMP_2716::CMP_2716(const nts::Timer		&time,
     SetData(i++, 0);
 }
 
-nts::CMP_2716::~CMP_2716(void)
+hbs::CMP_2716::~CMP_2716(void)
 {}
 

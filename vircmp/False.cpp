@@ -5,22 +5,22 @@
 
 #include		"False.hpp"
 
-const std::string	&nts::False::GetType(void) const
+const std::string	&hbs::False::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
 
-nts::Tristate		nts::False::Compute(size_t			pin_num_this)
+hbs::Tristate		hbs::False::Compute(size_t			pin_num_this)
 {
   if (pin_num_this != 1)
-    throw nts::BadPin(GetType() + ":Bad pin.");
-  return (nts::FALSE);
+    throw hbs::BadPin(GetType() + ":Bad pin.");
+  return (hbs::FALSE);
 }
 
-nts::False::False(nts::Timer		&timer)
+hbs::False::False(hbs::Timer		&timer)
   : AComponent(timer)
 {}
 
-nts::False::~False(void)
+hbs::False::~False(void)
 {}
 

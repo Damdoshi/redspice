@@ -5,26 +5,26 @@
 
 #include		"4030.hpp"
 
-const std::string	&nts::CMP_4030::GetType(void) const
+const std::string	&hbs::CMP_4030::GetType(void) const
 {
   return (type = typeid(*this).name());
 }
 
-nts::Tristate		nts::CMP_4030::Logic(nts::Tristate	a,
-					     nts::Tristate	b) const
+hbs::Tristate		hbs::CMP_4030::Logic(hbs::Tristate	a,
+					     hbs::Tristate	b) const
 {
-  if (a == nts::TRUE && b == nts::FALSE)
-    return (nts::TRUE);
-  if (b == nts::TRUE && a == nts::FALSE)
-    return (nts::TRUE);
-  if (a == nts::UNDEFINED || b == nts::UNDEFINED)
-    return (nts::UNDEFINED);
-  return (nts::FALSE);
+  if (a == hbs::TRUE && b == hbs::FALSE)
+    return (hbs::TRUE);
+  if (b == hbs::TRUE && a == hbs::FALSE)
+    return (hbs::TRUE);
+  if (a == hbs::UNDEFINED || b == hbs::UNDEFINED)
+    return (hbs::UNDEFINED);
+  return (hbs::FALSE);
 }
 
-nts::CMP_4030::CMP_4030(const nts::Timer	&timer)
+hbs::CMP_4030::CMP_4030(const hbs::Timer	&timer)
   : AGate(timer)
 {}
-nts::CMP_4030::~CMP_4030(void)
+hbs::CMP_4030::~CMP_4030(void)
 {}
 
