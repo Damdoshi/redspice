@@ -41,5 +41,7 @@ namespace			hbs
 
 std::ostream			&operator<<(std::ostream	&os,
 					    hbs::Tristate	t);
+char				&operator<<(char		&c,
+					    hbs::Tristate	t);
 
 #endif	//			__ICOMPONENT_HPP__

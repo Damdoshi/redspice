@@ -157,7 +157,7 @@ bool			hbs::Circuit::ReadLinks(const std::string	&code,
 
 hbs::Tristate		hbs::Circuit::Compute(size_t			output)
 {
-  std::map<std::string, Output*>::iterator	it;
+  std::map<std::string, Output*>::iterator it;
 
   for (it = outputs.begin(); it != outputs.end() && output > 1; ++it, --output);
   return (it->second->Compute());
@@ -165,7 +165,7 @@ hbs::Tristate		hbs::Circuit::Compute(size_t			output)
 
 hbs::Tristate		hbs::Circuit::Compute(void)
 {
-  std::map<std::string, Output*>::iterator	it;
+  std::map<std::string, Output*>::iterator it;
 
   for (it = outputs.begin(); it != outputs.end(); ++it)
     it->second->Compute();
@@ -181,18 +181,54 @@ void			hbs::Circuit::SetLink(size_t			pnthis,
 
 void			hbs::Circuit::Dump(void) const
 {
-  std::map<std::string, IComponent*>::const_iterator	it;
+  std::map<std::string, IComponent*>::const_iterator it;
 
   for (it = circuit.begin(); it != circuit.end(); ++it)
     {
-      std::cout << it->first << std::endl;
+      std::cerr << it->first << std::endl;
       it->second->Dump();
     }
 }
 
+void			hbs::Circuit::Map(void) const
+{
+  std::map<std::string, Input*>::const_iterator iti;
+  std::map<std::string, Output*>::const_iterator ito;
+
+  iti = inputs.begin();
+  ito = outputs.begin();
+  fprintf(stderr, "%21s[        ]\n", " ");
+  while (iti != inputs.end() || ito != outputs.end())
+    {
+      char		c;
+
+      if (iti != inputs.end())
+	{
+	  c << iti->second->Compute(1);
+	  fprintf(stderr, "%16s(%c)->[        ]", iti->first.c_str(), c);
+	  ++iti;
+	}
+      else
+	fprintf(stderr, "%21s[        ]", " ");
+      if (ito != outputs.end())
+	{
+	  if (ito->second->Displayable())
+	    {
+	      c << ito->second->Compute(1);
+	      fprintf(stderr, "->%s(%c)", ito->first.c_str(), c);
+	    }
+	  else
+	    fprintf(stderr, "->%s", ito->first.c_str());
+	  ++ito;
+	}
+      fprintf(stderr, "\n");
+    }
+  fprintf(stderr, "%21s[        ]\n", " ");
+}
+
 const std::string	&hbs::Circuit::GetOutputName(size_t		n) const
 {
-  std::map<std::string, Output*>::const_iterator	it;
+  std::map<std::string, Output*>::const_iterator it;
 
   for (it = outputs.begin(); it != outputs.end() && n > 1; --n, ++it);
   if (it == outputs.end())
@@ -202,7 +238,7 @@ const std::string	&hbs::Circuit::GetOutputName(size_t		n) const
 
 bool			hbs::Circuit::GetDisplayable(size_t		n) const
 {
-  std::map<std::string, Output*>::const_iterator	it;
+  std::map<std::string, Output*>::const_iterator it;
 
   for (it = outputs.begin(); it != outputs.end() && n > 1; --n, ++it);
   if (it == outputs.end())

@@ -13,7 +13,7 @@ void			handler(int		unused)
 {
   (void)unused;
   getout = true;
-  std::cout << std::endl;
+  std::cerr << std::endl;
 }
 
 static int		Shell(hbs::Circuit	&circuit,
@@ -25,10 +25,10 @@ static int		Shell(hbs::Circuit	&circuit,
 
   do
     {
-      std::cout << "> " << std::flush;
+      std::cerr << "> " << std::flush;
       if (!getline(std::cin, str))
 	{
-	  std::cout << std::endl;
+	  std::cerr << std::endl;
 	  return (EXIT_SUCCESS);
 	}
       else if (str == "simulate")
@@ -40,7 +40,7 @@ static int		Shell(hbs::Circuit	&circuit,
       else if (str == "display")
 	for (i = 1; i <= circuit.GetOutputNum(); ++i)
 	  if (circuit.GetDisplayable(i))
-	    std::cout << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
+	    std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
 	  else
 	    circuit.Compute(i);
       else if (str.compare(0, 3, "sdn") == 0)
@@ -49,12 +49,38 @@ static int		Shell(hbs::Circuit	&circuit,
 	    timer.Tick();
 	    for (i = 1; i <= circuit.GetOutputNum(); ++i)
 	      if (circuit.GetDisplayable(i))
-		std::cout << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
+		std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
 	      else
 		circuit.Compute(i);
 	  }
+      else if (str == "map")
+	circuit.Map();
       else if (str == "dump")
 	circuit.Dump();
+      else if (str == "help")
+	{
+	  std::cerr << "Commands are: "
+		    << std::endl
+		    << "\tsimulate: Start a single simulation operation of every components."
+		    << std::endl
+		    << "\tdisplay: Display all output values on stdout."
+		    << std::endl
+		    << "\tsdn N: Simulate and display N times."
+		    << std::endl
+		    << "\tmap: Display inputs of the circuit and output."
+		    << std::endl
+		    << "\tdump: Make a complete dump of the circuit component status."
+		    << std::endl
+		    << "\thelp: Display an explicative list of all commands."
+		    << std::endl
+		    << "\tloop: Loop until the program receive a SIGINT signal."
+		    << std::endl
+		    << "\texit: Exit the program."
+		    << std::endl
+		    << "\ta=b: Set b (0 or 1) to the input named a."
+		    << std::endl
+		    << std::endl;
+	}
       else if (str == "loop")
 	{
 	  getout = false;
@@ -69,8 +95,8 @@ static int		Shell(hbs::Circuit	&circuit,
 	}
       else if ((i = str.find('=', 0)) != std::string::npos)
 	circuit.SetValue(str.substr(0, i), atoi(&str.c_str()[i + 1]) ? hbs::TRUE : hbs::FALSE);
-      else if (str != "exit")
-	std::cout << "Unrecognized command '" << str << "'" << std::endl;
+      else if (str != "exit" && str != "")
+	std::cerr << "Unrecognized command '" << str << "'" << std::endl;
     }
   while (str != "exit");
   return (EXIT_SUCCESS);
@@ -86,7 +112,7 @@ int			main(int		argc,
 
   if (argc < 2)
     {
-      std::cout << argv[0] << " circuit.hbs [input=value]*" << std::endl;
+      std::cerr << argv[0] << " circuit.hbs [input=value]*" << std::endl;
       return (EXIT_FAILURE);
     }
   if (circuit.Load(argv[1]) == false)
@@ -100,7 +126,7 @@ int			main(int		argc,
     }
   for (i = 1; i <= (int)circuit.GetOutputNum(); ++i)
     if (circuit.GetDisplayable(i))
-      std::cout << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
+      std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
     else
       circuit.Compute(i);
   return (Shell(circuit, timer));

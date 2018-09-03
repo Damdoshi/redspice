@@ -46,6 +46,7 @@ namespace				hbs
 						hbs::IComponent			&component,
 						size_t				pntarg);
     void				Dump(void) const;
+    void				Map(void) const;
 
     const std::string			&GetOutputName(size_t			n) const;
     bool				GetDisplayable(size_t			n) const;

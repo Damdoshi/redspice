@@ -33,7 +33,6 @@ namespace				hbs
 
     void				CleanOld(void)
     {
-      //std::cout << timeline.size() << std::endl;
       if (timer.GetTime() > 4)
 	timeline.erase(timeline.begin(), timeline.find(timer.GetTime() - 3));
     }
@@ -163,20 +162,11 @@ namespace				hbs
 
       if ((itx = timeline.find(timer.GetTime())) == timeline.end())
 	{
-	  std::cout << "Not simulated yet." << std::endl;
+	  std::cerr << "Not simulated yet." << std::endl;
 	  return ;
 	}
       for (it = itx->second.begin(); it != itx->second.end(); ++it)
-	{
-	  std::cout << "Pin " << it->first << ": ";
-	  if (it->second == hbs::UNDEFINED)
-	    std::cout << "U";
-	  else if (it->second == hbs::FALSE)
-	    std::cout << "0";
-	  else
-	    std::cout << "1";
-	  std::cout << std::endl;
-	}
+	std::cerr << "Pin " << it->first << ": " << it->second << std::endl;
     }
 
     AComponent(const hbs::Timer		&tim)

@@ -20,3 +20,14 @@ std::ostream		&operator<<(std::ostream	&os,
   return (os);
 }
 
+char			&operator<<(char		&c,
+				    hbs::Tristate	t)
+{
+  if (t == hbs::TRUE)
+    return (c = '1');
+  if (t == hbs::FALSE)
+    return (c = '0');
+  if (t == hbs::UNDEFINED)
+    return (c = 'U');
+  return (c = 'B');
+}

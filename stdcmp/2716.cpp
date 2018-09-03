@@ -69,7 +69,7 @@ hbs::Tristate		hbs::CMP_2716::Compute(size_t		n)
       /// /OE
       if (GetPin(20) != hbs::FALSE)
 	return (hbs::UNDEFINED);
-      
+
       address = 0;
       for (i = 0; i < sizeof(addresspin) / sizeof(addresspin[0]); ++i)
 	address |= (GetPin(addresspin[i]) ? 1 : 0) << i;

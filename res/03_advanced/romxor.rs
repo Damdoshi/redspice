@@ -28,7 +28,7 @@ false			gnd
 
 4069			no
 4040			counter
-2716			rom(xorrom.bin)
+2716			rom(res/03_advanced/misc/rom.bin)
 4081			and
 
 4030			xor0

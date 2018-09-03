@@ -14,8 +14,8 @@ ERRLOG		=	errors~
 
 CC		=	g++
 FLAGS		=	-W -Wall -Werror -fPIC -std=gnu++14
-#FLAGS		+=	-g -g3 -ggdb
-FLAGS		+=	-O2
+FLAGS		+=	-g -g3 -ggdb
+#FLAGS		+=	-O2
 
 ## Define some stuff
 ECHO		=	/bin/echo -e

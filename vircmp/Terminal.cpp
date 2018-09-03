@@ -36,7 +36,7 @@ hbs::Tristate		hbs::Terminal::Compute(size_t		n)
       last_tick = hbs::AComponent<9>::timer.GetTime();
       for (i = 0; i < 7; ++i)
 	c |= AComponent<9>::GetPin(i + 1) << i;
-      if (write(2, &c, 1)) {}
+      if (write(1, &c, 1)) {}
     }
   else
     for (i = 1; i < 8; ++i)
