@@ -69,8 +69,9 @@ hbs::Tristate		hbs::CMP_4040::Compute(size_t		n)
   return (GetPin(n));
 }
 
-hbs::CMP_4040::CMP_4040(const hbs::Timer		&time)
-  : AComponent(time),
+hbs::CMP_4040::CMP_4040(const hbs::Timer		&time,
+			const std::string		&pos)
+  : AComponent(time, pos),
     value(0),
     last_tick(0)
 {}

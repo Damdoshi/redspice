@@ -39,7 +39,12 @@ bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
 	{
 	  i = ++j;
 	  if (ReadChar(code, j))
-	    position = code.substr(i, j - i);
+	    {
+	      if (code[j] != ',')
+		throw SyntaxError(code.substr(i, 20));
+	      ReadChar(code, ++j);
+	      position = code.substr(i, j - i);
+	    }
 	  ReadWhitespace(code, j);
 	  if (code[j] != ']')
 	    throw hbs::SyntaxError("Missing ']'.");
@@ -133,9 +138,10 @@ hbs::Tristate		hbs::Circuit::Compute(void)
 
 void			hbs::Circuit::SetLink(size_t			pnthis,
 					      hbs::IComponent		&com,
-					      size_t			pntarg)
+					      size_t			pntarg,
+					      const std::string		&pos)
 {
-  (void)pnthis; (void)com; (void)pntarg;
+  (void)pnthis; (void)com; (void)pntarg; (void)pos;
 }
 
 void			hbs::Circuit::Dump(void) const

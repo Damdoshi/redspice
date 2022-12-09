@@ -20,8 +20,9 @@ hbs::Tristate		hbs::CMP_4071::Logic(hbs::Tristate	a,
   return (hbs::FALSE);
 }
 
-hbs::CMP_4071::CMP_4071(const hbs::Timer	&timer)
-  : AGate(timer)
+hbs::CMP_4071::CMP_4071(const hbs::Timer	&timer,
+			const std::string	&pos)
+  : AGate(timer, pos)
 {}
 hbs::CMP_4071::~CMP_4071(void)
 {}

@@ -6,6 +6,7 @@
 #ifndef				__HBS_MEMORY_HPP__
 # define			__HBS_MEMORY_HPP__
 # include			<stdint.h>
+# include			<array>
 # include			"AComponent.hpp"
 
 namespace			hbs

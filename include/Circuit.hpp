@@ -36,7 +36,8 @@ namespace				hbs
 						  int				&i);
 
     IComponent				*Create(const std::string		&type,
-						const std::string		&value);
+						const std::string		&value,
+						const std::string		&position);
 
   public:
     hbs::Tristate			Compute(size_t				output);
@@ -44,7 +45,8 @@ namespace				hbs
 
     void				SetLink(size_t				pnthis,
 						hbs::IComponent			&component,
-						size_t				pntarg);
+						size_t				pntarg,
+						const std::string		&pos);
     void				Dump(void) const;
     void				Map(void) const;
 

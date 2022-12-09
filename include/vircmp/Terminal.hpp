@@ -20,7 +20,9 @@ namespace			hbs
   public:
     void			SetLink(size_t				pnthis,
 					hbs::IComponent			&component,
-					size_t				pntarg);
+					size_t				pntarg,
+					const std::string		&pos);
+    void			Draw(hbs::Screen			&screen) const;
 
     hbs::Tristate		Compute(size_t				n);
     void			Dump(void) const;

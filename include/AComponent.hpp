@@ -17,30 +17,34 @@
 
 namespace				hbs
 {
+  struct				Link
+  {
+    enum				Layer
+      {
+	TOP,
+	BOTTOM
+      };
+    IComponent				*first;
+    size_t				second;
+    
+    std::list<
+      std::pair<
+	hbs::Screen::Position,	// All positions, including start and end
+	Layer				// Layer of the next link
+	>
+      >					third;
+    Link(IComponent			*icom,
+	 size_t				pin,
+	 const std::string		&str);
+    ~Link(void) {}
+  };
+  
   template <int				Pin>
   class					AComponent: public virtual hbs::IComponent
   {
   protected:
     virtual const std::string		&GetType(void) const = 0;
     const hbs::Timer			&timer;
-
-    struct				Link
-    {
-      enum				Layer
-	{
-	  TOP,
-	  BOTTOM
-	};
-      IComponent			*first;
-      size_t				second;
-
-      std::list<
-	std::pair<
-	  hbs::Screen::Position,	// All positions, including start and end
-	  Layer				// Layer of the next link
-	  >
-	>				third;
-    };
     
     typedef std::map<size_t, Tristate>	PinState;
     typedef PinState::iterator		Preset;
@@ -159,7 +163,8 @@ namespace				hbs
   public:
     void				SetLink(size_t			pin_num_this,
 						hbs::IComponent		&component,
-						size_t			pin_num_target)
+						size_t			pin_num_target,
+						const std::string	&pos)
     {
       typename std::map<size_t, std::list<Link> >::iterator		it;
       typename std::list<Link>::iterator				itx;
@@ -175,8 +180,8 @@ namespace				hbs
 	    return ;
 
       /// Linked and signal to the other component the link
-      links[pin_num_this].push_back({&component, pin_num_target});
-      component.SetLink(pin_num_target, *this, pin_num_this);
+      links[pin_num_this].push_back({&component, pin_num_target, pos});
+      component.SetLink(pin_num_target, *this, pin_num_this); // , pos);
     }
 
     virtual void			Draw(hbs::Screen		&screen) const

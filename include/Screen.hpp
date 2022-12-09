@@ -38,6 +38,9 @@ namespace				hbs
     void				Line(Position			a,
 					     Position			b,
 					     unsigned int		col);
+    void				Square(Position			pos,
+					       Size			siz,
+					       unsigned int		col);
     void				Text(Position			p,
 					     unsigned int		col,
 					     const std::string		&str);

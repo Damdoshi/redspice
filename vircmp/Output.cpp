@@ -28,8 +28,9 @@ bool			hbs::Output::Displayable(void) const
   return (true);
 }
 
-hbs::Output::Output(const hbs::Timer		&timer)
-  : AComponent(timer)
+hbs::Output::Output(const hbs::Timer		&timer,
+		    const std::string		&pos)
+  : AComponent(timer, pos)
 {}
 
 hbs::Output::~Output(void)

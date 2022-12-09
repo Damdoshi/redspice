@@ -5,6 +5,7 @@
 
 #ifndef			__PARSING_HPP__
 # define		__PARSING_HPP__
+# include		<string>
 
 bool			ReadWhitespace(const std::string		&code,
 				       int				&i);

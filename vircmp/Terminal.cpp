@@ -11,11 +11,31 @@ const std::string	&hbs::Terminal::GetType(void) const
   return (hbs::AComponent<9>::type = typeid(*this).name());
 }
 
-void			hbs::Terminal::SetLink(size_t		a,
-					     hbs::IComponent	&b,
-					     size_t		c)
+void			hbs::Terminal::Draw(hbs::Screen		&screen) const
 {
-  hbs::AComponent<9>::SetLink(a, b, c);
+  screen.Square(hbs::AComponent<9>::position + hbs::Screen::Position{1, 0}, {1, 9}, hbs::Screen::White);
+  for (double i = 0; i < 9; ++i)
+    {
+      screen.Line(hbs::AComponent<9>::position + hbs::Screen::Position{0, i},
+		  hbs::AComponent<9>::position + hbs::Screen::Position{1, i},
+		  hbs::Screen::White);
+      screen.Circle(hbs::AComponent<9>::position + hbs::Screen::Position{0, i},
+		    hbs::Screen::Position{0.5, 0.5}, hbs::Screen::Teal, true);
+      screen.Circle(hbs::AComponent<9>::position + hbs::Screen::Position{0, i},
+		    hbs::Screen::Position{0.5, 0.5}, hbs::Screen::White, false);
+    }
+  screen.Text(hbs::AComponent<9>::position + hbs::Screen::Position{0, -1}, hbs::Screen::White, GetType());
+  char			buf[2] = {c, '\0'};
+  
+  screen.Text(hbs::AComponent<9>::position + hbs::Screen::Position{1, 1}, hbs::Screen::White, std::string(buf));
+}
+
+void			hbs::Terminal::SetLink(size_t		a,
+					       hbs::IComponent	&b,
+					       size_t		 c,
+					       const std::string &linkpath)
+{
+  hbs::AComponent<9>::SetLink(a, b, c, linkpath);
 }
 
 void			hbs::Terminal::Dump(void) const
@@ -49,8 +69,9 @@ bool			hbs::Terminal::Displayable(void) const
   return (false);
 }
 
-hbs::Terminal::Terminal(const hbs::Timer	&timer)
-  : AComponent<1>(timer), AComponent<9>(timer), Output(timer),
+hbs::Terminal::Terminal(const hbs::Timer	&timer,
+			const std::string	&pos)
+  : AComponent<1>(timer, pos), AComponent<9>(timer, pos), Output(timer, pos),
     last_tick(0),
     c('\0')
 {}

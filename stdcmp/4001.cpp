@@ -25,8 +25,9 @@ hbs::Tristate		hbs::CMP_4001::Logic(hbs::Tristate	a,
   return (hbs::UNDEFINED);
 }
 
-hbs::CMP_4001::CMP_4001(const hbs::Timer	&timer)
-  : CMP_4071(timer)
+hbs::CMP_4001::CMP_4001(const hbs::Timer	&timer,
+			const std::string	&pos)
+  : CMP_4071(timer, pos)
 {}
 hbs::CMP_4001::~CMP_4001(void)
 {}

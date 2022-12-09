@@ -81,8 +81,9 @@ hbs::Tristate		hbs::CMP_2716::Compute(size_t		n)
 }
 
 hbs::CMP_2716::CMP_2716(const hbs::Timer		&time,
-			const std::string		&file)
-  : Memory(time)
+			const std::string		&file,
+			const std::string		&pos)
+  : Memory(time, pos)
 {
   std::ifstream		ss((char*)file.c_str(), std::ios::in | std::ios::binary);
 

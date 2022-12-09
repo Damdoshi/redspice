@@ -47,8 +47,9 @@ hbs::Tristate		hbs::CMP_4069::Compute(size_t		n)
   return (GetPin(n));
 }
 
-hbs::CMP_4069::CMP_4069(const hbs::Timer	&tim)
-  : AComponent(tim)
+hbs::CMP_4069::CMP_4069(const hbs::Timer	&tim,
+			const std::string	&pos)
+  : AComponent(tim, pos)
 {}
 
 hbs::CMP_4069::~CMP_4069(void)

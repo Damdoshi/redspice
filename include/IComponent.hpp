@@ -29,7 +29,8 @@ namespace			hbs
     /// Useful to link IComponent together
     virtual void		SetLink(size_t			pin_num_this,
 					hbs::IComponent		&component,
-					size_t			pin_num_target) = 0;
+					size_t			pin_num_target,
+					const std::string	&pos = "") = 0;
 
     virtual void		Draw(hbs::Screen		&screen) const = 0;
 

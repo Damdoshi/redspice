@@ -17,8 +17,9 @@ hbs::Tristate		hbs::False::Compute(size_t			pin_num_this)
   return (hbs::FALSE);
 }
 
-hbs::False::False(hbs::Timer		&timer)
-  : AComponent(timer)
+hbs::False::False(hbs::Timer		&timer,
+		  const std::string	&pos)
+  : AComponent(timer, pos)
 {}
 
 hbs::False::~False(void)

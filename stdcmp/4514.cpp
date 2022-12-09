@@ -74,8 +74,9 @@ hbs::Tristate		hbs::CMP_4514::Compute(size_t		n)
   return (GetPin(n));
 }
 
-hbs::CMP_4514::CMP_4514(const hbs::Timer	&time)
-  : AComponent(time)
+hbs::CMP_4514::CMP_4514(const hbs::Timer	&time,
+			const std::string	&pos)
+  : AComponent(time, pos)
 {}
 
 hbs::CMP_4514::~CMP_4514(void)
