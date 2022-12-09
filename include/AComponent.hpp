@@ -12,6 +12,8 @@
 # include				"IComponent.hpp"
 # include				"Exception.hpp"
 # include				"Timer.hpp"
+# include				"Screen.hpp"
+# include				"Parsing.hpp"
 
 namespace				hbs
 {
@@ -22,15 +24,37 @@ namespace				hbs
     virtual const std::string		&GetType(void) const = 0;
     const hbs::Timer			&timer;
 
-    typedef std::pair<IComponent*, size_t> Link;
+    struct				Link
+    {
+      enum				Layer
+	{
+	  TOP,
+	  BOTTOM
+	};
+      IComponent			*first;
+      size_t				second;
+
+      std::list<
+	std::pair<
+	  hbs::Screen::Position,	// All positions, including start and end
+	  Layer				// Layer of the next link
+	  >
+	>				third;
+    };
+    
     typedef std::map<size_t, Tristate>	PinState;
     typedef PinState::iterator		Preset;
 
     std::map<size_t, std::list<Link> >	links;
     std::map<size_t, PinState>		timeline;
+    float				x;
+    float				y;
 
     mutable std::string			type;
 
+    hbs::Screen::Position		position;
+    bool				orientation;
+  
     void				CleanOld(void)
     {
       if (timer.GetTime() > 4)
@@ -109,8 +133,8 @@ namespace				hbs
     //// Get a pin value
     hbs::Tristate			GetPin(size_t			n)
     {
-      std::map<size_t, std::list<Link> >::iterator			lnk;
-      std::list<Link>::iterator						it;
+      typename std::map<size_t, std::list<Link> >::iterator		lnk;
+      typename std::list<Link>::iterator				it;
       hbs::Tristate							out;
       hbs::Tristate							tmp;
 
@@ -137,8 +161,8 @@ namespace				hbs
 						hbs::IComponent		&component,
 						size_t			pin_num_target)
     {
-      std::map<size_t, std::list<Link> >::iterator			it;
-      std::list<Link>::iterator						itx;
+      typename std::map<size_t, std::list<Link> >::iterator		it;
+      typename std::list<Link>::iterator				itx;
 
       /// If the pin is out of bound
       if (pin_num_this > Pin || pin_num_this == 0)
@@ -151,10 +175,69 @@ namespace				hbs
 	    return ;
 
       /// Linked and signal to the other component the link
-      links[pin_num_this].push_back(std::pair<hbs::IComponent*, size_t>(&component, pin_num_target));
+      links[pin_num_this].push_back({&component, pin_num_target});
       component.SetLink(pin_num_target, *this, pin_num_this);
     }
 
+    virtual void			Draw(hbs::Screen		&screen) const
+    {
+      if (Pin == 1)
+	{
+	  screen.Circle(position, {1, 1}, hbs::Screen::Teal, true);
+	  screen.Circle(position, {1, 1}, hbs::Screen::White, false);
+	}
+      else if (Pin == 2)
+	{
+	  if (orientation)
+	    {
+	      screen.Circle(position + hbs::Screen::Position{1, 0}, {2, 0.5}, hbs::Screen::Green);
+
+	      screen.Circle(position + hbs::Screen::Position{0, 0}, {1, 1}, hbs::Screen::Teal, true);
+	      screen.Circle(position + hbs::Screen::Position{0, 0}, {1, 1}, hbs::Screen::White, false);
+	      screen.Circle(position + hbs::Screen::Position{3, 0}, {1, 1}, hbs::Screen::Teal, true);
+	      screen.Circle(position + hbs::Screen::Position{3, 0}, {1, 1}, hbs::Screen::White, false);
+	      screen.Line(position, position + hbs::Screen::Position{3, 0}, hbs::Screen::White);
+	    }
+	  else
+	    {
+	      screen.Circle(position + hbs::Screen::Position{0, 1}, {0.5, 2}, hbs::Screen::Green);
+
+	      screen.Circle(position + hbs::Screen::Position{0, 0}, {1, 1}, hbs::Screen::Teal, true);
+	      screen.Circle(position + hbs::Screen::Position{0, 0}, {1, 1}, hbs::Screen::White, false);
+	      screen.Circle(position + hbs::Screen::Position{0, 3}, {1, 1}, hbs::Screen::Teal, true);
+	      screen.Circle(position + hbs::Screen::Position{0, 3}, {1, 1}, hbs::Screen::White, false);
+	      screen.Line(position, position + hbs::Screen::Position{0, 3}, hbs::Screen::White);
+	    }
+	}
+      else if (Pin == 3)
+	{
+	  screen.Circle(position, {1, 1}, hbs::Screen::Teal);
+	  screen.Line(position, position + hbs::Screen::Position{-1, 0}, hbs::Screen::White);
+	  screen.Line(position, position + hbs::Screen::Position{0, -1}, hbs::Screen::White);
+	  screen.Line(position, position + hbs::Screen::Position{0, 1}, hbs::Screen::White);
+	}
+      else
+	{
+	  screen.Line(position + hbs::Screen::Position{0, 0}, position + hbs::Screen::Position{0, 3}, hbs::Screen::White);
+	  screen.Line(position + hbs::Screen::Position{Pin / 2, 0}, position + hbs::Screen::Position{Pin / 2, 3}, hbs::Screen::White);
+	  screen.Line(position + hbs::Screen::Position{0, 0}, position + hbs::Screen::Position{Pin / 2, 0}, hbs::Screen::White);
+	  screen.Line(position + hbs::Screen::Position{0, 0}, position + hbs::Screen::Position{Pin / 2, 3}, hbs::Screen::White);
+	  for (double i = 0; i < Pin / 2; ++i)
+	    {
+	      screen.Circle(position + hbs::Screen::Position{0, i}, {0.5, 0.5}, hbs::Screen::Teal, true);
+	      screen.Circle(position + hbs::Screen::Position{3, i}, {0.5, 0.5}, hbs::Screen::Teal, true);
+
+	      screen.Circle(position + hbs::Screen::Position{0, i}, {0.5, 0.5}, hbs::Screen::White, false);
+	      screen.Circle(position + hbs::Screen::Position{3, i}, {0.5, 0.5}, hbs::Screen::White, false);
+	      
+	      screen.Line(position + hbs::Screen::Position{0, i}, position + hbs::Screen::Position{0.5, i}, hbs::Screen::White);
+	      screen.Line(position + hbs::Screen::Position{3, i}, position + hbs::Screen::Position{2.5, i}, hbs::Screen::White);
+	    }
+	}
+
+      screen.Text(position + hbs::Screen::Position{0, -1}, hbs::Screen::White, GetType());
+    }
+    
     void				Dump(void) const
     {
       std::map<size_t, Tristate>::const_iterator it;
@@ -169,9 +252,25 @@ namespace				hbs
 	std::cerr << "Pin " << it->first << ": " << it->second << std::endl;
     }
 
-    AComponent(const hbs::Timer		&tim)
+    AComponent(const hbs::Timer		&tim,
+	       const std::string	&pos)
       : timer(tim)
-    {}
+    {
+      size_t				idx = 0;
+      int				idy = 0;
+      
+      x = std::stof(pos, &idx);
+      if (idx == 0)
+	throw hbs::SyntaxError(pos);
+      idy = idx;
+      ReadWhitespace(pos, idy);
+      idy += pos[idy] == ',';
+      ReadWhitespace(pos, idy);
+      idx = idy;
+      y = std::stof(&pos[idx], &idx);
+      if ((int)idx == idy)
+	throw hbs::SyntaxError(pos);
+    }
     virtual ~AComponent(void) {}
   };
 }

@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_INPUT_HPP__
-# define			__NTS_INPUT_HPP__
+#ifndef				__HBS_INPUT_HPP__
+# define			__HBS_INPUT_HPP__
 # include			"AComponent.hpp"
 
 namespace			hbs
@@ -22,9 +22,10 @@ namespace			hbs
     void			SetValue(hbs::Tristate	tristate);
 
     Input(hbs::Timer		&timer,
-	  const std::string	&value = "");
+	  const std::string	&value = "",
+	  const std::string	&pos = "");
     virtual ~Input(void);
   };
 }
 
-#endif	//			__NTS_INPUT_HPP__
+#endif	//			__HBS_INPUT_HPP__

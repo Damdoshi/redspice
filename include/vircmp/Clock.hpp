@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_CLOCK_HPP__
-# define			__NTS_CLOCK_HPP__
+#ifndef				__HBS_CLOCK_HPP__
+# define			__HBS_CLOCK_HPP__
 # include			"Input.hpp"
 
 namespace			hbs
@@ -18,9 +18,10 @@ namespace			hbs
     virtual hbs::Tristate	Compute(size_t		pin_num_this = 1);
 
     Clock(hbs::Timer		&timer,
-	  const std::string	&value = "");
+	  const std::string	&value = "",
+	  const std::string	&pos = "");
     virtual ~Clock(void);
   };
 }
 
-#endif	//			__NTS_CLOCK_HPP__
+#endif	//			__HBS_CLOCK_HPP__

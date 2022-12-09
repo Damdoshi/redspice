@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_4001_HPP__
-# define			__NTS_4001_HPP__
+#ifndef				__HBS_4001_HPP__
+# define			__HBS_4001_HPP__
 # include			"4071.hpp"
 
 namespace			hbs
@@ -19,9 +19,10 @@ namespace			hbs
 				      hbs::Tristate		b) const;
 
   public:
-    CMP_4001(const hbs::Timer	&timer);
+    CMP_4001(const hbs::Timer	&timer,
+	     const std::string	&pos);
     virtual ~CMP_4001(void);
   };
 }
 
-#endif	//			__NTS_4001_HPP__
+#endif	//			__HBS_4001_HPP__

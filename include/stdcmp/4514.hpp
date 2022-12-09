@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_4514_HPP__
-# define			__NTS_4514_HPP__
+#ifndef				__HBS_4514_HPP__
+# define			__HBS_4514_HPP__
 # include			"AComponent.hpp"
 
 namespace			hbs
@@ -17,9 +17,10 @@ namespace			hbs
   public:
     hbs::Tristate		Compute(size_t				n);
 
-    CMP_4514(const hbs::Timer	&timer);
+    CMP_4514(const hbs::Timer	&timer,
+	     const std::string	&pos);
     virtual ~CMP_4514(void);
   };
 }
 
-#endif	//			__NTS_4514_HPP__
+#endif	//			__HBS_4514_HPP__

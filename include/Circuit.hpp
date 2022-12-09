@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef					__NTS_CIRCUIT_HPP__
-# define				__NTS_CIRCUIT_HPP__
+#ifndef					__HBS_CIRCUIT_HPP__
+# define				__HBS_CIRCUIT_HPP__
 # include				"Timer.hpp"
 # include				"Input.hpp"
 # include				"Output.hpp"
@@ -56,9 +56,11 @@ namespace				hbs
     void				SetValue(const std::string		&input,
 						 hbs::Tristate			value);
 
+    void				Draw(hbs::Screen			&screen) const;
+
     Circuit(hbs::Timer	&timer);
     virtual ~Circuit(void);
   };
 }
 
-#endif	//				__NTS_CIRCUIT_HPP__
+#endif	//				__HBS_CIRCUIT_HPP__

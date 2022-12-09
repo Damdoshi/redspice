@@ -3,6 +3,7 @@
 //
 // RED Spice
 
+#include		<fcntl.h>
 #include		<signal.h>
 #include		<stdlib.h>
 #include		"Circuit.hpp"
@@ -17,46 +18,67 @@ void			handler(int		unused)
 }
 
 static int		Shell(hbs::Circuit	&circuit,
-			      hbs::Timer	&timer)
+			      hbs::Timer	&timer,
+			      hbs::Screen	*screen)
 {
+  char			buffer[4096];
   std::string		str;
   int			l;
   size_t		i;
+  int			flags;
 
+  flags = fcntl(0, F_GETFL, 0);
+  fcntl(0, F_SETFL, flags | O_NONBLOCK);
   do
     {
       std::cerr << "> " << std::flush;
-      if (!getline(std::cin, str))
+      
+      if ((i = read(0, &buffer[0], sizeof(buffer) - 1)) == 0)
 	{
 	  std::cerr << std::endl;
 	  return (EXIT_SUCCESS);
 	}
-      else if (str == "simulate")
+      if (i > 1 && buffer[i - 1])
+	buffer[i - 1] = '\0';
+      buffer[i] = '\0';
+      str = buffer;
+      
+      if (str == "simulate")
 	{
 	  timer.Tick();
 	  for (i = 1; i <= circuit.GetOutputNum(); ++i)
 	    circuit.Compute(i);
+	  screen && screen->Draw(circuit);
 	}
       else if (str == "display")
-	for (i = 1; i <= circuit.GetOutputNum(); ++i)
-	  if (circuit.GetDisplayable(i))
-	    std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
-	  else
-	    circuit.Compute(i);
+	{
+	  for (i = 1; i <= circuit.GetOutputNum(); ++i)
+	    if (circuit.GetDisplayable(i))
+	      std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
+	    else
+	      circuit.Compute(i);
+	  screen && screen->Draw(circuit);
+	}
       else if (str.compare(0, 3, "sdn") == 0)
-	for (l = atoi(&str.c_str()[3]); l > 0; --l)
-	  {
-	    timer.Tick();
-	    for (i = 1; i <= circuit.GetOutputNum(); ++i)
-	      if (circuit.GetDisplayable(i))
-		std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
-	      else
-		circuit.Compute(i);
-	  }
+	{
+	  for (l = atoi(&str.c_str()[3]); l > 0; --l)
+	    {
+	      timer.Tick();
+	      for (i = 1; i <= circuit.GetOutputNum(); ++i)
+		if (circuit.GetDisplayable(i))
+		  std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
+		else
+		  circuit.Compute(i);
+	    }
+	  screen && screen->Draw(circuit);
+	}
       else if (str == "map")
 	circuit.Map();
       else if (str == "dump")
-	circuit.Dump();
+	{
+	  circuit.Dump();
+	  screen && screen->Draw(circuit);
+	}
       else if (str == "help")
 	{
 	  std::cerr << "Commands are: "
@@ -90,15 +112,21 @@ static int		Shell(hbs::Circuit	&circuit,
 	      timer.Tick();
 	      for (i = 1; i <= circuit.GetOutputNum(); ++i)
 		circuit.Compute(i);
+	      screen && screen->Draw(circuit);
 	    }
 	  signal(SIGINT, NULL);
 	}
       else if ((i = str.find('=', 0)) != std::string::npos)
-	circuit.SetValue(str.substr(0, i), atoi(&str.c_str()[i + 1]) ? hbs::TRUE : hbs::FALSE);
+	{
+	  circuit.SetValue(str.substr(0, i), atoi(&str.c_str()[i + 1]) ? hbs::TRUE : hbs::FALSE);
+	  screen && screen->Draw(circuit);
+	}
       else if (str != "exit" && str != "")
 	std::cerr << "Unrecognized command '" << str << "'" << std::endl;
+      screen && screen->Loop(circuit);
     }
   while (str != "exit");
+  fcntl(0, F_SETFL, flags);
   return (EXIT_SUCCESS);
 }
 
@@ -107,6 +135,7 @@ int			main(int		argc,
 {
   hbs::Timer		timer;
   hbs::Circuit		circuit(timer);
+  hbs::Screen		*screen = NULL;
   int			i;
   int			j;
 
@@ -119,6 +148,8 @@ int			main(int		argc,
     return (EXIT_FAILURE);
   for (i = 2; i < argc; ++i)
     {
+      if (strcmp(argv[i], "--screen") == 0)
+	screen = new hbs::Screen;
       for (j = 0; argv[i][j] && argv[i][j] != '='; ++j);
       if (argv[i][j] != '=')
 	throw hbs::InvalidCommandLine("Expected '=' after input name.");
@@ -129,7 +160,8 @@ int			main(int		argc,
       std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
     else
       circuit.Compute(i);
-  return (Shell(circuit, timer));
+  screen->Draw(circuit);
+  return (Shell(circuit, timer, screen));
 }
 
 

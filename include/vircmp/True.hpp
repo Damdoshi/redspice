@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_TRUE_HPP__
-# define			__NTS_TRUE_HPP__
+#ifndef				__HBS_TRUE_HPP__
+# define			__HBS_TRUE_HPP__
 # include			"AComponent.hpp"
 
 namespace			hbs
@@ -17,9 +17,10 @@ namespace			hbs
   public:
     hbs::Tristate		Compute(size_t		pin = 1);
 
-    True(hbs::Timer		&timer);
+    True(hbs::Timer		&timer,
+	 const std::string	&pos);
     virtual ~True(void);
   };
 }
 
-#endif	//			__NTS_TRUE_HPP__
+#endif	//			__HBS_TRUE_HPP__

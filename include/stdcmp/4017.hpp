@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_4017_HPP__
-# define			__NTS_4017_HPP__
+#ifndef				__HBS_4017_HPP__
+# define			__HBS_4017_HPP__
 # include			<bitset>
 # include			"AComponent.hpp"
 
@@ -20,9 +20,10 @@ namespace			hbs
   public:
     hbs::Tristate		Compute(size_t				n);
 
-    CMP_4017(const hbs::Timer	&timer);
+    CMP_4017(const hbs::Timer	&timer,
+	     const std::string	&pos);
     virtual ~CMP_4017(void);
   };
 }
 
-#endif	//			__NTS_4017_HPP__
+#endif	//			__HBS_4017_HPP__

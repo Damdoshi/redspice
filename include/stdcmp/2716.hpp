@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_2716_HPP__
-# define			__NTS_2716_HPP__
+#ifndef				__HBS_2716_HPP__
+# define			__HBS_2716_HPP__
 # include			"Memory.hpp"
 
 namespace			hbs
@@ -18,9 +18,10 @@ namespace			hbs
     hbs::Tristate		Compute(size_t				n);
 
     CMP_2716(const hbs::Timer	&timer,
-	     const std::string	&file);
+	     const std::string	&file,
+	     const std::string	&position);
     virtual ~CMP_2716(void);
   };
 }
 
-#endif	//			__NTS_2716_HPP__
+#endif	//			__HBS_2716_HPP__

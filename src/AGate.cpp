@@ -5,6 +5,12 @@
 
 #include		"AGate.hpp"
 
+void			hbs::AGate::DrawGates(hbs::Screen		&screen) const
+{
+  (void)screen;
+  // Dessiner les portes
+}
+
 hbs::Tristate		hbs::AGate::Compute(size_t		n)
 {
   /// Check if it already computed (Maybe temporary...)
@@ -29,8 +35,9 @@ hbs::Tristate		hbs::AGate::Compute(size_t		n)
   return (GetPin(n));
 }
 
-hbs::AGate::AGate(const hbs::Timer	&_timer)
-  : AComponent(_timer)
+hbs::AGate::AGate(const hbs::Timer	&_timer,
+		  const std::string	&pos)
+  : AComponent(_timer, pos)
 {}
 
 hbs::AGate::~AGate(void)

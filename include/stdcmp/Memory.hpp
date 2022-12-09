@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_MEMORY_HPP__
-# define			__NTS_MEMORY_HPP__
+#ifndef				__HBS_MEMORY_HPP__
+# define			__HBS_MEMORY_HPP__
 # include			<stdint.h>
 # include			"AComponent.hpp"
 
@@ -37,12 +37,13 @@ namespace			hbs
       return (Capacity);
     }
 
-    Memory(const hbs::Timer	&timer)
-      : AComponent<Pin>(timer)
+    Memory(const hbs::Timer	&timer,
+	   const std::string	&pos)
+      : AComponent<Pin>(timer, pos)
     {}
     virtual ~Memory(void)
     {}
   };
 }
 
-#endif	//			__NTS_MEMORY_HPP__
+#endif	//			__HBS_MEMORY_HPP__

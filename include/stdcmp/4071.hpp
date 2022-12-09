@@ -19,7 +19,8 @@ namespace			hbs
 				      hbs::Tristate		b) const;
 
   public:
-    CMP_4071(const hbs::Timer	&timer);
+    CMP_4071(const hbs::Timer	&timer,
+	     const std::string	&pos);
     virtual ~CMP_4071(void);
   };
 }

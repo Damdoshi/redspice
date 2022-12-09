@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_TERMINAL_HPP__
-# define			__NTS_TERMINAL_HPP__
+#ifndef				__HBS_TERMINAL_HPP__
+# define			__HBS_TERMINAL_HPP__
 # include			<bitset>
 # include			"Output.hpp"
 
@@ -26,9 +26,10 @@ namespace			hbs
     void			Dump(void) const;
     bool			Displayable(void) const;
 
-    Terminal(const hbs::Timer	&timer);
+    Terminal(const hbs::Timer	&timer,
+	     const std::string	&pos);
     virtual ~Terminal(void);
   };
 }
 
-#endif	//			__NTS_TERMINAL_HPP__
+#endif	//			__HBS_TERMINAL_HPP__

@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_OUTPUT_HPP__
-# define			__NTS_OUTPUT_HPP__
+#ifndef				__HBS_OUTPUT_HPP__
+# define			__HBS_OUTPUT_HPP__
 # include			"AComponent.hpp"
 
 namespace			hbs
@@ -18,9 +18,10 @@ namespace			hbs
     virtual hbs::Tristate	Compute(size_t			pin = 1);
     virtual bool		Displayable(void) const;
 
-    Output(const hbs::Timer	&timer);
+    Output(const hbs::Timer	&timer,
+	   const std::string	&pos);
     ~Output(void);
   };
 }
 
-#endif	//			__NTS_OUTPUT_HPP__
+#endif	//			__HBS_OUTPUT_HPP__

@@ -3,8 +3,8 @@
 //
 // RED Spice
 
-#ifndef				__NTS_TIMER_HPP__
-# define			__NTS_TIMER_HPP__
+#ifndef				__HBS_TIMER_HPP__
+# define			__HBS_TIMER_HPP__
 # include			<sys/types.h>
 
 namespace			hbs
@@ -23,4 +23,4 @@ namespace			hbs
   };
 }
 
-#endif	//			__NTS_TIMER_HPP__
+#endif	//			__HBS_TIMER_HPP__

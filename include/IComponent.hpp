@@ -10,6 +10,8 @@
 
 namespace			hbs
 {
+  class				Screen;
+  
   enum				Tristate
     {
       BROKEN			= -2,
@@ -28,6 +30,8 @@ namespace			hbs
     virtual void		SetLink(size_t			pin_num_this,
 					hbs::IComponent		&component,
 					size_t			pin_num_target) = 0;
+
+    virtual void		Draw(hbs::Screen		&screen) const = 0;
 
     ///// Print on terminal the name of the component and
     //// the state of every pin of the current component

@@ -6,64 +6,13 @@
 #include		<fstream>
 #include		"Circuit.hpp"
 
-static bool		ReadWhitespace(const std::string		&code,
-				       int				&i)
-{
-  int			j = i;
-
-  while (code[i] == ' ' || code[i] == '\t' || code[i] == '\n')
-    i = i + 1;
-  return (j != i);
-}
-
-static bool		ReadText(const std::string			&code,
-				 int					&i,
-				 const std::string			&token)
-{
-  int			j;
-
-  for (j = 0; token[j]; ++j)
-    if (code[i + j] != token[j])
-      return (false);
-  i += j;
-  return (true);
-}
-
-static bool		ReadChar(const std::string			&code,
-				 int					&i)
-{
-  bool			ret;
-  int			j;
-
-  for (j = i; (code[j] >= 'a' && code[j] <= 'z') ||
-	 (code[j] >= 'A' && code[j] <= 'Z') ||
-	 (code[j] >= '0' && code[j] <= '9') ||
-	 code[j] == '.' || code[j] == '/' || code[j] == '_';
-       ++j);
-  ret = (j != i);
-  i = j;
-  return (ret);
-}
-
-static bool		CheckChar(const std::string			&code,
-				  int					&i)
-{
-  int			j;
-
-  for (j = i; (code[j] >= 'a' && code[j] <= 'z') ||
-	 (code[j] >= 'A' && code[j] <= 'Z') ||
-	 (code[j] >= '0' && code[j] <= '9') ||
-	 code[j] == '.' || code[j] == '/' || code[j] == '_';
-       ++j);
-  return (j != i);
-}
-
 bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
 							 int		&i)
 {
   std::string		type;
   std::string		name;
   std::string		value;
+  std::string		position;
   int			j;
 
   j = i;
@@ -86,7 +35,17 @@ bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
 	    throw hbs::SyntaxError("Missing ')'.");
 	  j += 1;
 	}
-      circuit[name] = Create(type, value);
+      if (code[j] == '[')
+	{
+	  i = ++j;
+	  if (ReadChar(code, j))
+	    position = code.substr(i, j - i);
+	  ReadWhitespace(code, j);
+	  if (code[j] != ']')
+	    throw hbs::SyntaxError("Missing ']'.");
+	  j += 1;
+	}
+      circuit[name] = Create(type, value, position);
       if (type == "input" || type == "clock")
 	inputs[name] = dynamic_cast<hbs::Input*>(circuit[name]);
       else if (type == "output" || type == "terminal")
