@@ -26,7 +26,7 @@ namespace				hbs
       };
     IComponent				*first;
     size_t				second;
-    
+
     std::list<
       std::pair<
 	hbs::Screen::Position,	// All positions, including start and end
@@ -38,14 +38,14 @@ namespace				hbs
 	 const std::string		&str);
     ~Link(void) {}
   };
-  
+
   template <int				Pin>
   class					AComponent: public virtual hbs::IComponent
   {
   protected:
     virtual const std::string		&GetType(void) const = 0;
     const hbs::Timer			&timer;
-    
+
     typedef std::map<size_t, Tristate>	PinState;
     typedef PinState::iterator		Preset;
 
@@ -58,7 +58,7 @@ namespace				hbs
 
     hbs::Screen::Position		position;
     bool				orientation;
-  
+
     void				CleanOld(void)
     {
       if (timer.GetTime() > 4)
@@ -234,15 +234,15 @@ namespace				hbs
 
 	      screen.Circle(position + hbs::Screen::Position{0, i}, {0.5, 0.5}, hbs::Screen::White, false);
 	      screen.Circle(position + hbs::Screen::Position{3, i}, {0.5, 0.5}, hbs::Screen::White, false);
-	      
+
 	      screen.Line(position + hbs::Screen::Position{0, i}, position + hbs::Screen::Position{0.5, i}, hbs::Screen::White);
 	      screen.Line(position + hbs::Screen::Position{3, i}, position + hbs::Screen::Position{2.5, i}, hbs::Screen::White);
 	    }
 	}
 
-      screen.Text(position + hbs::Screen::Position{0, -1}, hbs::Screen::White, GetType());
+      screen.Text(position + hbs::Screen::Position{0, -1}, {10, 10}, hbs::Screen::White, GetType());
     }
-    
+
     void				Dump(void) const
     {
       std::map<size_t, Tristate>::const_iterator it;
@@ -263,7 +263,7 @@ namespace				hbs
     {
       size_t				idx = 0;
       int				idy = 0;
-      
+
       x = std::stof(pos, &idx);
       if (idx == 0)
 	throw hbs::SyntaxError(pos);

@@ -32,7 +32,7 @@ static int		Shell(hbs::Circuit	&circuit,
   do
     {
       std::cerr << "> " << std::flush;
-      
+
       if ((i = read(0, &buffer[0], sizeof(buffer) - 1)) == 0)
 	{
 	  std::cerr << std::endl;
@@ -42,7 +42,7 @@ static int		Shell(hbs::Circuit	&circuit,
 	buffer[i - 1] = '\0';
       buffer[i] = '\0';
       str = buffer;
-      
+
       if (str == "simulate")
 	{
 	  timer.Tick();
@@ -144,8 +144,16 @@ int			main(int		argc,
       std::cerr << argv[0] << " circuit.hbs [input=value]*" << std::endl;
       return (EXIT_FAILURE);
     }
-  if (circuit.Load(argv[1]) == false)
-    return (EXIT_FAILURE);
+  try
+    {
+      if (circuit.Load(argv[1]) == false)
+	return (EXIT_FAILURE);
+    }
+  catch (std::invalid_argument &e)
+    {
+      std::cerr << e.what() << std::endl;
+      return (EXIT_FAILURE);
+    }
   for (i = 2; i < argc; ++i)
     {
       if (strcmp(argv[i], "--screen") == 0)
@@ -160,8 +168,6 @@ int			main(int		argc,
       std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
     else
       circuit.Compute(i);
-  screen->Draw(circuit);
+  screen && screen->Draw(circuit);
   return (Shell(circuit, timer, screen));
 }
-
-

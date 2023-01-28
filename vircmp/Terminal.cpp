@@ -24,10 +24,10 @@ void			hbs::Terminal::Draw(hbs::Screen		&screen) const
       screen.Circle(hbs::AComponent<9>::position + hbs::Screen::Position{0, i},
 		    hbs::Screen::Position{0.5, 0.5}, hbs::Screen::White, false);
     }
-  screen.Text(hbs::AComponent<9>::position + hbs::Screen::Position{0, -1}, hbs::Screen::White, GetType());
+  screen.Text(hbs::AComponent<9>::position + hbs::Screen::Position{0, -1}, {10, 10}, hbs::Screen::White, GetType());
   char			buf[2] = {c, '\0'};
-  
-  screen.Text(hbs::AComponent<9>::position + hbs::Screen::Position{1, 1}, hbs::Screen::White, std::string(buf));
+
+  screen.Text(hbs::AComponent<9>::position + hbs::Screen::Position{1, 1}, {10, 10}, hbs::Screen::White, std::string(buf));
 }
 
 void			hbs::Terminal::SetLink(size_t		a,

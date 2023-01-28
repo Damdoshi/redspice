@@ -13,9 +13,11 @@ NAME		=	lib$(BINNAME).a
 ERRLOG		=	errors~
 
 CC		=	g++
-FLAGS		=	-W -Wall -Werror -fPIC -std=gnu++14
-FLAGS		+=	-g -g3 -ggdb
-#FLAGS		+=	-O2
+CFLAGS		=	-W -Wall -Werror -fPIC -std=gnu++14
+CFLAGS		+=	-g -g3 -ggdb
+CFLAGS		+=	-O2
+
+LFLAGS		=	-L$(HOME)/.froot/lib/ -llapin -lsfml-graphics -lsfml-audio -lsfml-window -lsfml-system -lstdc++ -ldl -lavcall -lm
 
 ## Define some stuff
 ECHO		=	/bin/echo -e
@@ -48,9 +50,9 @@ $(NAME):	$(OBJ)
 		 $(ECHO) $(GREEN) "[OK]" $(TEAL) $(NAME) $(DEFAULT) || \
 		 $(ECHO) $(RED) "[XX]" $(TEAL) $(NAME)
 $(BINNAME):	$(NAME) main.cpp
-		@$(CC) main.cpp -o $(BINNAME) $(INC) -L./ $(NAME) $(FLAGS)
+		@$(CC) main.cpp -o $(BINNAME) $(INC) -L./ $(NAME) $(CFLAGS) $(LFLAGS)
 .cpp.o:
-		@$(CC) $(INC) $(FLAGS) -c $< -o $@ 2>> $(ERRLOG) && \
+		@$(CC) $(INC) $(CFLAGS) -c $< -o $@ 2>> $(ERRLOG) && \
 		 $(ECHO) $(GREEN) "[OK]" $< $(DEFAULT) || \
 		 $(ECHO) $(RED) "[XX]" $< $(DEFAULT)
 

@@ -6,6 +6,16 @@
 #include		<fstream>
 #include		"Circuit.hpp"
 
+void			hbs::Circuit::Draw(hbs::Screen			&screen) const
+{
+  for (auto it = circuit.begin(); it != circuit.end(); ++it)
+    it->second->Draw(screen);
+  for (auto it = inputs.begin(); it != inputs.end(); ++it)
+    it->second->Draw(screen);
+  for (auto it = outputs.begin(); it != outputs.end(); ++it)
+    it->second->Draw(screen);
+}
+
 bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
 							 int		&i)
 {

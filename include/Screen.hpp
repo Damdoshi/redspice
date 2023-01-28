@@ -1,5 +1,5 @@
 // Jason Brillante "Damdoshi"
-// EFRITS SAS 2022-2022
+// EFRITS SAS 2022-2023
 // Hanged Bunny Studio 2014-2021
 //
 // RED Spice
@@ -14,8 +14,8 @@ namespace				hbs
   class					Screen
   {
   private:
-    t_bunny_window			*win;
-    t_bunny_picture			*pic;
+    mutable t_bunny_window		*win;
+    mutable t_bunny_picture		*pic;
     t_bunny_position			camera;
 
   public:
@@ -40,13 +40,17 @@ namespace				hbs
 					     unsigned int		col);
     void				Square(Position			pos,
 					       Size			siz,
-					       unsigned int		col);
+					       unsigned int		col,
+					       bool			full = false);
     void				Text(Position			p,
+					     Size			s,
 					     unsigned int		col,
 					     const std::string		&str);
-    
+    Size				TextSize(Size			s,
+						 const std::string	&str);
+
     bool				Loop(hbs::Circuit		&circ);
-    
+
     Screen(void);
     ~Screen(void);
   };

@@ -3,6 +3,7 @@
 //
 // RED Spice
 
+#include		<sstream>
 #include		"Exception.hpp"
 #include		"Circuit.hpp"
 #include		"Clock.hpp"
@@ -27,8 +28,19 @@
 
 hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
 					      const std::string		&value,
-					      const std::string		&position)
+					      const std::string		&pos)
 {
+  std::stringstream	ss;
+  std::string		position;
+
+  if (pos == "")
+    {
+      ss << rand() % 1440 << "," << rand() % 900;
+      position = ss.str();
+    }
+  else
+    position = pos;
+
   if (type == "input")
     return (new hbs::Input(timer, value, position));
   if (type == "clock")
