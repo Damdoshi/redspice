@@ -7,9 +7,12 @@
 #include		"Circuit.hpp"
 #include		"Screen.hpp"
 
-bool			hbs::Screen::Loop(hbs::Circuit		&c)
+bool			hbs::Screen::Loop(hbs::Circuit		&c,
+					  hbs::Timer		&timer)
 {
   (void)c;
+  (void)timer;
   return (true);
 }
 
+ 

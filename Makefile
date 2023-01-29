@@ -28,7 +28,7 @@ RED		=	"\033[0;31m"
 
 ## Source
 INC		=	-I./include/ -I./include/stdcmp -I./include/vircmp
-SRC		=	$(wildcard ./*/*.cpp)
+SRC		=	$(shell find . -name "*.cpp" | sort)
 OBJ		=	$(SRC:.cpp=.o)
 
 all:		erase $(BINNAME)

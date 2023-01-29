@@ -7,6 +7,7 @@
 #ifndef					__SCREEN_HPP__
 # define				__SCREEN_HPP__
 # include				<lapin.h>
+# include				"Timer.hpp"
 
 namespace				hbs
 {
@@ -49,7 +50,8 @@ namespace				hbs
     Size				TextSize(Size			s,
 						 const std::string	&str);
 
-    bool				Loop(hbs::Circuit		&circ);
+    bool				Loop(hbs::Circuit		&circ,
+					     hbs::Timer			&timer);
 
     Screen(void);
     ~Screen(void);

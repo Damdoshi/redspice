@@ -63,6 +63,10 @@ namespace				hbs
     Circuit(hbs::Timer	&timer);
     virtual ~Circuit(void);
   };
+
+  int					Command(const std::string		&cmd,
+						hbs::Circuit			&circuit,
+						hbs::Timer			&timer);
 }
 
 #endif	//				__HBS_CIRCUIT_HPP__
