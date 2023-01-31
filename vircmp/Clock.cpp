@@ -7,6 +7,7 @@
 
 const std::string	&hbs::Clock::GetType(void) const
 {
+  return (type = "Clock");
   return (type = typeid(*this).name());
 }
 

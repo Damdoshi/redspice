@@ -23,6 +23,7 @@ namespace			hbs
 					size_t				pntarg,
 					const std::string		&pos);
     void			Draw(hbs::Screen			&screen) const;
+    hbs::Screen::Position	GetPinPosition(size_t			pin) const;
 
     hbs::Tristate		Compute(size_t				n);
     void			Dump(void) const;

@@ -7,6 +7,7 @@
 
 const std::string	&hbs::Output::GetType(void) const
 {
+  return (type = "Out");
   return (type = typeid(*this).name());
 }
 

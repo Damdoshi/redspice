@@ -35,7 +35,8 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
 
   if (pos == "")
     {
-      ss << rand() % 1440 << "," << rand() % 900;
+      // Pin size is 10 by default
+      ss << rand() % 144 << "," << rand() % 90 << " ";
       position = ss.str();
     }
   else

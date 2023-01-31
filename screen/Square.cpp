@@ -11,12 +11,25 @@ void		hbs::Screen::Square(Position		pos,
 				    unsigned int	color,
 				    bool		full)
 {
+  pos.x *= pin_size;
+  pos.y *= pin_size;
+  siz.x *= pin_size;
+  siz.y *= pin_size;
   if (full)
     {
       t_bunny_position	poss[2][3] =
 	{
-	 {{(int)pos.x, (int)pos.y}, {(int)pos.x + (int)siz.x, (int)pos.y}, {(int)pos.x, (int)pos.y + (int)siz.y}},
-	 {{(int)pos.x + (int)siz.x, (int)pos.y}, {(int)pos.x, (int)pos.y + (int)siz.y}, {(int)pos.x + (int)siz.x, (int)pos.y + (int)siz.y}},
+	 {
+	  {(int)pos.x, (int)pos.y},
+	  {(int)pos.x + (int)siz.x, (int)pos.y},
+	  {(int)pos.x, (int)pos.y + (int)siz.y}
+	 },
+	 {
+	  {(int)pos.x + (int)siz.x, (int)pos.y},
+	  {(int)pos.x, (int)pos.y + (int)siz.y},
+	  {(int)pos.x + (int)siz.x, (int)pos.y + (int)siz.y
+	  }
+	 },
 	};
       unsigned int col[3] = {color, color, color};
 

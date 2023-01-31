@@ -50,6 +50,8 @@ namespace				hbs
     void				Dump(void) const;
     void				Map(void) const;
 
+    hbs::Screen::Position		GetPinPosition(size_t			pin) const;
+
     const std::string			&GetOutputName(size_t			n) const;
     bool				GetDisplayable(size_t			n) const;
     size_t				GetOutputNum(void) const;

@@ -7,11 +7,10 @@
 # define			__ICOMPONENT_HPP__
 # include			<iosfwd>
 # include			<sys/types.h>
+# include			"Screen.hpp"
 
 namespace			hbs
 {
-  class				Screen;
-  
   enum				Tristate
     {
       BROKEN			= -2,
@@ -32,6 +31,7 @@ namespace			hbs
 					size_t			pin_num_target,
 					const std::string	&pos = "") = 0;
 
+    virtual Screen::Position	GetPinPosition(size_t		pin) const = 0;
     virtual void		Draw(hbs::Screen		&screen) const = 0;
 
     ///// Print on terminal the name of the component and

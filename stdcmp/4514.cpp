@@ -7,6 +7,7 @@
 
 const std::string	&hbs::CMP_4514::GetType(void) const
 {
+  return (type = "4514");
   return (type = typeid(*this).name());
 }
 

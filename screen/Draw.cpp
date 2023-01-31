@@ -9,6 +9,7 @@
 
 bool			hbs::Screen::Draw(hbs::Circuit		&c)
 {
+  bunny_clear(&pic->buffer, BLACK);
   c.Draw(*this);
   bunny_blit(&win->buffer, pic, NULL);
   bunny_display(win);

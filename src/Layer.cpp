@@ -50,7 +50,7 @@ hbs::Link::Link(IComponent		*icom,
       else
 	throw SyntaxError(str);
       ReadWhitespace(str, i);
-      
+
       if (!ReadText(str, i, ")"))
 	throw SyntaxError(str);
       ReadWhitespace(str, i);

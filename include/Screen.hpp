@@ -18,6 +18,7 @@ namespace				hbs
     mutable t_bunny_window		*win;
     mutable t_bunny_picture		*pic;
     t_bunny_position			camera;
+    int					pin_size;
 
   public:
     typedef t_bunny_accurate_position	Position;
@@ -30,6 +31,10 @@ namespace				hbs
     static constexpr unsigned int	Teal = TEAL;
     static constexpr unsigned int	Green = GREEN;
 
+    int					PinSize(int			p);
+
+    void				Resize(const t_bunny_window	&win,
+					       t_bunny_position		pos);
     bool				Draw(hbs::Circuit		&c);
 
     void				Circle(Position			pos,
@@ -57,5 +62,12 @@ namespace				hbs
     ~Screen(void);
   };
 }
+
+struct				LoopData
+{
+  hbs::Circuit			&circuit;
+  hbs::Timer			&timer;
+  hbs::Screen			&screen;
+};
 
 #endif	//			__SCREEN_HPP__

@@ -13,9 +13,10 @@ NAME		=	lib$(BINNAME).a
 ERRLOG		=	errors~
 
 CC		=	g++
-CFLAGS		=	-W -Wall -Werror -fPIC -std=gnu++14
+CFLAGS		=	-W -Wall -fPIC -std=gnu++17
+CFLAGS		+=	-Wno-missing-field-initializers
 CFLAGS		+=	-g -g3 -ggdb
-CFLAGS		+=	-O2
+#CFLAGS		+=	-O2 -ffast-math -march=native
 
 LFLAGS		=	-L$(HOME)/.froot/lib/ -llapin -lsfml-graphics -lsfml-audio -lsfml-window -lsfml-system -lstdc++ -ldl -lavcall -lm
 

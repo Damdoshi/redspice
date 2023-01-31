@@ -160,7 +160,10 @@ int			main(int		argc,
   for (i = 2; i < argc; ++i)
     {
       if (strcmp(argv[i], "--screen") == 0)
-	screen = new hbs::Screen;
+	{
+	  screen = new hbs::Screen;
+	  continue ;
+	}
       for (j = 0; argv[i][j] && argv[i][j] != '='; ++j);
       if (argv[i][j] != '=')
 	throw hbs::InvalidCommandLine("Expected '=' after input name.");

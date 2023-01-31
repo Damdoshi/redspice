@@ -7,6 +7,7 @@
 
 const std::string	&hbs::False::GetType(void) const
 {
+  return (type = "False");
   return (type = typeid(*this).name());
 }
 

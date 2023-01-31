@@ -6,6 +6,13 @@
 #include		<fstream>
 #include		"Circuit.hpp"
 
+hbs::Screen::Position	hbs::Circuit::GetPinPosition(size_t		pin) const
+{
+  // Une fois qu'il sera devenu possible de definir un circuit comme composant, ca sera utile.
+  (void)pin;
+  return (hbs::Screen::Position{0, 0});
+}
+
 void			hbs::Circuit::Draw(hbs::Screen			&screen) const
 {
   for (auto it = circuit.begin(); it != circuit.end(); ++it)
@@ -111,11 +118,18 @@ bool			hbs::Circuit::ReadLinksInside(const std::string	&code,
 
   while (CheckChar(code, i))
     {
+      std::string	poslink;
+
       ReadOneLink(code, i, lcom, lpin);
       ReadOneLink(code, i, rcom, rpin);
+      ReadWhitespace(code, i);
+      if (code[i] == '(')
+	poslink = code.substr(i);
+      else
+	poslink = "";
       if (circuit[lcom] == NULL)
 	throw hbs::UnknownComponent(lcom);
-      circuit[lcom]->SetLink(lpin, *circuit[rcom], rpin);
+      circuit[lcom]->SetLink(lpin, *circuit[rcom], rpin, poslink);
     }
   return (true);
 }

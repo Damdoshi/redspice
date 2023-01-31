@@ -7,6 +7,7 @@
 
 const std::string	&hbs::Input::GetType(void) const
 {
+  return (type = "In");
   return (type = typeid(*this).name());
 }
 

@@ -10,7 +10,9 @@ static void	single_letter(hbs::Screen		&scr,
 			      hbs::Screen::Position	pos,
 			      hbs::Screen::Size		siz,
 			      unsigned int		color,
-			      int			c)
+			      int			c,
+			      int			ps,
+			      hbs::Screen::Position	ori)
 {
   const t_bunny_letter &l = gl_vector_font[c];
 
@@ -18,10 +20,10 @@ static void	single_letter(hbs::Screen		&scr,
     {
       hbs::Screen::Position a, b;
 
-      a.x = siz.x * l.edge[i].x0 / 20.0 + pos.x;
-      a.y = siz.y * l.edge[i].y0 / 20.0 + pos.y;
-      b.x = siz.x * l.edge[i].x1 / 20.0 + pos.x;
-      b.y = siz.y * l.edge[i].y1 / 20.0 + pos.y;
+      a.x = siz.x * l.edge[i].x0 / 20.0 + pos.x + ori.x * ps;
+      a.y = siz.y * l.edge[i].y0 / 20.0 + pos.y + ori.y * ps;
+      b.x = siz.x * l.edge[i].x1 / 20.0 + pos.x + ori.x * ps;
+      b.y = siz.y * l.edge[i].y1 / 20.0 + pos.y + ori.y * ps;
       scr.Line(a, b, color);
     }
 }
@@ -31,8 +33,11 @@ void		hbs::Screen::Text(Position		pos,
 				  unsigned int		color,
 				  const std::string	&str)
 {
+  Position	ori = pos;
+  int		ps = pin_size;
   char		c;
 
+  pin_size = 1;
   for (size_t i = 0; str[i]; ++i)
     {
       if (isalpha(c = tolower(str[i])))
@@ -48,10 +53,11 @@ void		hbs::Screen::Text(Position		pos,
       else
 	c = ' ';
 
-      single_letter(*this, pos, siz, color, c);
+      single_letter(*this, pos, siz, color, c, ps, ori);
 
       pos.x += siz.x * 1.1;
     }
+  pin_size = ps;
 }
 
 hbs::Screen::Size hbs::Screen::TextSize(Size			s,

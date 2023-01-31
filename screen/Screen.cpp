@@ -9,6 +9,7 @@
 
 hbs::Screen::Screen(void)
 {
+  pin_size = 10;
   if ((win = bunny_start(1440, 900, false, "RedSpice")) == NULL)
     throw 0;
   if ((pic = bunny_new_picture(win->buffer.width, win->buffer.height)) == NULL)
