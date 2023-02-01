@@ -14,10 +14,19 @@ hbs::Screen::Screen(void)
     throw 0;
   if ((pic = bunny_new_picture(win->buffer.width, win->buffer.height)) == NULL)
     throw 0;
+  if ((author = bunny_load_picture("./auth.png")) == NULL)
+    throw 0;
+  author->position.y = pic->buffer.height - author->buffer.height;
+  if ((controls = bunny_load_picture("./control.png")) == NULL)
+    throw 0;
+  camera.x = 0;
+  camera.y = 0;
 }
 
 hbs::Screen::~Screen(void)
 {
+  bunny_delete_clipable(author);
+  bunny_delete_clipable(controls);
   bunny_delete_clipable(pic);
   bunny_stop(win);
 }

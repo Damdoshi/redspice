@@ -32,7 +32,9 @@ namespace				hbs
     void				Draw(hbs::Screen		&screen,
 					     const IComponent		&origin,
 					     size_t			ori_pin) const;
-    Link(IComponent			*icom,
+    Link(const hbs::Screen::Position	&from,
+	 const hbs::Screen::Position	&to,
+	 IComponent			*icom,
 	 size_t				pin,
 	 const std::string		&pos,
 	 bool				rev = false);
@@ -182,10 +184,25 @@ namespace				hbs
 
       /// Linked and signal to the other component the link
       if (pos[0] != '!')
-	links[pin_num_this].push_back({&component, pin_num_target, pos});
+	links[pin_num_this].push_back
+	  ({
+	    GetPinPosition(pin_num_this),
+	    component.GetPinPosition(pin_num_target),
+	    &component, pin_num_target, pos
+	  });
       else
-	links[pin_num_this].push_back({&component, pin_num_target, pos.substr(1), true});
+	links[pin_num_this].push_back
+	  ({
+	    GetPinPosition(pin_num_this),
+	    component.GetPinPosition(pin_num_target),
+	    &component, pin_num_target, pos.substr(1), true
+	  });
       component.SetLink(pin_num_target, *this, pin_num_this, "!" + pos);
+    }
+
+    hbs::Screen::Position		GetPosition(void) const
+    {
+      return (position);
     }
 
     virtual hbs::Screen::Position	GetPinPosition(size_t		pin) const

@@ -31,6 +31,7 @@ namespace			hbs
 					size_t			pin_num_target,
 					const std::string	&pos = "") = 0;
 
+    virtual Screen::Position	GetPosition(void) const = 0;
     virtual Screen::Position	GetPinPosition(size_t		pin) const = 0;
     virtual void		Draw(hbs::Screen		&screen) const = 0;
 

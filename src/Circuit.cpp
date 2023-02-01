@@ -6,6 +6,13 @@
 #include		<fstream>
 #include		"Circuit.hpp"
 
+hbs::Screen::Position	hbs::Circuit::GetPosition(void) const
+{
+  // Une fois qu'il sera devenu possible de definir un circuit comme composant, ca sera utile.
+  return (hbs::Screen::Position{0, 0});
+}
+
+
 hbs::Screen::Position	hbs::Circuit::GetPinPosition(size_t		pin) const
 {
   // Une fois qu'il sera devenu possible de definir un circuit comme composant, ca sera utile.
@@ -126,11 +133,20 @@ bool			hbs::Circuit::ReadLinksInside(const std::string	&code,
     {
       std::string	poslink;
 
+      ReadWhitespace(code, i);
       ReadOneLink(code, i, lcom, lpin);
       ReadOneLink(code, i, rcom, rpin);
       ReadWhitespace(code, i);
-      if (code[i] == '(')
-	poslink = code.substr(i);
+      if (code[i] == '[')
+	{
+	  poslink = code.substr(i);
+	  while (code[i] != ']' && code[i])
+	    i = i + 1;
+	  if (!code[i])
+	    throw hbs::SyntaxError("Missing ']'");
+	  i = i + 1;
+	  ReadWhitespace(code, i);
+	}
       else
 	poslink = "";
       if (circuit[lcom] == NULL)

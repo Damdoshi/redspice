@@ -15,9 +15,11 @@ namespace				hbs
   class					Circuit;
   class					Screen
   {
-  private:
+  public:
     mutable t_bunny_window		*win;
     mutable t_bunny_picture		*pic;
+    t_bunny_picture			*author;
+    t_bunny_picture			*controls;
     t_bunny_position			camera;
     int					pin_size;
 

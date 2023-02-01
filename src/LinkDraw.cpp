@@ -13,18 +13,28 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
   auto			prev = third.begin();
 
   // Pas de positions déterminées
-  if (third.size() == 0)
+  if (third.size() <= 2)
     {
       auto a = origin.GetPinPosition(ori_pin);
       auto b = first->GetPinPosition(second);
 
-      screen.Line(a, b, GRAY(128));
+      for (double i = -1; i < 2; ++i)
+	for (double j = -1; j < 2; ++j)
+	  screen.Line(a + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+		      b + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+		      hbs::Screen::Yellow
+		      );
       return ;
     }
   // Des positions déterminées
   for (auto it = third.begin(); it != third.end(); ++it)
     {
-      screen.Line(prev->first, it->first, prev->second == TOP ? GRAY(255) : GRAY(128));
+      for (double i = -1; i < 2; ++i)
+	for (double j = -1; j < 2; ++j)
+	  screen.Line(prev->first + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+		      it->first + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+		      prev->second == TOP ? hbs::Screen::Red : hbs::Screen::Blue
+		      );
       if (prev->second != it->second) // Il y a un VIA
 	{
 	  screen.Circle(it->first, {1, 1}, hbs::Screen::Yellow, true);

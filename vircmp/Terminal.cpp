@@ -11,6 +11,11 @@ const std::string	&hbs::Terminal::GetType(void) const
   return (hbs::AComponent<9>::type = "Terminal");
 }
 
+hbs::Screen::Position	hbs::Terminal::GetPosition(void) const
+{
+  return (hbs::AComponent<9>::GetPosition());
+}
+
 hbs::Screen::Position	hbs::Terminal::GetPinPosition(size_t	pin) const
 {
   return (hbs::Screen::Position{0, (double)pin});

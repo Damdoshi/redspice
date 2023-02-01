@@ -37,7 +37,8 @@ bool			ReadChar(const std::string			&code,
   for (j = i; (code[j] >= 'a' && code[j] <= 'z') ||
 	 (code[j] >= 'A' && code[j] <= 'Z') ||
 	 (code[j] >= '0' && code[j] <= '9') ||
-	 code[j] == '.' || code[j] == '/' || code[j] == '_';
+	 code[j] == '.' || code[j] == '/' ||
+	 code[j] == '_' || code[j] == '-' || code[j] == '+';
        ++j);
   ret = (j != i);
   i = j;
