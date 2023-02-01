@@ -19,6 +19,7 @@ namespace			hbs
     virtual bool		Displayable(void) const;
 
     Output(const hbs::Timer	&timer,
+	   const std::string	&name,
 	   const std::string	&pos);
     ~Output(void);
   };

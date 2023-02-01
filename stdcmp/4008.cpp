@@ -68,8 +68,9 @@ hbs::Tristate		hbs::CMP_4008::Compute(size_t		n)
 }
 
 hbs::CMP_4008::CMP_4008(const hbs::Timer		&time,
+			const std::string		&name,
 			const std::string		&pos)
-  : AComponent(time, pos)
+  : AComponent(time, name, pos)
 {}
 
 hbs::CMP_4008::~CMP_4008(void)

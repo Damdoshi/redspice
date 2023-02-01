@@ -33,9 +33,10 @@ hbs::Tristate		hbs::Clock::Compute(size_t			pin_num_this)
 }
 
 hbs::Clock::Clock(hbs::Timer		&timer,
+		  const std::string	&name,
 		  const std::string	&value,
 		  const std::string	&pos)
-  : Input(timer, value, pos)
+  : Input(timer, name, value, pos)
 {}
 
 hbs::Clock::~Clock(void)

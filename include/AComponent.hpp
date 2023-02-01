@@ -34,7 +34,8 @@ namespace				hbs
 					     size_t			ori_pin) const;
     Link(IComponent			*icom,
 	 size_t				pin,
-	 const std::string		&pos);
+	 const std::string		&pos,
+	 bool				rev = false);
     ~Link(void) {}
   };
 
@@ -44,6 +45,7 @@ namespace				hbs
   protected:
     virtual const std::string		&GetType(void) const = 0;
     const hbs::Timer			&timer;
+    const std::string			name;
 
     typedef std::map<size_t, Tristate>	PinState;
     typedef PinState::iterator		Preset;
@@ -179,8 +181,11 @@ namespace				hbs
 	    return ;
 
       /// Linked and signal to the other component the link
-      links[pin_num_this].push_back({&component, pin_num_target, pos});
-      component.SetLink(pin_num_target, *this, pin_num_this); // , pos);
+      if (pos[0] != '!')
+	links[pin_num_this].push_back({&component, pin_num_target, pos});
+      else
+	links[pin_num_this].push_back({&component, pin_num_target, pos.substr(1), true});
+      component.SetLink(pin_num_target, *this, pin_num_this, "!" + pos);
     }
 
     virtual hbs::Screen::Position	GetPinPosition(size_t		pin) const
@@ -205,9 +210,10 @@ namespace				hbs
 	    return (position + hbs::Screen::Position{0, -1});
 	  return (position + hbs::Screen::Position{0, 1});
 	}
+      pin -= 1;
       if (pin < Pin / 2)
 	return (position + hbs::Screen::Position{0, (double)pin});
-      return (position + hbs::Screen::Position{3, Pin - (double)pin});
+      return (position + hbs::Screen::Position{3, Pin - (double)pin - 1});
     }
 
     virtual void			Draw(hbs::Screen		&screen) const
@@ -219,8 +225,8 @@ namespace				hbs
 
       if (Pin == 1)
 	{
-	  screen.Circle(GetPinPosition(1), {1, 1}, hbs::Screen::Teal, true);
-	  screen.Circle(GetPinPosition(1), {1, 1}, hbs::Screen::White, false);
+	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::Teal, true);
+	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::White, false);
 	}
       else if (Pin == 2)
 	{
@@ -229,15 +235,15 @@ namespace				hbs
 	  else
 	    screen.Circle(position + hbs::Screen::Position{0, 1}, {0.5, 2}, hbs::Screen::Green);
 
-	  screen.Circle(GetPinPosition(1), {1, 1}, hbs::Screen::Teal, true);
-	  screen.Circle(GetPinPosition(1), {1, 1}, hbs::Screen::White, false);
-	  screen.Circle(GetPinPosition(2), {1, 1}, hbs::Screen::Teal, true);
-	  screen.Circle(GetPinPosition(2), {1, 1}, hbs::Screen::White, false);
+	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::Teal, true);
+	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::White, false);
+	  screen.Circle(GetPinPosition(2), {0.5, 0.5}, hbs::Screen::Teal, true);
+	  screen.Circle(GetPinPosition(2), {0.5, 0.5}, hbs::Screen::White, false);
 	  screen.Line(GetPinPosition(1), GetPinPosition(2), hbs::Screen::White);
 	}
       else if (Pin == 3)
 	{
-	  screen.Circle(position, {1, 1}, hbs::Screen::Teal);
+	  screen.Circle(position, {0.5, 0.5}, hbs::Screen::Teal);
 	  screen.Line(position, GetPinPosition(1), hbs::Screen::White);
 	  screen.Line(position, GetPinPosition(2), hbs::Screen::White);
 	  screen.Line(position, GetPinPosition(3), hbs::Screen::White);
@@ -246,20 +252,46 @@ namespace				hbs
 	{
 	  for (size_t i = 1; i <= Pin; ++i)
 	    {
-	      screen.Circle(GetPinPosition(i), {1, 1}, hbs::Screen::Teal, true);
-	      screen.Circle(GetPinPosition(i), {1, 1}, hbs::Screen::White, false);
+	      screen.Circle(GetPinPosition(i), {0.25, 0.25}, hbs::Screen::Purple, true);
+	      screen.Circle(GetPinPosition(i), {0.25, 0.25}, hbs::Screen::White, false);
 	    }
-	  screen.Line(GetPinPosition(1), GetPinPosition(Pin), hbs::Screen::White);
-	  screen.Line(GetPinPosition(Pin / 2), GetPinPosition(Pin / 2 + 1), hbs::Screen::White);
-	  screen.Line(GetPinPosition(1), GetPinPosition(Pin / 2), hbs::Screen::White);
-	  screen.Line(GetPinPosition(Pin / 2 + 1), GetPinPosition(Pin), hbs::Screen::White);
+	  for (size_t i = 0; i <= 2; ++i)
+	    {
+	      hbs::Screen::Position xx = {0, (i - 1) / (double)screen.PinSize()};
+	      hbs::Screen::Position yy = {(i - 1) / (double)screen.PinSize(), 0};
+
+	      // Horizontal
+	      screen.Line(GetPinPosition(1) + xx, GetPinPosition(Pin) + xx, hbs::Screen::Teal);
+	      screen.Line(GetPinPosition(Pin / 2) + xx, GetPinPosition(Pin / 2 + 1) + xx, hbs::Screen::Teal);
+
+	      // Vertical
+	      screen.Line(GetPinPosition(1) + yy, GetPinPosition(Pin / 2) + yy, hbs::Screen::Teal);
+	      screen.Line(GetPinPosition(Pin / 2 + 1) + yy, GetPinPosition(Pin) + yy, hbs::Screen::Teal);
+	    }
+
+	  hbs::Screen::Size sz = screen.TextSize({10, 10}, GetType());
+
+	  sz.x = (-sz.x / 2.0) / screen.PinSize() + 1.5;
+	  sz.y = Pin / 2 - 0.5;
+	  screen.Text(position + sz, {10, 10}, hbs::Screen::Teal, GetType());
+
+	  sz = screen.TextSize({10, 10}, name);
+	  sz.x = (-sz.x / 2.0) / screen.PinSize() + 1.5;
+	  sz.y = -1.5;
+	  screen.Text(position + sz, {10, 10}, hbs::Screen::White, name);
+	  return ;
 	}
 
       hbs::Screen::Size sz = screen.TextSize({10, 10}, GetType());
 
-      sz.x = -sz.x / 2;
-      sz.y = 10;
-      screen.Text(position + sz, {10, 10}, hbs::Screen::White, GetType());
+      sz.x = (-sz.x / 2.0) / screen.PinSize();
+      sz.y = 0.75;
+      screen.Text(position + sz, {10, 10}, hbs::Screen::Teal, GetType());
+
+      sz = screen.TextSize({10, 10}, name);
+      sz.x = (-sz.x / 2.0) / screen.PinSize();
+      sz.y = -1.5;
+      screen.Text(position + sz, {10, 10}, hbs::Screen::White, name);
     }
 
     void				Dump(void) const
@@ -277,8 +309,10 @@ namespace				hbs
     }
 
     AComponent(const hbs::Timer		&tim,
+	       const std::string	&nam,
 	       const std::string	&pos)
-      : timer(tim)
+      : timer(tim),
+	name(nam)
     {
       size_t				idx = 0;
       int				idy = 0;

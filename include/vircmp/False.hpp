@@ -18,6 +18,7 @@ namespace			hbs
     hbs::Tristate		Compute(size_t		pin = 1);
 
     False(hbs::Timer		&timer,
+	  const std::string	&name,
 	  const std::string	&pos);
     virtual ~False(void);
   };

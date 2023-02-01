@@ -71,8 +71,9 @@ hbs::Tristate		hbs::CMP_4040::Compute(size_t		n)
 }
 
 hbs::CMP_4040::CMP_4040(const hbs::Timer		&time,
+			const std::string		&name,
 			const std::string		&pos)
-  : AComponent(time, pos),
+  : AComponent(time, name, pos),
     value(0),
     last_tick(0)
 {}

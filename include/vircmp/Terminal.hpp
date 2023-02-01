@@ -30,6 +30,7 @@ namespace			hbs
     bool			Displayable(void) const;
 
     Terminal(const hbs::Timer	&timer,
+	     const std::string	&name,
 	     const std::string	&pos);
     virtual ~Terminal(void);
   };

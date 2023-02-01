@@ -6,6 +6,7 @@
 
 #ifndef					__SCREEN_HPP__
 # define				__SCREEN_HPP__
+# define				PINSIZE_DEFAULT		20
 # include				<lapin.h>
 # include				"Timer.hpp"
 
@@ -30,8 +31,10 @@ namespace				hbs
     static constexpr unsigned int	Yellow = YELLOW;
     static constexpr unsigned int	Teal = TEAL;
     static constexpr unsigned int	Green = GREEN;
+    static constexpr unsigned int	Purple = PURPLE;
+    static constexpr unsigned int	Pink = PINK2;
 
-    int					PinSize(int			p);
+    int					PinSize(int			p = 0);
 
     void				Resize(const t_bunny_window	&win,
 					       t_bunny_position		pos);

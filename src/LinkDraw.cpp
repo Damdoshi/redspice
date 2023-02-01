@@ -13,7 +13,7 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
   auto			prev = third.begin();
 
   // Pas de positions déterminées
-  if (prev == third.end())
+  if (third.size() == 0)
     {
       auto a = origin.GetPinPosition(ori_pin);
       auto b = first->GetPinPosition(second);

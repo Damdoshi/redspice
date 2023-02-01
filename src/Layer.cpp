@@ -7,7 +7,8 @@
 
 hbs::Link::Link(IComponent		*icom,
 		size_t			pin,
-		const std::string	&str)
+		const std::string	&str,
+		bool			rev)
   : first(icom),
     second(pin)
 {
@@ -20,13 +21,13 @@ hbs::Link::Link(IComponent		*icom,
   while (str[i] != '\0')
     {
       ReadWhitespace(str, i);
-      if (!ReadText(str, i, "("))
+      if (!ReadText(str, i, "["))
 	throw hbs::SyntaxError(str);
       ReadWhitespace(str, i);
       j = i;
       ReadChar(str, i);
       ReadWhitespace(str, i);
-      if (!ReadText(str, i, ")"))
+      if (!ReadText(str, i, ","))
 	throw SyntaxError(str);
       ReadWhitespace(str, i);
       pos.x = std::stof(&str[j], &tmp);
@@ -37,10 +38,9 @@ hbs::Link::Link(IComponent		*icom,
       ReadChar(str, i);
       ReadWhitespace(str, i);
       pos.y = std::stof(&str[j], &tmp);
-      ReadWhitespace(str, i);
       if (tmp == 0)
 	throw SyntaxError(str);
-      if (!ReadText(str, i, ","))
+      if (!ReadText(str, i, " "))
 	throw SyntaxError(str);
       ReadWhitespace(str, i);
       if (ReadText(str, i, "t"))
@@ -51,14 +51,17 @@ hbs::Link::Link(IComponent		*icom,
 	throw SyntaxError(str);
       ReadWhitespace(str, i);
 
-      if (!ReadText(str, i, ")"))
+      if (!ReadText(str, i, "]"))
 	throw SyntaxError(str);
       ReadWhitespace(str, i);
       if (str[i] && !ReadText(str, i, ","))
 	throw SyntaxError(str);
       ReadWhitespace(str, i);
 
-      third.push_back({pos, layer});
+      if (!rev)
+	third.push_back({pos, layer});
+      else
+	third.push_front({pos, layer});
     }
 }
 

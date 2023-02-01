@@ -20,6 +20,7 @@ namespace			hbs
 
   public:
     CMP_4011(const hbs::Timer	&timer,
+	     const std::string	&name,
 	     const std::string	&pos);
     virtual ~CMP_4011(void);
   };

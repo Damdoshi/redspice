@@ -24,9 +24,10 @@ void			hbs::Input::SetValue(hbs::Tristate		tristate)
 }
 
 hbs::Input::Input(hbs::Timer		&timer,
+		  const std::string	&name,
 		  const std::string	&val,
 		  const std::string	&pos)
-  : AComponent(timer, pos),
+  : AComponent(timer, name, pos),
     value(hbs::UNDEFINED)
 {
   if (val == "1")

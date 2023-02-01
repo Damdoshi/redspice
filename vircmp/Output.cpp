@@ -30,8 +30,9 @@ bool			hbs::Output::Displayable(void) const
 }
 
 hbs::Output::Output(const hbs::Timer		&timer,
+		    const std::string		&name,
 		    const std::string		&pos)
-  : AComponent(timer, pos)
+  : AComponent(timer, name, pos)
 {}
 
 hbs::Output::~Output(void)

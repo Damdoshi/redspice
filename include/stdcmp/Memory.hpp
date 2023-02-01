@@ -39,8 +39,9 @@ namespace			hbs
     }
 
     Memory(const hbs::Timer	&timer,
+	   const std::string	&name,
 	   const std::string	&pos)
-      : AComponent<Pin>(timer, pos)
+      : AComponent<Pin>(timer, name, pos)
     {}
     virtual ~Memory(void)
     {}

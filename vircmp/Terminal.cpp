@@ -75,8 +75,9 @@ bool			hbs::Terminal::Displayable(void) const
 }
 
 hbs::Terminal::Terminal(const hbs::Timer	&timer,
+			const std::string	&name,
 			const std::string	&pos)
-  : AComponent<1>(timer, pos), AComponent<9>(timer, pos), Output(timer, pos),
+  : AComponent<1>(timer, name, pos), AComponent<9>(timer, name, pos), Output(timer, name, pos),
     last_tick(0),
     c('\0')
 {}

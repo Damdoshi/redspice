@@ -18,6 +18,7 @@ namespace			hbs
     hbs::Tristate		Compute(size_t				n);
 
     CMP_2716(const hbs::Timer	&timer,
+	     const std::string	&name,
 	     const std::string	&file,
 	     const std::string	&position);
     virtual ~CMP_2716(void);

@@ -6,6 +6,8 @@
 
 #include	"Screen.hpp"
 
+#define		SPACE_BETWEEN_LETTER			1.2
+
 static void	single_letter(hbs::Screen		&scr,
 			      hbs::Screen::Position	pos,
 			      hbs::Screen::Size		siz,
@@ -38,6 +40,8 @@ void		hbs::Screen::Text(Position		pos,
   char		c;
 
   pin_size = 1;
+  pos.x = 0;
+  pos.y = 0;
   for (size_t i = 0; str[i]; ++i)
     {
       if (isalpha(c = tolower(str[i])))
@@ -55,7 +59,7 @@ void		hbs::Screen::Text(Position		pos,
 
       single_letter(*this, pos, siz, color, c, ps, ori);
 
-      pos.x += siz.x * 1.1;
+      pos.x += siz.x * SPACE_BETWEEN_LETTER;
     }
   pin_size = ps;
 }
@@ -63,6 +67,6 @@ void		hbs::Screen::Text(Position		pos,
 hbs::Screen::Size hbs::Screen::TextSize(Size			s,
 					const std::string	&str)
 {
-  return (Size{str.size() * s.x * 1.1 - s.x * 0.1, s.y});
+  return (Size{str.size() * s.x * SPACE_BETWEEN_LETTER - s.x * (SPACE_BETWEEN_LETTER - 1.0), s.y});
 }
 

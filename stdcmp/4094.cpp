@@ -90,8 +90,9 @@ hbs::Tristate		hbs::CMP_4094::Compute(size_t		n)
 }
 
 hbs::CMP_4094::CMP_4094(const hbs::Timer		&time,
+			const std::string		&name,
 			const std::string		&pos)
-  : AComponent(time, pos),
+  : AComponent(time, name, pos),
     last_tick_up(0),
     last_tick_down(0)
 {}

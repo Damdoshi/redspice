@@ -116,8 +116,9 @@ hbs::Tristate		hbs::CMP_4013::Compute(size_t		n)
 }
 
 hbs::CMP_4013::CMP_4013(const hbs::Timer		&time,
+			const std::string		&name,
 			const std::string		&pos)
-  : AComponent(time, pos)
+  : AComponent(time, name, pos)
 {
   val[0] = hbs::UNDEFINED;
   val[1] = hbs::UNDEFINED;

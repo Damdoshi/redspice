@@ -142,6 +142,7 @@ int			main(int		argc,
   int			i;
   int			j;
 
+  srand(clock());
   if (argc < 2)
     {
       std::cerr << argv[0] << " circuit.hbs [input=value]*" << std::endl;

@@ -2,12 +2,12 @@
 # One or gate
 
 .chipsets:
-input		a
-input		b
-output		s
-4071		gate
+input		a		[ 3,  5]
+input		b		[ 3, 15]
+output		s		[50, 10]
+4071		gate		[30, 10]
 
 .links:
-a:1		gate:1
+a:1		gate:1		[3,5 b3,7 b30,10]
 b:1		gate:2
 s:1		gate:3

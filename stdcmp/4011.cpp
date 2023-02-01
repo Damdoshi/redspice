@@ -27,8 +27,9 @@ hbs::Tristate		hbs::CMP_4011::Logic(hbs::Tristate	a,
 }
 
 hbs::CMP_4011::CMP_4011(const hbs::Timer	&timer,
+			const std::string	&name,
 			const std::string	&pos)
-  : CMP_4081(timer, pos)
+  : CMP_4081(timer, name, pos)
 {}
 hbs::CMP_4011::~CMP_4011(void)
 {}

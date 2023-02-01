@@ -18,6 +18,7 @@ namespace			hbs
     virtual hbs::Tristate	Compute(size_t		pin_num_this = 1);
 
     Clock(hbs::Timer		&timer,
+	  const std::string	&name,
 	  const std::string	&value = "",
 	  const std::string	&pos = "");
     virtual ~Clock(void);

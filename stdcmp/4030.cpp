@@ -24,8 +24,9 @@ hbs::Tristate		hbs::CMP_4030::Logic(hbs::Tristate	a,
 }
 
 hbs::CMP_4030::CMP_4030(const hbs::Timer	&timer,
+			const std::string	&name,
 			const std::string	&pos)
-  : AGate(timer, pos)
+  : AGate(timer, name, pos)
 {}
 hbs::CMP_4030::~CMP_4030(void)
 {}

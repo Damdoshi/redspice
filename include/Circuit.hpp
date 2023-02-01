@@ -36,6 +36,7 @@ namespace				hbs
 						  int				&i);
 
     IComponent				*Create(const std::string		&type,
+						const std::string		&name,
 						const std::string		&value,
 						const std::string		&position);
 

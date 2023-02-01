@@ -22,6 +22,7 @@ namespace			hbs
     void			SetValue(hbs::Tristate	tristate);
 
     Input(hbs::Timer		&timer,
+	  const std::string	&name,
 	  const std::string	&value = "",
 	  const std::string	&pos = "");
     virtual ~Input(void);

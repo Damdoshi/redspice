@@ -12,8 +12,8 @@ void		hbs::Screen::Line(Position		a,
 {
   t_bunny_position pos[2] =
     {
-     {(int)a.x * pin_size, (int)a.y * pin_size},
-     {(int)b.x * pin_size, (int)b.y * pin_size}
+      {(int)(a.x * pin_size), (int)(a.y * pin_size)},
+      {(int)(b.x * pin_size), (int)(b.y * pin_size)}
     };
   unsigned int	col[2] = {color, color};
 

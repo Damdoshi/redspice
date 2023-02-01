@@ -5,7 +5,7 @@
 
 #include		"AGate.hpp"
 
-void			hbs::AGate::DrawGates(hbs::Screen		&screen) const
+void			hbs::AGate::DrawGates(hbs::Screen	&screen) const
 {
   (void)screen;
   // Dessiner les portes
@@ -36,8 +36,9 @@ hbs::Tristate		hbs::AGate::Compute(size_t		n)
 }
 
 hbs::AGate::AGate(const hbs::Timer	&_timer,
+		  const std::string	&name,
 		  const std::string	&pos)
-  : AComponent(_timer, pos)
+  : AComponent(_timer, name, pos)
 {}
 
 hbs::AGate::~AGate(void)

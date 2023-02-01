@@ -55,19 +55,25 @@ bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
       if (code[j] == '[')
 	{
 	  i = ++j;
+	  ReadWhitespace(code, j);
 	  if (ReadChar(code, j))
 	    {
 	      if (code[j] != ',')
 		throw SyntaxError(code.substr(i, 20));
+	      else
+		j += 1;
+	      ReadWhitespace(code, j);
 	      ReadChar(code, ++j);
 	      position = code.substr(i, j - i);
+	      ReadWhitespace(code, j);
 	    }
 	  ReadWhitespace(code, j);
 	  if (code[j] != ']')
 	    throw hbs::SyntaxError("Missing ']'.");
+	  ReadWhitespace(code, j);
 	  j += 1;
 	}
-      circuit[name] = Create(type, value, position);
+      circuit[name] = Create(type, name, value, position);
       if (type == "input" || type == "clock")
 	inputs[name] = dynamic_cast<hbs::Input*>(circuit[name]);
       else if (type == "output" || type == "terminal")
