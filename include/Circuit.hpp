@@ -51,8 +51,11 @@ namespace				hbs
     void				Dump(void) const;
     void				Map(void) const;
 
+    void				Move(const hbs::Screen::Position	&pos);
     hbs::Screen::Position		GetPosition(void) const;
     hbs::Screen::Position		GetPinPosition(size_t			pin) const;
+    bool				IsUnder(const hbs::Screen		&screen,
+						const t_bunny_position		&pos) const;
 
     const std::string			&GetOutputName(size_t			n) const;
     bool				GetDisplayable(size_t			n) const;
@@ -63,7 +66,13 @@ namespace				hbs
 						 hbs::Tristate			value);
 
     void				Draw(hbs::Screen			&screen) const;
+    size_t				GetTime(void) const;
 
+    hbs::Input				*GetInput(const hbs::Screen		&screen,
+						  t_bunny_position		pos) const;
+    hbs::IComponent			*GetComponent(const hbs::Screen		&screen,
+						      t_bunny_position		pos) const;
+    
     Circuit(hbs::Timer	&timer);
     virtual ~Circuit(void);
   };

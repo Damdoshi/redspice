@@ -6,6 +6,37 @@
 #include		<fstream>
 #include		"Circuit.hpp"
 
+hbs::Input		*hbs::Circuit::GetInput(const hbs::Screen		&screen,
+						t_bunny_position		pos) const
+{
+  for (auto it = inputs.begin(); it != inputs.end(); ++it)
+    if (it->second->IsUnder(screen, pos))
+      return (it->second);
+  return (NULL);
+}
+
+hbs::IComponent		*hbs::Circuit::GetComponent(const hbs::Screen		&screen,
+						    t_bunny_position		pos) const
+{
+  for (auto it = circuit.begin(); it != circuit.end(); ++it)
+    if (it->second->IsUnder(screen, pos))
+      return (it->second);
+  return (NULL);
+}
+
+void			hbs::Circuit::Move(const hbs::Screen::Position		&pos)
+{
+  (void)pos;
+}
+
+bool			hbs::Circuit::IsUnder(const hbs::Screen			&screen,
+					      const t_bunny_position		&pos) const
+{
+  (void)screen;
+  (void)pos;
+  return (false);
+}
+
 hbs::Screen::Position	hbs::Circuit::GetPosition(void) const
 {
   // Une fois qu'il sera devenu possible de definir un circuit comme composant, ca sera utile.
@@ -23,11 +54,14 @@ hbs::Screen::Position	hbs::Circuit::GetPinPosition(size_t		pin) const
 void			hbs::Circuit::Draw(hbs::Screen			&screen) const
 {
   for (auto it = circuit.begin(); it != circuit.end(); ++it)
-    it->second->Draw(screen);
+    if (it->second != screen.grabbed)
+      it->second->Draw(screen);
   for (auto it = inputs.begin(); it != inputs.end(); ++it)
-    it->second->Draw(screen);
+    if (it->second != screen.grabbed)
+      it->second->Draw(screen);
   for (auto it = outputs.begin(); it != outputs.end(); ++it)
-    it->second->Draw(screen);
+    if (it->second != screen.grabbed)
+      it->second->Draw(screen);
 }
 
 bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
@@ -302,6 +336,11 @@ void			hbs::Circuit::SetValue(const std::string		&input,
   if ((it = inputs.find(input)) == inputs.end())
     throw hbs::MissingInputs("Cannot found input " + input + ".");
   it->second->SetValue(value);
+}
+
+size_t			hbs::Circuit::GetTime(void) const
+{
+  return (timer.GetTime());
 }
 
 hbs::Circuit::Circuit(hbs::Timer		&tim)

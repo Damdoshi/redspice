@@ -4,12 +4,14 @@
 //
 // RED Spice
 
+#include		"Circuit.hpp"
 #include		"Screen.hpp"
 
 extern "C"
 t_bunny_response	screen_loop(LoopData			&ld)
 {
-  (void)ld;
+  if (ld.screen.loopsim)
+    hbs::Command("simulate", ld.circuit, ld.timer);
   return (GO_ON);
 }
 

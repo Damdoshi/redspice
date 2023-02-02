@@ -9,6 +9,8 @@
 
 hbs::Screen::Screen(void)
 {
+  loopsim = false;
+  grabbed = NULL;
   pin_size = PINSIZE_DEFAULT;
   if ((win = bunny_start(1440, 900, false, "RedSpice")) == NULL)
     throw 0;

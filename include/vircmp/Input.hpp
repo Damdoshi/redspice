@@ -18,6 +18,12 @@ namespace			hbs
     hbs::Tristate		value;
 
   public:
+    hbs::Tristate		GetPin(size_t n)
+    {
+      (void)n;
+      return (value);
+    }
+
     virtual hbs::Tristate	Compute(size_t		pin_num_this = 1);
     void			SetValue(hbs::Tristate	tristate);
 

@@ -1,5 +1,7 @@
 // Jason Brillante "Damdoshi"
-// Hanged Bunny Studio 2014-2018
+// EFRITS SAS 2022-2023
+// Pentacle Technologie 2008-2023
+// Hanged Bunny Studio 2014-2021
 //
 // RED Spice
 
@@ -9,6 +11,7 @@
 # include				<typeinfo>
 # include				<list>
 # include				<map>
+# include				<math.h>
 # include				"IComponent.hpp"
 # include				"Exception.hpp"
 # include				"Timer.hpp"
@@ -137,8 +140,9 @@ namespace				hbs
       return (timeline[timer.GetTime() - 1][n]);
     }
 
+  public:
     //// Get a pin value
-    hbs::Tristate			GetPin(size_t			n)
+    virtual hbs::Tristate		GetPin(size_t			n)
     {
       typename std::map<size_t, std::list<Link> >::iterator		lnk;
       typename std::list<Link>::iterator				it;
@@ -163,7 +167,6 @@ namespace				hbs
       return (timeline[timer.GetTime()][n] = out);
     }
 
-  public:
     void				SetLink(size_t			pin_num_this,
 						hbs::IComponent		&component,
 						size_t			pin_num_target,
@@ -200,9 +203,31 @@ namespace				hbs
       component.SetLink(pin_num_target, *this, pin_num_this, "!" + pos);
     }
 
+    bool				IsUnder(const hbs::Screen	&screen,
+						const t_bunny_position	&c) const
+    {
+      if (Pin == 1)
+	{
+	  t_bunny_accurate_position dist = {c.x - position.x, c.y - position.y};
+
+	  return (sqrt(dist.x * dist.x + dist.y * dist.y) < screen.pin_size * 0.5);
+	}
+      if (Pin == 2)
+	return (false);
+      if (Pin == 3)
+	return (false);
+      return (false);
+    }
+    
     hbs::Screen::Position		GetPosition(void) const
     {
       return (position);
+    }
+
+    void				Move(const hbs::Screen::Position &pos)
+    {
+      position.x += pos.x;
+      position.y += pos.y;
     }
 
     virtual hbs::Screen::Position	GetPinPosition(size_t		pin) const
@@ -239,11 +264,18 @@ namespace				hbs
       for (auto itx = links.begin(); itx != links.end(); ++itx)
 	for (auto ity = itx->second.begin(); ity != itx->second.end(); ++ity)
 	  ity->Draw(screen, *this, itx->first);
+      auto last = timeline.rbegin();
 
       if (Pin == 1)
 	{
-	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::Teal, true);
-	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::White, false);
+	  int col = 0;
+	  
+	  if (last != timeline.rend())
+	    col = hbs::Screen::TristateColor[(int)(last->second.at(1) - BROKEN)];
+
+	  screen.Circle(GetPinPosition(1), {0.7, 0.7}, col, true);
+	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::Blue, true);
+	  screen.Circle(GetPinPosition(1), {0.3, 0.3}, hbs::Screen::Black, true);
 	}
       else if (Pin == 2)
 	{
@@ -269,6 +301,12 @@ namespace				hbs
 	{
 	  for (size_t i = 1; i <= Pin; ++i)
 	    {
+	      int col = 0;
+	      
+	      if (last != timeline.rend() && last->second.find(i) != last->second.end())
+		col = hbs::Screen::TristateColor[(int)(last->second.at(i) - BROKEN)];
+
+	      screen.Circle(GetPinPosition(i), {0.4, 0.4}, col, true);
 	      screen.Circle(GetPinPosition(i), {0.25, 0.25}, hbs::Screen::Purple, true);
 	      screen.Circle(GetPinPosition(i), {0.25, 0.25}, hbs::Screen::White, false);
 	    }

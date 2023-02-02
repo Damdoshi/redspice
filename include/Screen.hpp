@@ -12,6 +12,7 @@
 
 namespace				hbs
 {
+  class					IComponent;
   class					Circuit;
   class					Screen
   {
@@ -22,12 +23,16 @@ namespace				hbs
     t_bunny_picture			*controls;
     t_bunny_position			camera;
     int					pin_size;
+    bool				loopsim;
+    IComponent				*grabbed;
+    t_bunny_position			grab_pos;
 
   public:
     typedef t_bunny_accurate_position	Position;
     typedef t_bunny_accurate_size	Size;
 
     static constexpr unsigned int	White = WHITE;
+    static constexpr unsigned int	Black = BLACK;
     static constexpr unsigned int	Red = RED;
     static constexpr unsigned int	Blue = BLUE;
     static constexpr unsigned int	Yellow = YELLOW;
@@ -36,6 +41,14 @@ namespace				hbs
     static constexpr unsigned int	Purple = PURPLE;
     static constexpr unsigned int	Pink = PINK2;
 
+    static constexpr unsigned int	TristateColor[4] =
+      {
+	YELLOW,
+	0,
+	((unsigned int)GRAY(64)),
+	RED
+      };
+    
     int					PinSize(int			p = 0);
 
     void				Resize(const t_bunny_window	&win,

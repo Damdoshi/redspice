@@ -11,7 +11,9 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 					size_t			ori_pin) const
 {
   auto			prev = third.begin();
+  auto			now = (int)(50 * clock() / CLOCKS_PER_SEC) % 2;
 
+  //if (&origin == screen.grabbed || first == screen.grabbed) return ;
   // Pas de positions déterminées
   if (third.size() <= 2)
     {
@@ -22,7 +24,7 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 	for (double j = -1; j < 2; ++j)
 	  screen.Line(a + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
 		      b + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
-		      hbs::Screen::Yellow
+		      now ? hbs::Screen::Yellow : hbs::Screen::White
 		      );
       return ;
     }

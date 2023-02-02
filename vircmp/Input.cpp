@@ -20,6 +20,10 @@ hbs::Tristate		hbs::Input::Compute(size_t			pin_num_this)
 
 void			hbs::Input::SetValue(hbs::Tristate		tristate)
 {
+  if (timeline.rbegin() == timeline.rend())
+    timeline[0][1] = tristate;
+  else
+    timeline.rbegin()->second[1] = tristate;
   value = tristate;
 }
 

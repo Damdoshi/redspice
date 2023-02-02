@@ -46,7 +46,7 @@ void		hbs::Screen::Text(Position		pos,
     {
       if (isalpha(c = tolower(str[i])))
 	c = c - 'a';
-      else if (isdigit(c))
+      else if (c >= '0' && c <= '9')
 	c = c - '0' + BFT_0;
       else if (c == '!')
 	c = BFT_EXCLAMATION;
@@ -55,9 +55,10 @@ void		hbs::Screen::Text(Position		pos,
       else if (c == '.')
 	c = BFT_DOT;
       else
-	c = ' ';
+	c = -1;
 
-      single_letter(*this, pos, siz, color, c, ps, ori);
+      if (c != -1)
+	single_letter(*this, pos, siz, color, c, ps, ori);
 
       pos.x += siz.x * SPACE_BETWEEN_LETTER;
     }

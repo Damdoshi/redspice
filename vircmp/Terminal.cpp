@@ -16,12 +16,20 @@ hbs::Screen::Position	hbs::Terminal::GetPosition(void) const
   return (hbs::AComponent<9>::GetPosition());
 }
 
-hbs::Screen::Position	hbs::Terminal::GetPinPosition(size_t	pin) const
+hbs::Screen::Position	hbs::Terminal::GetPinPosition(size_t		pin) const
 {
   return (hbs::Screen::Position{0, (double)pin});
 }
 
-void			hbs::Terminal::Draw(hbs::Screen		&screen) const
+bool			hbs::Terminal::IsUnder(const hbs::Screen	&screen,
+					       const t_bunny_position	&pos) const
+{
+  (void)screen;
+  (void)pos;
+  return (false);
+}
+
+void			hbs::Terminal::Draw(hbs::Screen			&screen) const
 {
   screen.Square(hbs::AComponent<9>::position + hbs::Screen::Position{1, 0}, {1, 9}, hbs::Screen::White);
   for (double i = 0; i < 9; ++i)

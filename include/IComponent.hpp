@@ -1,5 +1,7 @@
 // Jason Brillante "Damdoshi"
-// Hanged Bunny Studio 2014-2018
+// EFRITS SAS 2022-2023
+// Pentacle Technologie 2008-2023
+// Hanged Bunny Studio 2014-2021
 //
 // RED Spice
 
@@ -31,6 +33,9 @@ namespace			hbs
 					size_t			pin_num_target,
 					const std::string	&pos = "") = 0;
 
+    virtual bool		IsUnder(const hbs::Screen	&screen,
+					const t_bunny_position	&pos) const = 0;
+    virtual void		Move(const Screen::Position	&pos) = 0;
     virtual Screen::Position	GetPosition(void) const = 0;
     virtual Screen::Position	GetPinPosition(size_t		pin) const = 0;
     virtual void		Draw(hbs::Screen		&screen) const = 0;
