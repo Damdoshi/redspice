@@ -56,10 +56,27 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
   Text(Position{0.5 * pic->buffer.width - TextSize({20, 20}, buffer).x + 0.0, 5.0 - pic->buffer.height / 2}, {20, 20}, RED, buffer);
   Text(Position{0.5 * pic->buffer.width - TextSize({20, 20}, buffer).x + 0.5, 6.0 - pic->buffer.height / 2}, {20, 20}, RED, buffer);
   pin_size = ps;
+
+  t_bunny_position oldcam = camera;
+  int oldpinsize = pin_size;
+
+  pin_size = 1;
+  camera.x += win->buffer.width / 2;
+  camera.y += win->buffer.height / 2;
+  Text({5, win->buffer.height - 5 * 15}, {10, 10}, hbs::Screen::Red, "REDSPICE - by Jason Brillante Damdoshi");
+  Text({5, win->buffer.height - 4 * 15}, {10, 10}, hbs::Screen::Red, "EFRITS SAS 2022-2023");
+  Text({5, win->buffer.height - 3 * 15}, {10, 10}, hbs::Screen::Red, "Hanged Bunny Studio 2014-2021");
+  Text({5, win->buffer.height - 2 * 15}, {10, 10}, hbs::Screen::Red, "Pentacle Technologie 2008-2023");
+  Text({5, win->buffer.height - 1 * 15}, {10, 10}, hbs::Screen::Red, "Under GNU GPL V3");
+
+  Text({5, 5}, {15, 75}, hbs::Screen::Red | (GRAY(0)), "SAVE!");
+  Text({105, 5}, {15, 75}, hbs::Screen::Red | (GRAY(96)), "STOP!");
+  Text({205, 5}, {15, 75}, hbs::Screen::Red | (GRAY(0)), "STEP!");
+  Text({305, 5}, {15, 75}, hbs::Screen::Red | (GRAY(96)), "RUN");
+  camera = oldcam;
+  pin_size = oldpinsize;
   
   bunny_blit(&win->buffer, pic, NULL);
-  bunny_blit(&win->buffer, controls, NULL);
-  bunny_blit(&win->buffer, author, NULL);
   bunny_display(win);
   return (true);
 }

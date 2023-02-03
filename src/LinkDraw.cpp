@@ -15,7 +15,7 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 
   //if (&origin == screen.grabbed || first == screen.grabbed) return ;
   // Pas de positions déterminées
-  if (third.size() <= 2)
+  if (third.size() == 0)
     {
       auto a = origin.GetPinPosition(ori_pin);
       auto b = first->GetPinPosition(second);
@@ -28,6 +28,15 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 		      );
       return ;
     }
+  auto a = origin.GetPinPosition(ori_pin);
+  auto b = third.begin()->first;
+
+  for (double i = -1; i < 2; ++i)
+    for (double j = -1; j < 2; ++j)
+      screen.Line(a + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+		  b + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+		  hbs::Screen::Blue);
+
   // Des positions déterminées
   for (auto it = third.begin(); it != third.end(); ++it)
     {
@@ -44,4 +53,13 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 	}
       prev = it;
     }
+
+  auto c = third.rbegin()->first;
+  auto d = first->GetPinPosition(second);
+
+  for (double i = -1; i < 2; ++i)
+    for (double j = -1; j < 2; ++j)
+      screen.Line(c + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+		  d + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+		  hbs::Screen::Blue);
 }

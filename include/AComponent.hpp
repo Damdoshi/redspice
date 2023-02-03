@@ -12,6 +12,7 @@
 # include				<list>
 # include				<map>
 # include				<math.h>
+# include				"Link.hpp"
 # include				"IComponent.hpp"
 # include				"Exception.hpp"
 # include				"Timer.hpp"
@@ -20,30 +21,6 @@
 
 namespace				hbs
 {
-  struct				Link
-  {
-    enum				Layer
-      {
-	TOP,
-	BOTTOM
-      };
-    IComponent				*first;
-    size_t				second;
-
-    typedef std::list<std::pair<hbs::Screen::Position, Layer> > Positions;
-    Positions				third;
-    void				Draw(hbs::Screen		&screen,
-					     const IComponent		&origin,
-					     size_t			ori_pin) const;
-    Link(const hbs::Screen::Position	&from,
-	 const hbs::Screen::Position	&to,
-	 IComponent			*icom,
-	 size_t				pin,
-	 const std::string		&pos,
-	 bool				rev = false);
-    ~Link(void) {}
-  };
-
   template <int				Pin>
   class					AComponent: public virtual hbs::IComponent
   {
@@ -210,13 +187,20 @@ namespace				hbs
 	{
 	  t_bunny_accurate_position dist = {c.x - position.x, c.y - position.y};
 
-	  return (sqrt(dist.x * dist.x + dist.y * dist.y) < screen.pin_size * 0.5);
+	  return (sqrt(dist.x * dist.x + dist.y * dist.y) * screen.pin_size < screen.pin_size * 2);
 	}
       if (Pin == 2)
-	return (false);
+	{
+	  if (orientation)
+	    return (c.x >= position.x && c.x <= position.x + 3 && c.y >= position.y && c.y <= position.y + 1);
+	  else
+	    return (c.x >= position.x && c.x <= position.x + 1 && c.y >= position.y && c.y <= position.y + 3);
+	}
       if (Pin == 3)
-	return (false);
-      return (false);
+	{
+	  return (false);
+	}
+      return (c.x >= position.x && c.x < position.x + 3 && c.y >= position.y && c.y < position.y + Pin / 2);
     }
     
     hbs::Screen::Position		GetPosition(void) const

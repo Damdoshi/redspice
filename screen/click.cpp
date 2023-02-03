@@ -35,6 +35,7 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
   pos.y /= ld.screen.pin_size;
   hbs::Input *in = ld.circuit.GetInput(ld.screen, pos);
   hbs::IComponent *ic = ld.circuit.GetComponent(ld.screen, pos);
+  hbs::Link::Positions::iterator step = ld.circuit.GetLinkStep(ld.screen, pos);
 
   if (in && sym == BMB_MIDDLE && state == GO_UP)
     {
@@ -48,6 +49,7 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
       ld.screen.grabbed = ic;
       ld.screen.grab_pos = *bunny_get_mouse_position();
     }
+  if (step != ld.
 
   if (sym == BMB_LEFT && state == GO_UP && ld.screen.grabbed)
     {
