@@ -27,11 +27,11 @@ namespace				hbs
     void				Draw(hbs::Screen		&screen,
 					     const IComponent		&origin,
 					     size_t			ori_pin) const;
-    
+
     std::pair<int, int>			GetStep(size_t			i) const
     {
       auto				it = third.begin();
-      
+
       for (; it != third.end() && i + 1 > 0; ++it, --i);
       if (it == third.end())
 	throw 0;
@@ -49,6 +49,10 @@ namespace				hbs
     {
       return (second);
     }
+    Link(void)
+      : first(NULL),
+	second(0)
+    {}
     Link(const hbs::Screen::Position	&from,
 	 const hbs::Screen::Position	&to,
 	 IComponent			*icom,

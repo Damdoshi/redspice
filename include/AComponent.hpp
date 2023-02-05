@@ -118,6 +118,36 @@ namespace				hbs
     }
 
   public:
+    hbs::Link::Positions::iterator	EndLinkStep(void)
+    {
+      static Link			lnk;
+
+      return (lnk.third.end());
+    }
+    hbs::Link::Positions::iterator	GetLinkStep(const hbs::Screen	&screen,
+						    t_bunny_position	pos) const
+    {
+      // On liste les liens, pin par pin
+      for (auto it = links.begin(); it != links.end(); ++it)
+	{
+	  // On liste les liens sur ce pin
+	  for (auto itx = it->second.begin(); itx != it->second.end(); ++itx)
+	    {
+	      auto ity = itx->third.begin();
+
+	      for (size_t i = 0; i < itx->GetNbrSteps(); ++i, ++ity)
+		{
+		  auto ii = itx->GetStep(i);
+		  int dist = sqrt(pow(pos.x - ii.first, 2) + pow(pos.y - ii.second, 2));
+
+		  if (dist < screen.pin_size)
+		    return (ity);
+		}
+	      return (EndLinkStep());
+	    }
+	}
+    }
+
     //// Get a pin value
     virtual hbs::Tristate		GetPin(size_t			n)
     {
@@ -202,7 +232,7 @@ namespace				hbs
 	}
       return (c.x >= position.x && c.x < position.x + 3 && c.y >= position.y && c.y < position.y + Pin / 2);
     }
-    
+
     hbs::Screen::Position		GetPosition(void) const
     {
       return (position);
@@ -253,7 +283,7 @@ namespace				hbs
       if (Pin == 1)
 	{
 	  int col = 0;
-	  
+
 	  if (last != timeline.rend())
 	    col = hbs::Screen::TristateColor[(int)(last->second.at(1) - BROKEN)];
 
@@ -286,7 +316,7 @@ namespace				hbs
 	  for (size_t i = 1; i <= Pin; ++i)
 	    {
 	      int col = 0;
-	      
+
 	      if (last != timeline.rend() && last->second.find(i) != last->second.end())
 		col = hbs::Screen::TristateColor[(int)(last->second.at(i) - BROKEN)];
 

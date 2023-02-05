@@ -29,7 +29,7 @@ hbs::Link::Positions::iterator	hbs::Circuit::GetLinkStep(const hbs::Screen	&scre
 {
   for (auto it = circuit.begin(); it != circuit.end(); ++it)
     {
-      
+      for (auto itx = it->seconds
 
     }
 }

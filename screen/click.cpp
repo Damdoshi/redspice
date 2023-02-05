@@ -49,7 +49,6 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
       ld.screen.grabbed = ic;
       ld.screen.grab_pos = *bunny_get_mouse_position();
     }
-  if (step != ld.
 
   if (sym == BMB_LEFT && state == GO_UP && ld.screen.grabbed)
     {
