@@ -13,7 +13,7 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 				     LoopData			&ld)
 {
   t_bunny_position	pos = *bunny_get_mouse_position();
-  
+
   if (pos.y < 75 && pos.x < 400 && state == GO_UP)
     {
       int but = pos.x / 100;
@@ -49,8 +49,10 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
     ld.screen.grab_pos = *bunny_get_mouse_position();
   if (ic && sym == BMB_LEFT && state == GO_DOWN)
     ld.screen.grabbed = ic;
+  if (step != ld.circuit.EndLinkStep() && state == GO_DOWN)
+    ld.screen.grabbed_step = step;
 
-  if (sym == BMB_LEFT && state == GO_UP && ld.screen.grabbed)
+  if (sym == BMB_LEFT && state == GO_UP)
     {
       t_bunny_accurate_position npos =
 	{
@@ -64,12 +66,20 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
       npos.y /= ld.screen.pin_size;
       npos.x = round(npos.x);
       npos.y = round(npos.y);
-      ld.screen.grabbed->Move(npos);
+
+      if (ld.screen.grabbed)
+	ld.screen.grabbed->Move(npos);
       ld.screen.grabbed = NULL;
+
+      if (ld.screen.grabbed_step != ld.circuit.EndLinkStep())
+	{
+	  ld.screen.grabbed_step->first.x += npos.x;
+	  ld.screen.grabbed_step->first.y += npos.y;
+	}
+      else
+	ld.screen.grabbed_step = ld.circuit.EndLinkStep();
     }
 
-  (void)step;
-  
   return (GO_ON);
 }
 

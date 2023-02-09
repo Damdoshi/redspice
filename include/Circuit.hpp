@@ -72,9 +72,9 @@ namespace				hbs
 						  t_bunny_position		pos) const;
     hbs::IComponent			*GetComponent(const hbs::Screen		&screen,
 						      t_bunny_position		pos) const;
-    hbs::Link::Positions::iterator	GetLinkStep(const hbs::Screen		&screen,
+    hbs::Link::Packet			GetLinkStep(const hbs::Screen		&screen,
 						    t_bunny_position		pos) const;
-    
+    hbs::Link::Packet			EndLinkStep(void) const;
     Circuit(hbs::Timer	&timer);
     virtual ~Circuit(void);
   };

@@ -24,10 +24,17 @@ hbs::IComponent		*hbs::Circuit::GetComponent(const hbs::Screen		&screen,
   return (NULL);
 }
 
-hbs::Link::Positions::iterator	hbs::Circuit::GetLinkStep(const hbs::Screen	&screen,
+hbs::Link::Packet	hbs::Circuit::EndLinkStep(void) const
+{
+  hbs::Link::Packet ps;
+
+  return (ps);
+}
+
+hbs::Link::Packet	hbs::Circuit::GetLinkStep(const hbs::Screen	&screen,
 							  t_bunny_position	pos) const
 {
-  hbs::Link::Positions ps;
+  hbs::Link::Packet ps;
 
   (void)screen;
   (void)pos;

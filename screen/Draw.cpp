@@ -24,25 +24,28 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
 	Line(pos[0], pos[1], GRAY(128));
       }
   c.Draw(*this);
-  
+
   t_bunny_accurate_position npos =
     {
       (double)bunny_get_mouse_position()->x,
       (double)bunny_get_mouse_position()->y
     };
-  
+
   npos.x -= grab_pos.x;
   npos.y -= grab_pos.y;
   npos.x /= pin_size;
   npos.y /= pin_size;
   npos.x = round(npos.x);
-  npos.y = round(npos.y);      
+  npos.y = round(npos.y);
 
   if (bunny_get_mouse_button()[BMB_LEFT] && grabbed == NULL)
-    Square({
-	(grab_pos.x - pic->buffer.width / 2) / pin_size,
-	(grab_pos.y - pic->buffer.height / 2) / pin_size},
-      npos, ALPHA(128, WHITE), true);
+    Square(
+	   {
+	    (grab_pos.x - pic->buffer.width / 2.0) / pin_size,
+	    (grab_pos.y - pic->buffer.height / 2.0) / pin_size
+	   },
+	   npos, ALPHA(128, WHITE), true
+	   );
 
   if (grabbed)
     {
@@ -51,9 +54,16 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
       npos.x *= -1;
       npos.y *= -1;
       grabbed->Move(npos);
-
     }
-  
+  if (grabbed_step != c.EndLinkStep())
+    {
+      ld.screen.grabbed_step->first.x += npos.x;
+      ld.screen.grabbed_step->first.y += npos.y;
+      /// On dessine le lien
+      ld.screen.grabbed_step->first.x -= npos.x;
+      ld.screen.grabbed_step->first.y -= npos.y;
+    }
+
   char			buffer[32];
 
   snprintf(&buffer[0], sizeof(buffer), "TIME %04d", (int)c.GetTime());
@@ -83,7 +93,7 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
   Text({305, 5}, {15, 75}, hbs::Screen::Red | (GRAY(96)), "RUN");
   camera = oldcam;
   pin_size = oldpinsize;
-  
+
   bunny_blit(&win->buffer, pic, NULL);
   bunny_display(win);
   return (true);

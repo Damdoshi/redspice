@@ -28,6 +28,18 @@ namespace				hbs
 					     const IComponent		&origin,
 					     size_t			ori_pin) const;
 
+    struct				Packet
+    {
+      hbs::Link				*link;
+      size_t				ori_pin;
+      hbs::Link::Positions::iterator	pos;
+      Packet(void) link(NULL), ori_pin(0) {
+	hbs::Link::Positions ps;
+	pos = ps.end();
+      }
+      ~Packet(void) {}
+    };
+
     std::pair<int, int>			GetStep(size_t			i) const
     {
       auto				it = third.begin();

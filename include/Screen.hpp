@@ -25,6 +25,7 @@ namespace				hbs
     int					pin_size;
     bool				loopsim;
     IComponent				*grabbed;
+    hbs::Link::Positions::iterator	grabbed_step;
     t_bunny_position			grab_pos;
 
   public:

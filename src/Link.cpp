@@ -57,6 +57,8 @@ hbs::Link::Link(const hbs::Screen::Position	&from,
       else
 	third.push_front({pos, layer});
     }
+  (void)from;
+  (void)to;
   /*
   if (!rev)
     {
