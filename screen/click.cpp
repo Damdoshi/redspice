@@ -44,11 +44,11 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
       else
 	in->SetValue(hbs::FALSE);
     }
+
+  if (sym == BMB_LEFT && state == GO_DOWN)
+    ld.screen.grab_pos = *bunny_get_mouse_position();
   if (ic && sym == BMB_LEFT && state == GO_DOWN)
-    {
-      ld.screen.grabbed = ic;
-      ld.screen.grab_pos = *bunny_get_mouse_position();
-    }
+    ld.screen.grabbed = ic;
 
   if (sym == BMB_LEFT && state == GO_UP && ld.screen.grabbed)
     {
@@ -68,6 +68,8 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
       ld.screen.grabbed = NULL;
     }
 
+  (void)step;
+  
   return (GO_ON);
 }
 

@@ -27,11 +27,11 @@ hbs::IComponent		*hbs::Circuit::GetComponent(const hbs::Screen		&screen,
 hbs::Link::Positions::iterator	hbs::Circuit::GetLinkStep(const hbs::Screen	&screen,
 							  t_bunny_position	pos) const
 {
-  for (auto it = circuit.begin(); it != circuit.end(); ++it)
-    {
-      for (auto itx = it->seconds
+  hbs::Link::Positions ps;
 
-    }
+  (void)screen;
+  (void)pos;
+  return (ps.end());
 }
 
 void			hbs::Circuit::Move(const hbs::Screen::Position		&pos)

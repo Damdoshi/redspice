@@ -24,26 +24,34 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
 	Line(pos[0], pos[1], GRAY(128));
       }
   c.Draw(*this);
+  
+  t_bunny_accurate_position npos =
+    {
+      (double)bunny_get_mouse_position()->x,
+      (double)bunny_get_mouse_position()->y
+    };
+  
+  npos.x -= grab_pos.x;
+  npos.y -= grab_pos.y;
+  npos.x /= pin_size;
+  npos.y /= pin_size;
+  npos.x = round(npos.x);
+  npos.y = round(npos.y);      
+
+  if (bunny_get_mouse_button()[BMB_LEFT] && grabbed == NULL)
+    Square({
+	(grab_pos.x - pic->buffer.width / 2) / pin_size,
+	(grab_pos.y - pic->buffer.height / 2) / pin_size},
+      npos, ALPHA(128, WHITE), true);
 
   if (grabbed)
     {
-      t_bunny_accurate_position npos =
-	{
-	  (double)bunny_get_mouse_position()->x,
-	  (double)bunny_get_mouse_position()->y
-	};
-
-      npos.x -= grab_pos.x;
-      npos.y -= grab_pos.y;
-      npos.x /= pin_size;
-      npos.y /= pin_size;
-      npos.x = round(npos.x);
-      npos.y = round(npos.y);
       grabbed->Move(npos);
       grabbed->Draw(*this);
       npos.x *= -1;
       npos.y *= -1;
       grabbed->Move(npos);
+
     }
   
   char			buffer[32];

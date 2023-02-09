@@ -133,7 +133,7 @@ namespace				hbs
 	  // On liste les liens sur ce pin
 	  for (auto itx = it->second.begin(); itx != it->second.end(); ++itx)
 	    {
-	      auto ity = itx->third.begin();
+	      hbs::Link::Positions::iterator ity = itx->third.begin();
 
 	      for (size_t i = 0; i < itx->GetNbrSteps(); ++i, ++ity)
 		{
