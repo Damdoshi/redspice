@@ -7,15 +7,14 @@
 #include		<lapin.h>
 #include		"Screen.hpp"
 
-hbs::Screen::Screen(void)
+hbs::Screen::Screen(std::string const &filename)
 {
+  file_name = filename;
   loopsim = false;
   grabbed = NULL;
-  hbs::Link::Positions lnk;
-
-  grabbed_step = lnk.end();
+  grabbed_step = hbs::Packet();
   pin_size = PINSIZE_DEFAULT;
-  if ((win = bunny_start(1440, 900, false, "RedSpice")) == NULL)
+  if ((win = bunny_start(1440, 900, false, "Bunny CAD")) == NULL)
     throw 0;
   if ((pic = bunny_new_picture(win->buffer.width, win->buffer.height)) == NULL)
     throw 0;

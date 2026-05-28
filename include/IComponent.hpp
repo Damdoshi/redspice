@@ -8,6 +8,7 @@
 #ifndef				__ICOMPONENT_HPP__
 # define			__ICOMPONENT_HPP__
 # include			<iosfwd>
+# include			<string>
 # include			<sys/types.h>
 # include			"Screen.hpp"
 
@@ -24,6 +25,18 @@ namespace			hbs
   class				IComponent
   {
   public:
+    /// Return the canonical type name of the component.
+    virtual const std::string	&GetType(void) const = 0;
+
+    /// Return the instance name of the component.
+    virtual const std::string	&GetName(void) const = 0;
+
+    /// Return the number of pins exposed by the component.
+    virtual size_t		GetPinCount(void) const = 0;
+
+    /// Optional value stored in the textual declaration.
+    virtual std::string		GetDefinitionValue(void) const { return (""); }
+
     /// Compute value of the precised pin
     virtual hbs::Tristate	Compute(size_t			pin_num_this = 1) = 0;
 
@@ -35,9 +48,9 @@ namespace			hbs
 
     virtual bool		IsUnder(const hbs::Screen	&screen,
 					const t_bunny_position	&pos) const = 0;
-    virtual void		Move(const Screen::Position	&pos) = 0;
-    virtual Screen::Position	GetPosition(void) const = 0;
-    virtual Screen::Position	GetPinPosition(size_t		pin) const = 0;
+    virtual void		Move(const Position		&pos) = 0;
+    virtual Position		GetPosition(void) const = 0;
+    virtual Position		GetPinPosition(size_t		pin) const = 0;
     virtual void		Draw(hbs::Screen		&screen) const = 0;
 
     ///// Print on terminal the name of the component and

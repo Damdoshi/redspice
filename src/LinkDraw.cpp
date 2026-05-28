@@ -4,7 +4,10 @@
 //
 // RED Spice
 
-#include		"AComponent.hpp"
+#include		<ctime>
+#include		"Link.hpp"
+#include		"Parsing.hpp"
+#include		"Exception.hpp"
 
 void			hbs::Link::Draw(hbs::Screen		&screen,
 					const IComponent	&origin,
@@ -22,8 +25,8 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 
       for (double i = -1; i < 2; ++i)
 	for (double j = -1; j < 2; ++j)
-	  screen.Line(a + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
-		      b + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+	  screen.Line(a + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
+		      b + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
 		      now ? hbs::Screen::Yellow : hbs::Screen::White
 		      );
       return ;
@@ -33,8 +36,8 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 
   for (double i = -1; i < 2; ++i)
     for (double j = -1; j < 2; ++j)
-      screen.Line(a + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
-		  b + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+      screen.Line(a + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
+		  b + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
 		  hbs::Screen::Blue);
 
   // Des positions déterminées
@@ -42,8 +45,8 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
     {
       for (double i = -1; i < 2; ++i)
 	for (double j = -1; j < 2; ++j)
-	  screen.Line(prev->first + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
-		      it->first + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+	  screen.Line(prev->first + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
+		      it->first + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
 		      prev->second == TOP ? hbs::Screen::Red : hbs::Screen::Blue
 		      );
       if (prev->second != it->second) // Il y a un VIA
@@ -59,7 +62,7 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 
   for (double i = -1; i < 2; ++i)
     for (double j = -1; j < 2; ++j)
-      screen.Line(c + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
-		  d + hbs::Screen::Position{i / screen.PinSize(), j / screen.PinSize()},
+      screen.Line(c + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
+		  d + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
 		  hbs::Screen::Blue);
 }

@@ -57,11 +57,11 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
     }
   if (grabbed_step != c.EndLinkStep())
     {
-      ld.screen.grabbed_step->first.x += npos.x;
-      ld.screen.grabbed_step->first.y += npos.y;
+      grabbed_step.pos->first.x += npos.x;
+      grabbed_step.pos->first.y += npos.y;
       /// On dessine le lien
-      ld.screen.grabbed_step->first.x -= npos.x;
-      ld.screen.grabbed_step->first.y -= npos.y;
+      grabbed_step.pos->first.x -= npos.x;
+      grabbed_step.pos->first.y -= npos.y;
     }
 
   char			buffer[32];
@@ -81,7 +81,7 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
   pin_size = 1;
   camera.x += win->buffer.width / 2;
   camera.y += win->buffer.height / 2;
-  Text({5.0, win->buffer.height - 5.0 * 15}, {10, 10}, hbs::Screen::Red, "REDSPICE - by Jason Brillante Damdoshi");
+  Text({5.0, win->buffer.height - 5.0 * 15}, {10, 10}, hbs::Screen::Red, "BUNNY CAD - by Jason Brillante Damdoshi");
   Text({5.0, win->buffer.height - 4.0 * 15}, {10, 10}, hbs::Screen::Red, "EFRITS SAS 2022-2023");
   Text({5.0, win->buffer.height - 3.0 * 15}, {10, 10}, hbs::Screen::Red, "Hanged Bunny Studio 2014-2021");
   Text({5.0, win->buffer.height - 2.0 * 15}, {10, 10}, hbs::Screen::Red, "Pentacle Technologie 2008-2023");

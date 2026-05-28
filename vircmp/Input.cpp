@@ -18,6 +18,16 @@ hbs::Tristate		hbs::Input::Compute(size_t			pin_num_this)
   return (value);
 }
 
+
+std::string		hbs::Input::GetDefinitionValue(void) const
+{
+  if (value == hbs::TRUE)
+    return ("1");
+  if (value == hbs::FALSE)
+    return ("0");
+  return ("");
+}
+
 void			hbs::Input::SetValue(hbs::Tristate		tristate)
 {
   if (timeline.rbegin() == timeline.rend())

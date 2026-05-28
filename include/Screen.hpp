@@ -8,6 +8,9 @@
 # define				__SCREEN_HPP__
 # define				PINSIZE_DEFAULT		20
 # include				<lapin.h>
+# include				<map>
+# include				<string>
+# include				"Positions.hpp"
 # include				"Timer.hpp"
 
 namespace				hbs
@@ -25,12 +28,11 @@ namespace				hbs
     int					pin_size;
     bool				loopsim;
     IComponent				*grabbed;
-    hbs::Link::Positions::iterator	grabbed_step;
+    hbs::Packet				grabbed_step;
     t_bunny_position			grab_pos;
-
+    std::string				file_name;
+    
   public:
-    typedef t_bunny_accurate_position	Position;
-    typedef t_bunny_accurate_size	Size;
 
     static constexpr unsigned int	White = WHITE;
     static constexpr unsigned int	Black = BLACK;
@@ -77,16 +79,29 @@ namespace				hbs
     bool				Loop(hbs::Circuit		&circ,
 					     hbs::Timer			&timer);
 
-    Screen(void);
+    Screen(std::string const &filename);
     ~Screen(void);
+  };
+
+  typedef hbs::IComponent *(*CreateFunction)(void);
+  struct				ComponentLib
+  {
+    void				*handler;
+    hbs::CreateFunction			create;
   };
 }
 
-struct				LoopData
+struct					LoopData
 {
-  hbs::Circuit			&circuit;
-  hbs::Timer			&timer;
-  hbs::Screen			&screen;
+  hbs::Circuit				&circuit;
+  hbs::Timer				&timer;
+  hbs::Screen				&screen;
+  bool					search_panel = false;
+  int					search_offset = 0;
+  std::map<
+    std::string,
+    hbs::ComponentLib
+    >					library;
 };
 
 #endif	//			__SCREEN_HPP__

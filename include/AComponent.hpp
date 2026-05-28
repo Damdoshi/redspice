@@ -12,7 +12,6 @@
 # include				<list>
 # include				<map>
 # include				<math.h>
-# include				"Link.hpp"
 # include				"IComponent.hpp"
 # include				"Exception.hpp"
 # include				"Timer.hpp"
@@ -32,14 +31,20 @@ namespace				hbs
     typedef std::map<size_t, Tristate>	PinState;
     typedef PinState::iterator		Preset;
 
-    std::map<size_t, std::list<Link> >	links;
+    struct				Connection
+    {
+      hbs::IComponent			*component;
+      size_t				pin;
+    };
+
+    std::map<size_t, std::list<Connection> > links;
     std::map<size_t, PinState>		timeline;
     //float				x;
     //float				y;
 
     mutable std::string			type;
 
-    hbs::Screen::Position		position;
+    hbs::Position			position;
     bool				orientation;
 
     void				CleanOld(void)
@@ -118,41 +123,11 @@ namespace				hbs
     }
 
   public:
-    hbs::Link::Positions::iterator	EndLinkStep(void)
-    {
-      static Link			lnk;
-
-      return (lnk.third.end());
-    }
-    hbs::Link::Positions::iterator	GetLinkStep(const hbs::Screen	&screen,
-						    t_bunny_position	pos) const
-    {
-      // On liste les liens, pin par pin
-      for (auto it = links.begin(); it != links.end(); ++it)
-	{
-	  // On liste les liens sur ce pin
-	  for (auto itx = it->second.begin(); itx != it->second.end(); ++itx)
-	    {
-	      hbs::Link::Positions::iterator ity = itx->third.begin();
-
-	      for (size_t i = 0; i < itx->GetNbrSteps(); ++i, ++ity)
-		{
-		  auto ii = itx->GetStep(i);
-		  int dist = sqrt(pow(pos.x - ii.first, 2) + pow(pos.y - ii.second, 2));
-
-		  if (dist < screen.pin_size)
-		    return (ity);
-		}
-	      return (EndLinkStep());
-	    }
-	}
-    }
-
     //// Get a pin value
     virtual hbs::Tristate		GetPin(size_t			n)
     {
-      typename std::map<size_t, std::list<Link> >::iterator		lnk;
-      typename std::list<Link>::iterator				it;
+      typename std::map<size_t, std::list<Connection> >::iterator	lnk;
+      typename std::list<Connection>::iterator			it;
       hbs::Tristate							out;
       hbs::Tristate							tmp;
 
@@ -162,10 +137,10 @@ namespace				hbs
 
       /// Linked
       it = lnk->second.begin();
-      out = it->first->Compute(it->second);
+      out = it->component->Compute(it->pin);
       for (++it; it != lnk->second.end(); ++it)
 	{
-	  tmp = it->first->Compute(it->second);
+	  tmp = it->component->Compute(it->pin);
 	  if (out == hbs::UNDEFINED)
 	    out = tmp;
 	  else if (tmp != hbs::UNDEFINED)
@@ -179,8 +154,8 @@ namespace				hbs
 						size_t			pin_num_target,
 						const std::string	&pos)
     {
-      typename std::map<size_t, std::list<Link> >::iterator		it;
-      typename std::list<Link>::iterator				itx;
+      typename std::map<size_t, std::list<Connection> >::iterator	it;
+      typename std::list<Connection>::iterator			itx;
 
       /// If the pin is out of bound
       if (pin_num_this > Pin || pin_num_this == 0)
@@ -189,25 +164,12 @@ namespace				hbs
       /// Already linked
       if ((it = links.find(pin_num_this)) != links.end())
 	for (itx = it->second.begin(); itx != it->second.end(); ++itx)
-	  if (itx->first == &component && itx->second == pin_num_target)
+	  if (itx->component == &component && itx->pin == pin_num_target)
 	    return ;
 
-      /// Linked and signal to the other component the link
-      if (pos[0] != '!')
-	links[pin_num_this].push_back
-	  ({
-	    GetPinPosition(pin_num_this),
-	    component.GetPinPosition(pin_num_target),
-	    &component, pin_num_target, pos
-	  });
-      else
-	links[pin_num_this].push_back
-	  ({
-	    GetPinPosition(pin_num_this),
-	    component.GetPinPosition(pin_num_target),
-	    &component, pin_num_target, pos.substr(1), true
-	  });
-      component.SetLink(pin_num_target, *this, pin_num_this, "!" + pos);
+      links[pin_num_this].push_back({&component, pin_num_target});
+      if (pos.empty() || pos[0] != '!')
+	component.SetLink(pin_num_target, *this, pin_num_this, "!" + pos);
     }
 
     bool				IsUnder(const hbs::Screen	&screen,
@@ -233,51 +195,57 @@ namespace				hbs
       return (c.x >= position.x && c.x < position.x + 3 && c.y >= position.y && c.y < position.y + Pin / 2);
     }
 
-    hbs::Screen::Position		GetPosition(void) const
+    const std::string			&GetName(void) const
+    {
+      return (name);
+    }
+
+    size_t				GetPinCount(void) const
+    {
+      return (Pin);
+    }
+
+    hbs::Position			GetPosition(void) const
     {
       return (position);
     }
 
-    void				Move(const hbs::Screen::Position &pos)
+    void				Move(const hbs::Position &pos)
     {
       position.x += pos.x;
       position.y += pos.y;
     }
 
-    virtual hbs::Screen::Position	GetPinPosition(size_t		pin) const
+    virtual hbs::Position		GetPinPosition(size_t		pin) const
     {
-      if (Pin < Pin || pin == 0)
+      if (pin > Pin || pin == 0)
 	throw hbs::BadPin(GetType() + ": Bad pin.");
       if (Pin == 1)
 	return (position);
       if (Pin == 2)
 	{
 	  if (pin == 1)
-	    return (position + hbs::Screen::Position{0, 0});
+	    return (position + hbs::Position{0, 0});
 	  if (orientation)
-	    return (position + hbs::Screen::Position{3, 0});
-	  return (position + hbs::Screen::Position{0, 3});
+	    return (position + hbs::Position{3, 0});
+	  return (position + hbs::Position{0, 3});
 	}
       if (Pin == 3)
 	{
 	  if (pin == 1)
-	    return (position + hbs::Screen::Position{-1, 0});
+	    return (position + hbs::Position{-1, 0});
 	  if (pin == 2)
-	    return (position + hbs::Screen::Position{0, -1});
-	  return (position + hbs::Screen::Position{0, 1});
+	    return (position + hbs::Position{0, -1});
+	  return (position + hbs::Position{0, 1});
 	}
       pin -= 1;
       if (pin < Pin / 2)
-	return (position + hbs::Screen::Position{0, (double)pin});
-      return (position + hbs::Screen::Position{3, Pin - (double)pin - 1});
+	return (position + hbs::Position{0, (double)pin});
+      return (position + hbs::Position{3, Pin - (double)pin - 1});
     }
 
     virtual void			Draw(hbs::Screen		&screen) const
     {
-      /// Draw links
-      for (auto itx = links.begin(); itx != links.end(); ++itx)
-	for (auto ity = itx->second.begin(); ity != itx->second.end(); ++ity)
-	  ity->Draw(screen, *this, itx->first);
       auto last = timeline.rbegin();
 
       if (Pin == 1)
@@ -294,9 +262,9 @@ namespace				hbs
       else if (Pin == 2)
 	{
 	  if (orientation)
-	    screen.Circle(position + hbs::Screen::Position{1, 0}, {2, 0.5}, hbs::Screen::Green);
+	    screen.Circle(position + hbs::Position{1, 0}, {2, 0.5}, hbs::Screen::Green);
 	  else
-	    screen.Circle(position + hbs::Screen::Position{0, 1}, {0.5, 2}, hbs::Screen::Green);
+	    screen.Circle(position + hbs::Position{0, 1}, {0.5, 2}, hbs::Screen::Green);
 
 	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::Teal, true);
 	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::White, false);
@@ -326,8 +294,8 @@ namespace				hbs
 	    }
 	  for (size_t i = 0; i <= 2; ++i)
 	    {
-	      hbs::Screen::Position xx = {0, (i - 1) / (double)screen.PinSize()};
-	      hbs::Screen::Position yy = {(i - 1) / (double)screen.PinSize(), 0};
+	      hbs::Position xx = {0, (i - 1) / (double)screen.PinSize()};
+	      hbs::Position yy = {(i - 1) / (double)screen.PinSize(), 0};
 
 	      // Horizontal
 	      screen.Line(GetPinPosition(1) + xx, GetPinPosition(Pin) + xx, hbs::Screen::Teal);
@@ -338,7 +306,7 @@ namespace				hbs
 	      screen.Line(GetPinPosition(Pin / 2 + 1) + yy, GetPinPosition(Pin) + yy, hbs::Screen::Teal);
 	    }
 
-	  hbs::Screen::Size sz = screen.TextSize({10, 10}, GetType());
+	  hbs::Size sz = screen.TextSize({10, 10}, GetType());
 
 	  sz.x = (-sz.x / 2.0) / screen.PinSize() + 1.5;
 	  sz.y = Pin / 2 - 0.5;
@@ -351,7 +319,7 @@ namespace				hbs
 	  return ;
 	}
 
-      hbs::Screen::Size sz = screen.TextSize({10, 10}, GetType());
+      hbs::Size sz = screen.TextSize({10, 10}, GetType());
 
       sz.x = (-sz.x / 2.0) / screen.PinSize();
       sz.y = 0.75;
@@ -381,7 +349,8 @@ namespace				hbs
 	       const std::string	&nam,
 	       const std::string	&pos)
       : timer(tim),
-	name(nam)
+	name(nam),
+	orientation(false)
     {
       size_t				idx = 0;
       int				idy = 0;

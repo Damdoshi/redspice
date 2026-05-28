@@ -25,6 +25,7 @@
 #include		"2716.hpp"
 
 #include		"Terminal.hpp"
+#include		"Track.hpp"
 
 hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
 					      const std::string		&name,
@@ -84,6 +85,9 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
 
   if (type == "terminal")
     return (new hbs::Terminal(timer, name, position));
+
+  if (type == "wire" || type == "track")
+    return (new hbs::Track(timer, name, value));
 
   throw hbs::BadComponent(std::string("Unknown component ") + type);
   return (NULL);

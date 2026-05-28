@@ -9,18 +9,18 @@
 #define		SPACE_BETWEEN_LETTER			1.2
 
 static void	single_letter(hbs::Screen		&scr,
-			      hbs::Screen::Position	pos,
-			      hbs::Screen::Size		siz,
+			      hbs::Position		pos,
+			      hbs::Size			siz,
 			      unsigned int		color,
 			      int			c,
 			      int			ps,
-			      hbs::Screen::Position	ori)
+			      hbs::Position		ori)
 {
   const t_bunny_letter &l = gl_vector_font[c];
 
   for (int i = 0; i < l.nb_edge; ++i)
     {
-      hbs::Screen::Position a, b;
+      hbs::Position a, b;
 
       a.x = siz.x * l.edge[i].x0 / 20.0 + pos.x + ori.x * ps;
       a.y = siz.y * l.edge[i].y0 / 20.0 + pos.y + ori.y * ps;
@@ -65,8 +65,8 @@ void		hbs::Screen::Text(Position		pos,
   pin_size = ps;
 }
 
-hbs::Screen::Size hbs::Screen::TextSize(Size			s,
-					const std::string	&str)
+hbs::Size hbs::Screen::TextSize(Size			s,
+				const std::string	&str)
 {
   return (Size{str.size() * s.x * SPACE_BETWEEN_LETTER - s.x * (SPACE_BETWEEN_LETTER - 1.0), s.y});
 }

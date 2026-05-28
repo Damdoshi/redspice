@@ -13,6 +13,7 @@ extern "C"
   t_bunny_context	gl_screen =
     {
      .key = screen_key,
+     .type = screen_type,
      .click = screen_click,
      .move = screen_move,
      .wheel = screen_wheel,

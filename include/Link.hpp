@@ -9,6 +9,7 @@
 # define				__LINK_HPP__
 # include				<list>
 # include				<map>
+# include				<cmath>
 # include				"IComponent.hpp"
 # include				"ILink.hpp"
 # include				"Screen.hpp"
@@ -20,25 +21,10 @@ namespace				hbs
     IComponent				*first;
     size_t				second;
 
-    typedef std::list<
-      std::pair<hbs::Screen::Position, hbs::ILink::Layer>
-      >					Positions;
     Positions				third;
     void				Draw(hbs::Screen		&screen,
 					     const IComponent		&origin,
 					     size_t			ori_pin) const;
-
-    struct				Packet
-    {
-      hbs::Link				*link;
-      size_t				ori_pin;
-      hbs::Link::Positions::iterator	pos;
-      Packet(void) link(NULL), ori_pin(0) {
-	hbs::Link::Positions ps;
-	pos = ps.end();
-      }
-      ~Packet(void) {}
-    };
 
     std::pair<int, int>			GetStep(size_t			i) const
     {
@@ -65,8 +51,8 @@ namespace				hbs
       : first(NULL),
 	second(0)
     {}
-    Link(const hbs::Screen::Position	&from,
-	 const hbs::Screen::Position	&to,
+    Link(const hbs::Position		&from,
+	 const hbs::Position		&to,
 	 IComponent			*icom,
 	 size_t				pin,
 	 const std::string		&pos,

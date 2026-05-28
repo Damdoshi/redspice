@@ -4,6 +4,7 @@
 // RED Spice
 
 #include		<fcntl.h>
+#include		<cstring>
 #include		<signal.h>
 #include		<stdlib.h>
 #include		"Circuit.hpp"
@@ -148,7 +149,7 @@ int			main(int		argc,
   srand(clock());
   if (argc < 2)
     {
-      std::cerr << argv[0] << " circuit.hbs [input=value]*" << std::endl;
+      std::cerr << argv[0] << " circuit.bc [input=value]*" << std::endl;
       return (EXIT_FAILURE);
     }
   try
@@ -165,7 +166,7 @@ int			main(int		argc,
     {
       if (strcmp(argv[i], "--screen") == 0)
 	{
-	  screen = new hbs::Screen;
+	  screen = new hbs::Screen(argv[1]);
 	  continue ;
 	}
       for (j = 0; argv[i][j] && argv[i][j] != '='; ++j);

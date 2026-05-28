@@ -8,6 +8,7 @@
 # include				"Timer.hpp"
 # include				"Input.hpp"
 # include				"Output.hpp"
+# include				"Track.hpp"
 
 namespace				hbs
 {
@@ -19,12 +20,22 @@ namespace				hbs
     std::map<std::string, IComponent*>	circuit;
     std::map<std::string, Input*>	inputs;
     std::map<std::string, Output*>	outputs;
+    std::map<std::string, Track*>	tracks;
+    size_t				implicit_track_count;
 
     bool				ReadChipsetsInside(const std::string	&code,
 							   int			&i);
     bool				ReadChipsets(const std::string		&code,
 						     int			&i);
 
+
+    bool				ReadTracksInside(const std::string	&code,
+						 int			&i);
+    bool				ReadTracks(const std::string		&code,
+					   int			&i);
+    hbs::Track			*CreateTrack(const std::string		&name,
+					     const std::string		&geometry);
+    hbs::Track			*CreateImplicitTrack(const std::string	&geometry);
 
     bool				ReadOneLink(const std::string		&code,
 						    int				&i,
@@ -41,6 +52,10 @@ namespace				hbs
 						const std::string		&position);
 
   public:
+    const std::string			&GetType(void) const;
+    const std::string			&GetName(void) const;
+    size_t				GetPinCount(void) const;
+
     hbs::Tristate			Compute(size_t				output);
     hbs::Tristate			Compute(void);
 
@@ -51,9 +66,9 @@ namespace				hbs
     void				Dump(void) const;
     void				Map(void) const;
 
-    void				Move(const hbs::Screen::Position	&pos);
-    hbs::Screen::Position		GetPosition(void) const;
-    hbs::Screen::Position		GetPinPosition(size_t			pin) const;
+    void				Move(const hbs::Position		&pos);
+    hbs::Position			GetPosition(void) const;
+    hbs::Position			GetPinPosition(size_t			pin) const;
     bool				IsUnder(const hbs::Screen		&screen,
 						const t_bunny_position		&pos) const;
 
@@ -62,6 +77,7 @@ namespace				hbs
     size_t				GetOutputNum(void) const;
 
     bool				Load(const std::string			&file);
+    bool				Save(const std::string			&file) const;
     void				SetValue(const std::string		&input,
 						 hbs::Tristate			value);
 
@@ -72,9 +88,9 @@ namespace				hbs
 						  t_bunny_position		pos) const;
     hbs::IComponent			*GetComponent(const hbs::Screen		&screen,
 						      t_bunny_position		pos) const;
-    hbs::Link::Packet			GetLinkStep(const hbs::Screen		&screen,
+    hbs::Packet				GetLinkStep(const hbs::Screen		&screen,
 						    t_bunny_position		pos) const;
-    hbs::Link::Packet			EndLinkStep(void) const;
+    hbs::Packet				EndLinkStep(void) const;
     Circuit(hbs::Timer	&timer);
     virtual ~Circuit(void);
   };

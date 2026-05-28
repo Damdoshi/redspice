@@ -26,6 +26,7 @@ namespace			hbs
 
     virtual hbs::Tristate	Compute(size_t		pin_num_this = 1);
     void			SetValue(hbs::Tristate	tristate);
+    std::string			GetDefinitionValue(void) const;
 
     Input(hbs::Timer		&timer,
 	  const std::string	&name,

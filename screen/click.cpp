@@ -19,7 +19,7 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
       int but = pos.x / 100;
 
       if (but == 0)
-	{}
+	ld.circuit.Save(ld.screen.file_name);
       else if (but == 1)
 	ld.screen.loopsim = false;
       else if (but == 2)
@@ -35,7 +35,7 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
   pos.y /= ld.screen.pin_size;
   hbs::Input *in = ld.circuit.GetInput(ld.screen, pos);
   hbs::IComponent *ic = ld.circuit.GetComponent(ld.screen, pos);
-  hbs::Link::Positions::iterator step = ld.circuit.GetLinkStep(ld.screen, pos);
+  hbs::Packet step = ld.circuit.GetLinkStep(ld.screen, pos);
 
   if (in && sym == BMB_MIDDLE && state == GO_UP)
     {
@@ -73,11 +73,22 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 
       if (ld.screen.grabbed_step != ld.circuit.EndLinkStep())
 	{
-	  ld.screen.grabbed_step->first.x += npos.x;
-	  ld.screen.grabbed_step->first.y += npos.y;
+	  ld.screen.grabbed_step.pos->first.x += npos.x;
+	  ld.screen.grabbed_step.pos->first.y += npos.y;
 	}
       else
 	ld.screen.grabbed_step = ld.circuit.EndLinkStep();
+    }
+
+  if (sym == BMB_RIGHT && state == GO_UP)
+    {
+      // On supprime
+      if (in)
+	{
+	}
+      if (ic)
+	{
+	}
     }
 
   return (GO_ON);

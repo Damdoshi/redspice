@@ -26,6 +26,7 @@ namespace				hbs
     virtual std::pair<int, int>		GetStep(size_t i) const = 0;
     virtual ~ILink(void) {}
   };
+
 }
 
 #endif	//				__ILINK_HPP__

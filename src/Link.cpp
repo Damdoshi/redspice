@@ -3,10 +3,12 @@
 //
 // RED Spice
 
-#include		"AComponent.hpp"
+#include		"Link.hpp"
+#include		"Parsing.hpp"
+#include		"Exception.hpp"
 
-hbs::Link::Link(const hbs::Screen::Position	&from,
-		const hbs::Screen::Position	&to,
+hbs::Link::Link(const hbs::Position		&from,
+		const hbs::Position		&to,
 		IComponent			*icom,
 		size_t				pin,
 		const std::string		&str,
@@ -15,7 +17,7 @@ hbs::Link::Link(const hbs::Screen::Position	&from,
     second(pin)
 {
   int			i, j;
-  hbs::Screen::Position	pos;
+  hbs::Position		pos;
   size_t		tmp = 0;
   Layer			layer = BOTTOM;
 

@@ -8,17 +8,17 @@
 ## ---<________/---------------------------   -   -   ---   - - - ---   - --- --
 ## -----------------------------------------------------------------------------
 
-BINNAME		=	redspice
+BINNAME		=	bcad
 NAME		=	lib$(BINNAME).a
 ERRLOG		=	errors~
 
-CC		=	g++
-CFLAGS		=	-W -Wall -fPIC -std=gnu++17
+CC		=	b++
+CFLAGS		=	-W -Wall -fPIC -std=gnu++23
 CFLAGS		+=	-Wno-missing-field-initializers
 CFLAGS		+=	-g -g3 -ggdb
 #CFLAGS		+=	-O2 -ffast-math -march=native
 
-LFLAGS		=	-L$(HOME)/.froot/lib/ -llapin -lsfml-graphics -lsfml-audio -lsfml-window -lsfml-system -lstdc++ -ldl -lavcall -lm
+LFLAGS		=
 
 ## Define some stuff
 ECHO		=	/bin/echo -e

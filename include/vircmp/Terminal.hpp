@@ -23,12 +23,14 @@ namespace			hbs
 					size_t				pntarg,
 					const std::string		&pos);
     void			Draw(hbs::Screen			&screen) const;
-    void			Move(const hbs::Screen::Position	&pos)
+    void			Move(const hbs::Position		&pos)
     {
       hbs::AComponent<9>::Move(pos);
     }
-    hbs::Screen::Position	GetPosition(void) const final;
-    hbs::Screen::Position	GetPinPosition(size_t			pin) const;
+    const std::string		&GetName(void) const final;
+    size_t			GetPinCount(void) const final;
+    hbs::Position		GetPosition(void) const final;
+    hbs::Position		GetPinPosition(size_t			pin) const;
     bool			IsUnder(const hbs::Screen		&screen,
 					const t_bunny_position		&pos) const;
 

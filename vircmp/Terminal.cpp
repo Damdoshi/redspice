@@ -11,14 +11,24 @@ const std::string	&hbs::Terminal::GetType(void) const
   return (hbs::AComponent<9>::type = "Terminal");
 }
 
-hbs::Screen::Position	hbs::Terminal::GetPosition(void) const
+const std::string	&hbs::Terminal::GetName(void) const
+{
+  return (hbs::AComponent<9>::GetName());
+}
+
+size_t			hbs::Terminal::GetPinCount(void) const
+{
+  return (hbs::AComponent<9>::GetPinCount());
+}
+
+hbs::Position		hbs::Terminal::GetPosition(void) const
 {
   return (hbs::AComponent<9>::GetPosition());
 }
 
-hbs::Screen::Position	hbs::Terminal::GetPinPosition(size_t		pin) const
+hbs::Position		hbs::Terminal::GetPinPosition(size_t		pin) const
 {
-  return (hbs::Screen::Position{0, (double)pin});
+  return (hbs::Position{0, (double)pin});
 }
 
 bool			hbs::Terminal::IsUnder(const hbs::Screen	&screen,
@@ -31,21 +41,21 @@ bool			hbs::Terminal::IsUnder(const hbs::Screen	&screen,
 
 void			hbs::Terminal::Draw(hbs::Screen			&screen) const
 {
-  screen.Square(hbs::AComponent<9>::position + hbs::Screen::Position{1, 0}, {1, 9}, hbs::Screen::White);
+  screen.Square(hbs::AComponent<9>::position + hbs::Position{1, 0}, {1, 9}, hbs::Screen::White);
   for (double i = 0; i < 9; ++i)
     {
-      screen.Line(hbs::AComponent<9>::position + hbs::Screen::Position{0, i},
-		  hbs::AComponent<9>::position + hbs::Screen::Position{1, i},
+      screen.Line(hbs::AComponent<9>::position + hbs::Position{0, i},
+		  hbs::AComponent<9>::position + hbs::Position{1, i},
 		  hbs::Screen::White);
-      screen.Circle(hbs::AComponent<9>::position + hbs::Screen::Position{0, i},
-		    hbs::Screen::Position{0.5, 0.5}, hbs::Screen::Teal, true);
-      screen.Circle(hbs::AComponent<9>::position + hbs::Screen::Position{0, i},
-		    hbs::Screen::Position{0.5, 0.5}, hbs::Screen::White, false);
+      screen.Circle(hbs::AComponent<9>::position + hbs::Position{0, i},
+		    hbs::Size{0.5, 0.5}, hbs::Screen::Teal, true);
+      screen.Circle(hbs::AComponent<9>::position + hbs::Position{0, i},
+		    hbs::Size{0.5, 0.5}, hbs::Screen::White, false);
     }
-  screen.Text(hbs::AComponent<9>::position + hbs::Screen::Position{0, -1}, {10, 10}, hbs::Screen::White, GetType());
+  screen.Text(hbs::AComponent<9>::position + hbs::Position{0, -1}, {10, 10}, hbs::Screen::White, GetType());
   char			buf[2] = {c, '\0'};
 
-  screen.Text(hbs::AComponent<9>::position + hbs::Screen::Position{1, 1}, {10, 10}, hbs::Screen::White, std::string(buf));
+  screen.Text(hbs::AComponent<9>::position + hbs::Position{1, 1}, {10, 10}, hbs::Screen::White, std::string(buf));
 }
 
 void			hbs::Terminal::SetLink(size_t		a,
