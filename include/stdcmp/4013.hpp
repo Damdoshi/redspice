@@ -14,6 +14,8 @@ namespace			hbs
   {
   private:
     const std::string		&GetType(void) const;
+    virtual bool			DrivesPin(size_t			n) const { return (n == 1 || n == 2 || n == 12 || n == 13); }
+
     hbs::Tristate		val[2];
     size_t			last_tick[2];
 

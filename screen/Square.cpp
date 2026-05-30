@@ -11,12 +11,12 @@ void		hbs::Screen::Square(Position		pos,
 				    unsigned int	color,
 				    bool		full)
 {
+  pos.x -= camera.x;
+  pos.y -= camera.y;
   pos.x *= pin_size;
   pos.y *= pin_size;
   siz.x *= pin_size;
   siz.y *= pin_size;
-  pos.x -= camera.x;
-  pos.y -= camera.y;
   if (full)
     {
       t_bunny_position	poss[2][3] =
@@ -56,7 +56,7 @@ void		hbs::Screen::Square(Position		pos,
 	};
       unsigned int col[2] = {color, color};
 
-      for (int i = 0; i < 3; ++i)
+      for (int i = 0; i < 4; ++i)
 	{
 	  poss[i][0].x += pic->buffer.width / 2;
 	  poss[i][0].y += pic->buffer.height / 2;

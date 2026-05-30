@@ -1,5 +1,5 @@
 // Jason Brillante "Damdoshi"
-// EFRITS SAS 2022-2023
+// EFRITS SAS 2022-2026
 // Hanged Bunny Studio 2014-2021
 //
 // RED Spice
@@ -11,6 +11,8 @@
 
 namespace		hbs
 {
+  class			Track;
+
   typedef t_bunny_accurate_position Position;
   typedef t_bunny_accurate_size	Size;
   typedef std::list<
@@ -19,12 +21,11 @@ namespace		hbs
 
   struct		Packet
   {
-    hbs::ILink		*link;
-    size_t		ori_pin;
-    hbs::Positions::iterator pos;
+    hbs::Track		*track;
+    size_t		node;
     bool		operator==(Packet const &o) const
     {
-      return (link == o.link && ori_pin == o.ori_pin && pos == o.pos);
+      return (track == o.track && node == o.node);
     }
     bool		operator!=(Packet const &o) const
     {
@@ -32,20 +33,13 @@ namespace		hbs
     }
     Packet		&operator=(Packet const &o)
     {
-      link = o.link;
-      ori_pin = o.ori_pin;
-      pos = o.pos;
+      track = o.track;
+      node = o.node;
       return (*this);
     }
-    Packet(void) : link(NULL), ori_pin(0) {
-      hbs::Positions ps;
-      pos = ps.end();
-    }
-    Packet(Packet const &p)
-      : link(p.link),
-	ori_pin(p.ori_pin),
-	pos(p.pos)
-    {}
+    Packet(void) : track(NULL), node((size_t)-1) {}
+    Packet(hbs::Track *t, size_t n) : track(t), node(n) {}
+    Packet(Packet const &p) : track(p.track), node(p.node) {}
     ~Packet(void) {}
   };
 }

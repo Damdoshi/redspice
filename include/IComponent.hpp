@@ -31,11 +31,22 @@ namespace			hbs
     /// Return the instance name of the component.
     virtual const std::string	&GetName(void) const = 0;
 
+    /// Rename the component instance.
+    virtual void		SetName(const std::string &name) = 0;
+
+    /// Remove every direct connection to this component.
+    virtual void		DisconnectFrom(const hbs::IComponent *component) = 0;
+
     /// Return the number of pins exposed by the component.
     virtual size_t		GetPinCount(void) const = 0;
 
     /// Optional value stored in the textual declaration.
     virtual std::string		GetDefinitionValue(void) const { return (""); }
+
+    /// Return true when this pin actively drives the attached net.
+    /// Passive input pins and observation pins must return false, otherwise
+    /// querying a net would recursively poison the cache of sink pins.
+    virtual bool		DrivesPin(size_t pin) const { (void)pin; return (false); }
 
     /// Compute value of the precised pin
     virtual hbs::Tristate	Compute(size_t			pin_num_this = 1) = 0;

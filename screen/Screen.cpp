@@ -6,6 +6,7 @@
 
 #include		<lapin.h>
 #include		"Screen.hpp"
+#include		"Track.hpp"
 
 hbs::Screen::Screen(std::string const &filename)
 {
@@ -13,6 +14,23 @@ hbs::Screen::Screen(std::string const &filename)
   loopsim = false;
   grabbed = NULL;
   grabbed_step = hbs::Packet();
+  active_track = NULL;
+  active_node = hbs::Track::NoNode;
+  panning = false;
+  selecting = false;
+  dragging_selection = false;
+  context_menu = false;
+  rename_mode = false;
+  drawing_mode = false;
+  placing_component = false;
+  component_to_place = NULL;
+  placing_type = "";
+  context_pos = {0, 0};
+  rename_buffer = "";
+  search_panel = false;
+  search_offset = 0;
+  search_query = "";
+  pan_last = {0, 0};
   pin_size = PINSIZE_DEFAULT;
   if ((win = bunny_start(1440, 900, false, "Bunny CAD")) == NULL)
     throw 0;

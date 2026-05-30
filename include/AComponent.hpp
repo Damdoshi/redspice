@@ -26,7 +26,7 @@ namespace				hbs
   protected:
     virtual const std::string		&GetType(void) const = 0;
     const hbs::Timer			&timer;
-    const std::string			name;
+    std::string			name;
 
     typedef std::map<size_t, Tristate>	PinState;
     typedef PinState::iterator		Preset;
@@ -137,14 +137,16 @@ namespace				hbs
 
       /// Linked
       it = lnk->second.begin();
-      out = it->component->Compute(it->pin);
-      for (++it; it != lnk->second.end(); ++it)
+      out = hbs::UNDEFINED;
+      for (; it != lnk->second.end(); ++it)
 	{
 	  tmp = it->component->Compute(it->pin);
-	  if (out == hbs::UNDEFINED)
-	    out = tmp;
-	  else if (tmp != hbs::UNDEFINED)
-	    return (timeline[timer.GetTime()][n] = hbs::BROKEN);
+	  if (tmp != hbs::UNDEFINED)
+	    {
+	      if (out != hbs::UNDEFINED)
+		return (timeline[timer.GetTime()][n] = hbs::BROKEN);
+	      out = tmp;
+	    }
 	}
       return (timeline[timer.GetTime()][n] = out);
     }
@@ -198,6 +200,23 @@ namespace				hbs
     const std::string			&GetName(void) const
     {
       return (name);
+    }
+
+    void				SetName(const std::string &n)
+    {
+      name = n;
+    }
+
+    void				DisconnectFrom(const hbs::IComponent *component)
+    {
+      for (typename std::map<size_t, std::list<Connection> >::iterator it = links.begin();
+           it != links.end(); ++it)
+	for (typename std::list<Connection>::iterator jt = it->second.begin();
+	     jt != it->second.end();)
+	  if (jt->component == component)
+	    jt = it->second.erase(jt);
+	  else
+	    ++jt;
     }
 
     size_t				GetPinCount(void) const

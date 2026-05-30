@@ -20,6 +20,8 @@ namespace			hbs
     size_t			last_tick_down;
 
   public:
+    virtual bool			DrivesPin(size_t			n) const { return ((n >= 4 && n <= 8) || (n >= 9 && n <= 14)); }
+
     hbs::Tristate		Compute(size_t				n);
 
     CMP_4094(const hbs::Timer	&timer,

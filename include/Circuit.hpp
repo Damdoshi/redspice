@@ -9,9 +9,21 @@
 # include				"Input.hpp"
 # include				"Output.hpp"
 # include				"Track.hpp"
+# include				<set>
+# include				<vector>
 
 namespace				hbs
 {
+  struct				ComponentPin
+  {
+    hbs::IComponent			*component;
+    size_t				pin;
+
+    ComponentPin(void) : component(NULL), pin(0) {}
+    ComponentPin(hbs::IComponent *c, size_t p) : component(c), pin(p) {}
+    bool IsValid(void) const { return (component != NULL && pin != 0); }
+  };
+
   class					Circuit : public hbs::IComponent
   {
   protected:
@@ -21,6 +33,7 @@ namespace				hbs
     std::map<std::string, Input*>	inputs;
     std::map<std::string, Output*>	outputs;
     std::map<std::string, Track*>	tracks;
+    std::vector<std::string>		creatable_types;
     size_t				implicit_track_count;
 
     bool				ReadChipsetsInside(const std::string	&code,
@@ -37,10 +50,16 @@ namespace				hbs
 					     const std::string		&geometry);
     hbs::Track			*CreateImplicitTrack(const std::string	&geometry);
 
+    struct				LinkEnd
+    {
+      std::string			cmp;
+      int				pin;
+      size_t			node;
+    };
+
     bool				ReadOneLink(const std::string		&code,
 						    int				&i,
-						    std::string			&cmp,
-						    int				&pin);
+						    LinkEnd			&end);
     bool				ReadLinksInside(const std::string	&code,
 							int			&i);
     bool				ReadLinks(const std::string		&code,
@@ -54,6 +73,8 @@ namespace				hbs
   public:
     const std::string			&GetType(void) const;
     const std::string			&GetName(void) const;
+    void				SetName(const std::string &name);
+    void				DisconnectFrom(const hbs::IComponent *component);
     size_t				GetPinCount(void) const;
 
     hbs::Tristate			Compute(size_t				output);
@@ -88,9 +109,28 @@ namespace				hbs
 						  t_bunny_position		pos) const;
     hbs::IComponent			*GetComponent(const hbs::Screen		&screen,
 						      t_bunny_position		pos) const;
+    hbs::ComponentPin			GetPinAt(const hbs::Screen		&screen,
+						 t_bunny_position		pos) const;
+    hbs::Track				*CreateUserTrackAt(const hbs::Position	&pos);
+    hbs::Track				*MergeTracks(hbs::Track *dst, hbs::Track *src, size_t dst_node, size_t src_node);
+    hbs::Track				*FindTrackAttachedTo(hbs::IComponent *component, size_t pin, size_t *node = NULL) const;
+    const std::vector<std::string>	&GetCreatableTypes(void) const;
+    hbs::IComponent			*CreateUserComponent(const std::string	&type,
+					     const hbs::Position	&pos);
+    bool				DeleteSelected(std::set<hbs::IComponent*> &components,
+					       std::set<hbs::Track*> &tracks);
+    bool				RenameComponent(hbs::IComponent *component,
+						const std::string &name);
+    hbs::Track				*GetTrackAt(const hbs::Screen		&screen,
+						     t_bunny_position		pos) const;
+    void				GetSelectionInRect(const hbs::Position	&from,
+						   const hbs::Position	&to,
+						   std::set<hbs::IComponent*> &components,
+						   std::set<hbs::Track*> &tracks) const;
     hbs::Packet				GetLinkStep(const hbs::Screen		&screen,
 						    t_bunny_position		pos) const;
     hbs::Packet				EndLinkStep(void) const;
+    void				ValidateRouting(void) const;
     Circuit(hbs::Timer	&timer);
     virtual ~Circuit(void);
   };

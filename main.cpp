@@ -143,21 +143,21 @@ int			main(int		argc,
   hbs::Timer		timer;
   hbs::Circuit		circuit(timer);
   hbs::Screen		*screen = NULL;
+  bool			simulate_only = false;
   int			i;
   int			j;
 
   srand(clock());
   if (argc < 2)
     {
-      std::cerr << argv[0] << " circuit.bc [input=value]*" << std::endl;
+      std::cerr << argv[0] << " circuit.bc [--simulate] [input=value]*" << std::endl;
       return (EXIT_FAILURE);
     }
   try
     {
-      if (circuit.Load(argv[1]) == false)
-	return (EXIT_FAILURE);
+      circuit.Load(argv[1]);
     }
-  catch (std::invalid_argument &e)
+  catch (const std::exception &e)
     {
       std::cerr << e.what() << std::endl;
       return (EXIT_FAILURE);
@@ -165,8 +165,10 @@ int			main(int		argc,
   for (i = 2; i < argc; ++i)
     {
       if (strcmp(argv[i], "--screen") == 0)
+	continue ;
+      if (strcmp(argv[i], "--simulate") == 0)
 	{
-	  screen = new hbs::Screen(argv[1]);
+	  simulate_only = true;
 	  continue ;
 	}
       for (j = 0; argv[i][j] && argv[i][j] != '='; ++j);
@@ -174,15 +176,17 @@ int			main(int		argc,
 	throw hbs::InvalidCommandLine("Expected '=' after input name.");
       circuit.SetValue(std::string(argv[i]).substr(0, j), atoi(&argv[i][j + 1]) ? hbs::TRUE : hbs::FALSE);
     }
-  if (!screen)
+  if (!simulate_only)
     {
-      for (i = 1; i <= (int)circuit.GetOutputNum(); ++i)
-	if (circuit.GetDisplayable(i))
-	  std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
-	else
-	  circuit.Compute(i);
+      screen = new hbs::Screen(argv[1]);
+      int ret = Loop(circuit, timer, *screen);
+      delete screen;
+      return (ret);
     }
-  else
-    return (Loop(circuit, timer, *screen));
+  for (i = 1; i <= (int)circuit.GetOutputNum(); ++i)
+    if (circuit.GetDisplayable(i))
+      std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
+    else
+      circuit.Compute(i);
   return (Shell(circuit, timer));
 }

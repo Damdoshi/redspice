@@ -16,6 +16,18 @@ const std::string	&hbs::Terminal::GetName(void) const
   return (hbs::AComponent<9>::GetName());
 }
 
+void			hbs::Terminal::SetName(const std::string &name)
+{
+  hbs::AComponent<9>::SetName(name);
+  hbs::AComponent<1>::SetName(name);
+}
+
+void			hbs::Terminal::DisconnectFrom(const hbs::IComponent *component)
+{
+  hbs::AComponent<9>::DisconnectFrom(component);
+  hbs::AComponent<1>::DisconnectFrom(component);
+}
+
 size_t			hbs::Terminal::GetPinCount(void) const
 {
   return (hbs::AComponent<9>::GetPinCount());

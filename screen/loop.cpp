@@ -10,6 +10,30 @@
 extern "C"
 t_bunny_response	screen_loop(LoopData			&ld)
 {
+  const bool *keyboard = bunny_get_keyboard();
+  double speed = 0.65;
+
+  if (keyboard[BKS_LSHIFT] || keyboard[BKS_RSHIFT])
+    speed *= 3.0;
+  bool moved = false;
+
+  if (ld.screen.search_panel)
+    {
+      if (ld.screen.loopsim)
+	hbs::Command("simulate", ld.circuit, ld.timer);
+      return (GO_ON);
+    }
+
+  if (keyboard[BKS_Z] || keyboard[BKS_W] || keyboard[BKS_UP])
+    ld.screen.camera.y -= speed, moved = true;
+  if (keyboard[BKS_S] || keyboard[BKS_DOWN])
+    ld.screen.camera.y += speed, moved = true;
+  if (keyboard[BKS_Q] || keyboard[BKS_A] || keyboard[BKS_LEFT])
+    ld.screen.camera.x -= speed, moved = true;
+  if (keyboard[BKS_D] || keyboard[BKS_RIGHT])
+    ld.screen.camera.x += speed, moved = true;
+  if (moved)
+    ld.screen.context_menu = false;
   if (ld.screen.loopsim)
     hbs::Command("simulate", ld.circuit, ld.timer);
   return (GO_ON);

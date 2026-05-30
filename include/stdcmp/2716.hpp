@@ -15,6 +15,8 @@ namespace			hbs
     const std::string		&GetType(void) const;
 
   public:
+    virtual bool			DrivesPin(size_t			n) const { return ((n >= 9 && n <= 11) || (n >= 13 && n <= 17)); }
+
     hbs::Tristate		Compute(size_t				n);
 
     CMP_2716(const hbs::Timer	&timer,

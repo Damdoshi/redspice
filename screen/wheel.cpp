@@ -4,24 +4,21 @@
 //
 // RED Spice
 
+#include		<algorithm>
 #include		"Screen.hpp"
 
 extern "C"
 t_bunny_response	screen_wheel(int			id,
-				     int			delta,
-				     LoopData			&ld)
+			     int			delta,
+			     LoopData			&ld)
 {
-  return (GO_ON);
   (void)id;
-  double		x = ld.screen.pic->buffer.width / ld.screen.PinSize();
-  double		y = ld.screen.pic->buffer.height / ld.screen.PinSize();
-
-  ld.screen.PinSize(ld.screen.PinSize() + delta);
-  double		nx = ld.screen.pic->buffer.width / ld.screen.PinSize();
-  double		ny = ld.screen.pic->buffer.height / ld.screen.PinSize();
-
-  ld.screen.camera.x -= nx - x;
-  ld.screen.camera.y -= ny - y;
+  if (ld.screen.search_panel)
+    {
+      ld.screen.search_offset = std::max(0, ld.screen.search_offset - delta);
+      return (GO_ON);
+    }
+  ld.screen.context_menu = false;
+  ld.screen.ZoomAt(*bunny_get_mouse_position(), delta);
   return (GO_ON);
 }
-

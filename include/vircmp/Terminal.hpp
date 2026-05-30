@@ -28,6 +28,8 @@ namespace			hbs
       hbs::AComponent<9>::Move(pos);
     }
     const std::string		&GetName(void) const final;
+    void			SetName(const std::string &name) final;
+    void			DisconnectFrom(const hbs::IComponent *component) final;
     size_t			GetPinCount(void) const final;
     hbs::Position		GetPosition(void) const final;
     hbs::Position		GetPinPosition(size_t			pin) const;

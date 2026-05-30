@@ -16,6 +16,7 @@ namespace			hbs
 
   public:
     hbs::Tristate		Compute(size_t		pin = 1);
+    virtual bool			DrivesPin(size_t		pin) const { return (pin == 1); }
 
     False(hbs::Timer		&timer,
 	  const std::string	&name,

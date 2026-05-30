@@ -18,6 +18,14 @@ namespace			hbs
     virtual hbs::Tristate	Logic(hbs::Tristate		a,
 				      hbs::Tristate		b) const = 0;
 
+  public:
+    virtual bool			DrivesPin(size_t		n) const
+    {
+      return (n == 3 || n == 4 || n == 10 || n == 11);
+    }
+
+  protected:
+
     virtual void		Draw(hbs::Screen		&screen) const
     {
       hbs::AComponent<14>::Draw(screen);

@@ -25,6 +25,7 @@ namespace			hbs
     }
 
     virtual hbs::Tristate	Compute(size_t		pin_num_this = 1);
+    virtual bool			DrivesPin(size_t		pin) const { return (pin == 1); }
     void			SetValue(hbs::Tristate	tristate);
     std::string			GetDefinitionValue(void) const;
 
