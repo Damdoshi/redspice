@@ -1,0 +1,42 @@
+BunnyCAD Debian packaging notes
+===============================
+
+Installed layout
+----------------
+
+The packages install:
+
+  * /usr/bin/bcad
+  * /usr/lib/<multiarch>/libbcad.so.0
+  * /usr/lib/<multiarch>/libbcad.a
+  * /usr/include/bcad/
+  * /usr/lib/<multiarch>/pkgconfig/bcad.pc
+  * /usr/share/bcad/
+
+/usr/share/bcad is reserved as the default system directory for external
+BunnyCAD components, including future .rs components and shared-object
+components.
+
+Development flags
+-----------------
+
+Use pkg-config when building components or external evaluators:
+
+  pkg-config --cflags --libs bcad
+
+The installed headers live in /usr/include/bcad and include the stdcmp/ and
+vircmp/ subdirectories.
+
+Shared component ABI reminder
+-----------------------------
+
+A component shared object is expected to export a component list and a creation
+function compatible with hbs::Circuit::Create, for example:
+
+  extern "C" const char **GetComponents(void);
+  extern "C" hbs::IComponent *Create(
+      hbs::Timer &timer,
+      const std::string &type,
+      const std::string &name,
+      const std::string &value,
+      const std::string &position);

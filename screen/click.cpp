@@ -235,6 +235,37 @@ static void		detach_draw_cursor(hbs::Screen &screen)
   screen.active_node = hbs::Track::NoNode;
 }
 
+static size_t		find_track_attachment(hbs::Track *track,
+				      const hbs::ComponentPin &pin)
+{
+  if (track == NULL || !pin.IsValid())
+    return (hbs::Track::NoNode);
+  const std::vector<hbs::Track::Attachment> &attachments = track->GetAttachments();
+
+  for (size_t i = 0; i < attachments.size(); ++i)
+    if (attachments[i].component == pin.component && attachments[i].pin == pin.pin)
+      return (i + 1);
+  return (hbs::Track::NoNode);
+}
+
+static size_t		ensure_pin_attachment_node(hbs::Track *track,
+					   const hbs::ComponentPin &pin,
+					   const hbs::Position &pos,
+					   hbs::ILink::Layer layer)
+{
+  size_t		track_pin = find_track_attachment(track, pin);
+  size_t		node;
+
+  if (track_pin == hbs::Track::NoNode)
+    return (hbs::Track::NoNode);
+  node = track->GetAttachmentNode(track_pin);
+  if (node != hbs::Track::NoNode)
+    return (node);
+  node = track->AddFreeNode(pos, layer);
+  track->SetAttachmentNode(track_pin, node);
+  return (node);
+}
+
 static void		attach_pin_to_active_track(LoopData &ld,
 					       const hbs::ComponentPin &pin)
 {
@@ -243,6 +274,10 @@ static void		attach_pin_to_active_track(LoopData &ld,
   size_t existing_node = hbs::Track::NoNode;
   hbs::Track *existing = ld.circuit.FindTrackAttachedTo(pin.component, pin.pin, &existing_node);
 
+  if (existing != NULL)
+    existing_node = ensure_pin_attachment_node(existing, pin,
+					      pin.component->GetPinPosition(pin.pin),
+					      current_layer(ld.screen));
   if (existing != NULL && existing != ld.screen.active_track)
     {
       ld.screen.active_track = ld.circuit.MergeTracks(ld.screen.active_track, existing,
@@ -271,6 +306,9 @@ static void		connect_pin_in_draw_mode(LoopData &ld,
   hbs::Position pp = pin.component->GetPinPosition(pin.pin);
   size_t existing_node = hbs::Track::NoNode;
   hbs::Track *existing = ld.circuit.FindTrackAttachedTo(pin.component, pin.pin, &existing_node);
+
+  if (existing != NULL)
+    existing_node = ensure_pin_attachment_node(existing, pin, pp, current_layer(ld.screen));
 
   if (ld.screen.active_track == NULL)
     {
@@ -380,7 +418,10 @@ static void		draw_mode_right_click(LoopData &ld, t_bunny_position pos)
       size_t segment = track->FindSegment(ld.screen, pos);
 
       if (segment != hbs::Track::NoNode)
-	track->DeleteBranchFromSegment(segment);
+	{
+	  track->DeleteBranchFromSegment(segment);
+	  ld.circuit.NormalizeTracks();
+	}
       else
 	{
 	  std::set<hbs::IComponent*> components;

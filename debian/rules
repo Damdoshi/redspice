@@ -1,0 +1,71 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/architecture.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+CXX = b++
+AR ?= ar
+RANLIB ?= ranlib
+
+BCAD_CPPFLAGS = -I./include -I./include/stdcmp -I./include/vircmp
+BCAD_CXXFLAGS = -W -Wall -fPIC -std=gnu++23 -Wno-missing-field-initializers
+BCAD_SOURCES = $(shell find . -name "*.cpp" ! -name "main.cpp" | sort)
+BCAD_OBJECTS = $(patsubst ./%.cpp,debian/build/obj/%.o,$(BCAD_SOURCES))
+LIBDIR = /usr/lib/$(DEB_HOST_MULTIARCH)
+SONAME = libbcad.so.0
+SOVERSION = libbcad.so.0.0.0
+
+%:
+	dh $@
+
+override_dh_auto_clean:
+	rm -rf debian/build
+	rm -f errors~ bcad libbcad.a
+	dh_auto_clean || true
+
+override_dh_auto_build: debian/build/bcad
+	true
+
+debian/build/obj/%.o: %.cpp
+	mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(BCAD_CPPFLAGS) $(CXXFLAGS) $(BCAD_CXXFLAGS) -c $< -o $@
+
+debian/build/libbcad.a: $(BCAD_OBJECTS)
+	mkdir -p debian/build
+	$(AR) rcs $@ $(BCAD_OBJECTS)
+	$(RANLIB) $@
+
+debian/build/$(SOVERSION): $(BCAD_OBJECTS)
+	mkdir -p debian/build
+	$(CXX) -shared -Wl,-soname,$(SONAME) $(LDFLAGS) -o $@ $(BCAD_OBJECTS)
+	ln -sf $(SOVERSION) debian/build/$(SONAME)
+	ln -sf $(SONAME) debian/build/libbcad.so
+
+debian/build/bcad: debian/build/$(SOVERSION) debian/build/libbcad.a main.cpp
+	$(CXX) $(CPPFLAGS) $(BCAD_CPPFLAGS) $(CXXFLAGS) $(BCAD_CXXFLAGS) main.cpp -o $@ -Ldebian/build -lbcad -Wl,-rpath-link,debian/build $(LDFLAGS)
+
+override_dh_auto_install:
+	install -d debian/tmp/usr/bin
+	install -m 0755 debian/build/bcad debian/tmp/usr/bin/bcad
+	install -d debian/tmp$(LIBDIR)
+	install -m 0755 debian/build/$(SOVERSION) debian/tmp$(LIBDIR)/$(SOVERSION)
+	ln -sf $(SOVERSION) debian/tmp$(LIBDIR)/$(SONAME)
+	ln -sf $(SONAME) debian/tmp$(LIBDIR)/libbcad.so
+	install -m 0644 debian/build/libbcad.a debian/tmp$(LIBDIR)/libbcad.a
+	install -d debian/tmp/usr/include/bcad
+	cp -a include/. debian/tmp/usr/include/bcad/
+	install -d debian/tmp$(LIBDIR)/pkgconfig
+	printf '%s\n' \
+	  'prefix=/usr' \
+	  'exec_prefix=$${prefix}' \
+	  'libdir=$${exec_prefix}/lib/$(DEB_HOST_MULTIARCH)' \
+	  'includedir=$${prefix}/include/bcad' \
+	  '' \
+	  'Name: bcad' \
+	  'Description: BunnyCAD circuit simulation and component library' \
+	  'Version: 0.0.1' \
+	  'Libs: -L$${libdir} -lbcad' \
+	  'Cflags: -I$${includedir} -I$${includedir}/stdcmp -I$${includedir}/vircmp' \
+	  > debian/tmp$(LIBDIR)/pkgconfig/bcad.pc
+	install -d debian/tmp/usr/share/bcad

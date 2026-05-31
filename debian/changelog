@@ -1,0 +1,5 @@
+bcad (0.0.1-1) unstable; urgency=medium
+
+  * Initial Debian packaging.
+
+ -- Jason Brillante <jason@efrits.fr>  Sun, 31 May 2026 19:00:00 +0200

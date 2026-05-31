@@ -9,8 +9,11 @@
 # include				"Input.hpp"
 # include				"Output.hpp"
 # include				"Track.hpp"
+# include				<list>
 # include				<set>
+# include				<string>
 # include				<vector>
+# include				<map>
 
 namespace				hbs
 {
@@ -27,7 +30,43 @@ namespace				hbs
   class					Circuit : public hbs::IComponent
   {
   protected:
+    enum					CircuitPinKind
+    {
+      CIRCUIT_INPUT_PIN,
+      CIRCUIT_OUTPUT_PIN
+    };
+
+    struct				CircuitPin
+    {
+      std::string			name;
+      CircuitPinKind			kind;
+      hbs::IComponent			*component;
+      size_t				component_pin;
+      hbs::Position			position;
+    };
+
+    struct				CircuitConnection
+    {
+      hbs::IComponent			*component;
+      size_t				pin;
+    };
+
+    struct				PackageLine
+    {
+      hbs::Position			from;
+      hbs::Position			to;
+    };
+
     hbs::Timer				&timer;
+
+    std::string				component_type;
+    std::string				component_name;
+    hbs::Position				component_position;
+    bool				component_instance;
+    bool				package_defined;
+    std::vector<CircuitPin>		external_pins;
+    std::vector<PackageLine>		package_lines;
+    std::map<size_t, std::list<CircuitConnection> > external_links;
 
     std::map<std::string, IComponent*>	circuit;
     std::map<std::string, Input*>	inputs;
@@ -49,6 +88,8 @@ namespace				hbs
     hbs::Track			*CreateTrack(const std::string		&name,
 					     const std::string		&geometry);
     hbs::Track			*CreateImplicitTrack(const std::string	&geometry);
+    hbs::Track			*NormalizeTrack(hbs::Track		*track,
+					       size_t			preferred_node);
 
     struct				LinkEnd
     {
@@ -70,12 +111,24 @@ namespace				hbs
 						const std::string		&value,
 						const std::string		&position);
 
+    bool				ReadPackageInside(const std::string	&code,
+						  int			&i);
+    bool				ReadPackage(const std::string		&code,
+						    int			&i);
+    void				LoadExternalComponents(void);
+    void				ConfigureAsComponent(const std::string	&type,
+						     const std::string	&name,
+						     const std::string	&position);
+    void				BuildExternalPins(void);
+    void				UpdateExternalInputs(void);
+
   public:
     const std::string			&GetType(void) const;
     const std::string			&GetName(void) const;
     void				SetName(const std::string &name);
     void				DisconnectFrom(const hbs::IComponent *component);
     size_t				GetPinCount(void) const;
+    bool				DrivesPin(size_t pin) const;
 
     hbs::Tristate			Compute(size_t				output);
     hbs::Tristate			Compute(void);
@@ -102,6 +155,19 @@ namespace				hbs
     void				SetValue(const std::string		&input,
 						 hbs::Tristate			value);
 
+    bool				HasInput(const std::string		&name) const;
+    bool				HasOutput(const std::string		&name) const;
+    bool				HasComponent(const std::string		&name) const;
+    bool				HasComponentType(const std::string	&type) const;
+    hbs::Tristate			GetOutputValue(const std::string		&output);
+    std::vector<std::string>		GetInputNames(void) const;
+    std::vector<std::string>		GetOutputNames(void) const;
+    std::vector<std::string>		GetComponentNames(void) const;
+    std::string				GetComponentType(const std::string	&component) const;
+    std::map<std::string, size_t>	GetComponentTypeCount(void) const;
+    size_t				GetComponentCount(bool			include_tracks = false) const;
+    size_t				GetLinkCount(void) const;
+
     void				Draw(hbs::Screen			&screen) const;
     size_t				GetTime(void) const;
 
@@ -113,6 +179,7 @@ namespace				hbs
 						 t_bunny_position		pos) const;
     hbs::Track				*CreateUserTrackAt(const hbs::Position	&pos);
     hbs::Track				*MergeTracks(hbs::Track *dst, hbs::Track *src, size_t dst_node, size_t src_node);
+    void				NormalizeTracks(void);
     hbs::Track				*FindTrackAttachedTo(hbs::IComponent *component, size_t pin, size_t *node = NULL) const;
     const std::vector<std::string>	&GetCreatableTypes(void) const;
     hbs::IComponent			*CreateUserComponent(const std::string	&type,

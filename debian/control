@@ -1,0 +1,35 @@
+Source: bcad
+Section: electronics
+Priority: optional
+Maintainer: Jason Brillante <jason@efrits.fr>
+Build-Depends: debhelper-compat (= 13), liblapin-dev
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://hangedbunnystudio.com/
+
+Package: bcad
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, libbcad0 (= ${binary:Version})
+Description: BunnyCAD circuit simulator and editor
+ BunnyCAD is a digital circuit editor and simulator used as a reference oracle
+ for RED Spice / Nanotekspice-style circuit exercises.
+ .
+ This package installs the bcad frontend and creates /usr/share/bcad, the
+ default directory intended for external BunnyCAD components.
+
+Package: libbcad0
+Section: libs
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: BunnyCAD circuit simulation shared library
+ This package contains the shared library used by BunnyCAD and by external
+ tools that need to load or simulate BunnyCAD circuits.
+
+Package: libbcad-dev
+Section: libdevel
+Architecture: any
+Depends: ${misc:Depends}, libbcad0 (= ${binary:Version}), liblapin-dev
+Description: development files for BunnyCAD components and evaluators
+ This package contains the BunnyCAD headers, static archive, shared-library
+ linker symlink and pkg-config file. It is intended for developing external
+ .so components and Scolaire/Evaluator integrations using libbcad.

@@ -3,130 +3,101 @@
 //
 // RED Spice
 
-#include		<fcntl.h>
+#include		<cstdlib>
 #include		<cstring>
-#include		<signal.h>
-#include		<stdlib.h>
+#include		<ctime>
+#include		<fstream>
+#include		<iostream>
 #include		"Circuit.hpp"
+#include		"Screen.hpp"
+#include		"Shell.hpp"
 
-static bool		getout;
-
-void			handler(int		unused)
+static void		usage(const char	*prog)
 {
-  (void)unused;
-  getout = true;
-  std::cerr << std::endl;
+  std::cerr << prog << " circuit.bc [--simulate] [--screen] [input=value]*" << std::endl;
+  std::cerr << prog << " --batch circuit.bc [input=value]* < scenario.bcadtest" << std::endl;
+  std::cerr << prog << " --test scenario.bcadtest circuit.bc [input=value]*" << std::endl;
 }
 
-namespace		hbs
+static void		set_input_argument(hbs::Circuit	&circuit,
+					   const char		*arg)
 {
-  int			Command(const std::string	&cmd,
-				hbs::Circuit		&circuit,
-				hbs::Timer		&timer)
-  {
-    int			l;
-    size_t		i;
+  int			j;
 
-    if (cmd == "simulate")
-      {
-	timer.Tick();
-	for (i = 1; i <= circuit.GetOutputNum(); ++i)
-	  circuit.Compute(i);
-      }
-    else if (cmd == "display")
-      {
-	for (i = 1; i <= circuit.GetOutputNum(); ++i)
-	  if (circuit.GetDisplayable(i))
-	    std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
-	  else
-	    circuit.Compute(i);
-      }
-    else if (cmd.compare(0, 3, "sdn") == 0)
-      {
-	for (l = atoi(&cmd.c_str()[3]); l > 0; --l)
-	  {
-	    timer.Tick();
-	    for (i = 1; i <= circuit.GetOutputNum(); ++i)
-	      if (circuit.GetDisplayable(i))
-		std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
-	      else
-		circuit.Compute(i);
-	  }
-      }
-    else if (cmd == "map")
-      circuit.Map();
-    else if (cmd == "dump")
-      circuit.Dump();
-    else if (cmd == "help")
-      {
-	std::cerr << "Commands are: "
-		  << std::endl
-		  << "\tsimulate: Start a single simulation operation of every components."
-		  << std::endl
-		  << "\tdisplay: Display all output values on stdout."
-		  << std::endl
-		  << "\tsdn N: Simulate and display N times."
-		  << std::endl
-		  << "\tmap: Display inputs of the circuit and output."
-		  << std::endl
-		  << "\tdump: Make a complete dump of the circuit component status."
-		  << std::endl
-		  << "\thelp: Display an explicative list of all commands."
-		  << std::endl
-		  << "\tloop: Loop until the program receive a SIGINT signal."
-		  << std::endl
-		  << "\texit: Exit the program."
-		<< std::endl
-		  << "\ta=b: Set b (0 or 1) to the input named a."
-		  << std::endl
-		  << std::endl;
-      }
-    else if (cmd == "loop")
-      {
-	getout = false;
-	signal(SIGINT, handler);
-	while (!getout)
-	  {
-	    timer.Tick();
-	    for (i = 1; i <= circuit.GetOutputNum(); ++i)
-	      circuit.Compute(i);
-	  }
-	signal(SIGINT, NULL);
-      }
-    else if ((i = cmd.find('=', 0)) != std::string::npos)
-      circuit.SetValue(cmd.substr(0, i), atoi(&cmd.c_str()[i + 1]) ? hbs::TRUE : hbs::FALSE);
-    else if (cmd != "")
-      std::cerr << "Unrecognized command '" << cmd << "'" << std::endl;
-    return (0);
-  }
+  for (j = 0; arg[j] && arg[j] != '='; ++j);
+  if (arg[j] != '=')
+    throw hbs::InvalidCommandLine("Expected '=' after input name.");
+  circuit.SetValue(std::string(arg).substr(0, j), atoi(&arg[j + 1]) ? hbs::TRUE : hbs::FALSE);
 }
 
-static int		Shell(hbs::Circuit	&circuit,
-			      hbs::Timer	&timer)
+static int		load_circuit(hbs::Circuit	&circuit,
+				     const std::string	&file)
 {
-  char			buffer[4096];
-  std::string		str;
-  int			i;
-
-  do
+  try
     {
-      std::cerr << "> " << std::flush;
-
-      if ((i = read(0, &buffer[0], sizeof(buffer) - 1)) == 0)
-	{
-	  std::cerr << std::endl;
-	  return (EXIT_SUCCESS);
-	}
-      if (i > 1 && buffer[i - 1])
-	buffer[i - 1] = '\0';
-      buffer[i] = '\0';
-      str = buffer;
-
-      if (str != "exit")
-	Command(str, circuit, timer);
+      circuit.Load(file);
     }
-  while (str != "exit");
+  catch (const std::exception &e)
+    {
+      std::cerr << e.what() << std::endl;
+      return (EXIT_FAILURE);
+    }
   return (EXIT_SUCCESS);
+}
+
+static int		parse_input_arguments(hbs::Circuit	&circuit,
+					    int			argc,
+					    char		**argv,
+					    int			start)
+{
+  try
+    {
+      for (int i = start; i < argc; ++i)
+	set_input_argument(circuit, argv[i]);
+    }
+  catch (const std::exception &e)
+    {
+      std::cerr << e.what() << std::endl;
+      return (EXIT_FAILURE);
+    }
+  return (EXIT_SUCCESS);
+}
+
+static int		Batch(int		argc,
+			      char		**argv)
+{
+  hbs::Timer		timer;
+  hbs::Circuit		circuit(timer);
+
+  if (argc < 3)
+    return (usage(argv[0]), EXIT_FAILURE);
+  if (load_circuit(circuit, argv[2]) != EXIT_SUCCESS)
+    return (EXIT_FAILURE);
+  if (parse_input_arguments(circuit, argc, argv, 3) != EXIT_SUCCESS)
+    return (EXIT_FAILURE);
+  return (hbs::ExecuteScript(circuit, timer, std::cin, std::cout, std::cerr));
+}
+
+static int		Test(int		argc,
+			     char		**argv)
+{
+  hbs::Timer		timer;
+  hbs::Circuit		circuit(timer);
+  std::ifstream		script;
+
+  if (argc < 4)
+    return (usage(argv[0]), EXIT_FAILURE);
+  if (load_circuit(circuit, argv[3]) != EXIT_SUCCESS)
+    return (EXIT_FAILURE);
+  if (parse_input_arguments(circuit, argc, argv, 4) != EXIT_SUCCESS)
+    return (EXIT_FAILURE);
+  script.open(argv[2], std::ios::in | std::ios::binary);
+  if (!script)
+    {
+      std::cerr << "Cannot open test script '" << argv[2] << "'." << std::endl;
+      return (EXIT_FAILURE);
+    }
+  return (hbs::ExecuteScript(circuit, timer, script, std::cout, std::cerr));
 }
 
 static int		Loop(hbs::Circuit	&circuit,
@@ -145,36 +116,34 @@ int			main(int		argc,
   hbs::Screen		*screen = NULL;
   bool			simulate_only = false;
   int			i;
-  int			j;
 
   srand(clock());
   if (argc < 2)
-    {
-      std::cerr << argv[0] << " circuit.bc [--simulate] [input=value]*" << std::endl;
-      return (EXIT_FAILURE);
-    }
+    return (usage(argv[0]), EXIT_FAILURE);
+  if (strcmp(argv[1], "--batch") == 0)
+    return (Batch(argc, argv));
+  if (strcmp(argv[1], "--test") == 0)
+    return (Test(argc, argv));
+  if (load_circuit(circuit, argv[1]) != EXIT_SUCCESS)
+    return (EXIT_FAILURE);
   try
     {
-      circuit.Load(argv[1]);
+      for (i = 2; i < argc; ++i)
+	{
+	  if (strcmp(argv[i], "--screen") == 0)
+	    continue ;
+	  if (strcmp(argv[i], "--simulate") == 0)
+	    {
+	      simulate_only = true;
+	      continue ;
+	    }
+	  set_input_argument(circuit, argv[i]);
+	}
     }
   catch (const std::exception &e)
     {
       std::cerr << e.what() << std::endl;
       return (EXIT_FAILURE);
-    }
-  for (i = 2; i < argc; ++i)
-    {
-      if (strcmp(argv[i], "--screen") == 0)
-	continue ;
-      if (strcmp(argv[i], "--simulate") == 0)
-	{
-	  simulate_only = true;
-	  continue ;
-	}
-      for (j = 0; argv[i][j] && argv[i][j] != '='; ++j);
-      if (argv[i][j] != '=')
-	throw hbs::InvalidCommandLine("Expected '=' after input name.");
-      circuit.SetValue(std::string(argv[i]).substr(0, j), atoi(&argv[i][j + 1]) ? hbs::TRUE : hbs::FALSE);
     }
   if (!simulate_only)
     {
@@ -188,5 +157,5 @@ int			main(int		argc,
       std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;
     else
       circuit.Compute(i);
-  return (Shell(circuit, timer));
+  return (hbs::Shell(circuit, timer));
 }

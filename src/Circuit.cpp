@@ -183,7 +183,7 @@ hbs::Track		*hbs::Circuit::MergeTracks(hbs::Track *dst,
     dst->AddSegment(dst_node, nodemap[src_node]);
   victims.insert(src);
   DeleteSelected(empty_components, victims);
-  return (dst);
+  return (NormalizeTrack(dst, dst_node));
 }
 
 
@@ -303,51 +303,157 @@ bool			hbs::Circuit::DeleteSelected(std::set<hbs::IComponent*> &components,
   return (true);
 }
 
+static hbs::Position	parse_position(const std::string &pos)
+{
+  hbs::Position		position = {0, 0};
+  size_t		idx = 0;
+  int			idy;
+
+  position.x = std::stof(pos, &idx);
+  if (idx == 0)
+    throw hbs::SyntaxError(pos);
+  idy = idx;
+  ReadWhitespace(pos, idy);
+  idy += pos[idy] == ',';
+  ReadWhitespace(pos, idy);
+  idx = idy;
+  position.y = std::stof(&pos[idx], &idx);
+  if (idx == 0)
+    throw hbs::SyntaxError(pos);
+  return (position);
+}
+
+void			hbs::Circuit::ConfigureAsComponent(const std::string	&type,
+					       const std::string	&name,
+					       const std::string	&position)
+{
+  component_instance = true;
+  component_type = type;
+  component_name = name;
+  component_position = parse_position(position);
+  BuildExternalPins();
+  if (!package_defined)
+    Move(component_position);
+}
+
+void			hbs::Circuit::BuildExternalPins(void)
+{
+  external_pins.clear();
+  if (package_defined)
+    return ;
+  for (std::map<std::string, Input*>::iterator it = inputs.begin(); it != inputs.end(); ++it)
+    external_pins.push_back({it->first, CIRCUIT_INPUT_PIN, it->second, 1, it->second->GetPinPosition(1)});
+  for (std::map<std::string, Output*>::iterator it = outputs.begin(); it != outputs.end(); ++it)
+    external_pins.push_back({it->first, CIRCUIT_OUTPUT_PIN, it->second, 1, it->second->GetPinPosition(1)});
+}
+
 void			hbs::Circuit::Move(const hbs::Position			&pos)
 {
-  (void)pos;
+  if (package_defined)
+    {
+      component_position.x += pos.x;
+      component_position.y += pos.y;
+      return ;
+    }
+  for (std::map<std::string, IComponent*>::iterator it = circuit.begin(); it != circuit.end(); ++it)
+    it->second->Move(pos);
+  component_position.x += pos.x;
+  component_position.y += pos.y;
 }
 
 bool			hbs::Circuit::IsUnder(const hbs::Screen			&screen,
 					      const t_bunny_position		&pos) const
 {
-  (void)screen;
-  (void)pos;
-  return (false);
+  hbs::Position		p = {(double)pos.x, (double)pos.y};
+
+  if (!component_instance)
+    return (false);
+  for (size_t i = 1; i <= external_pins.size(); ++i)
+    {
+      hbs::Position pp = GetPinPosition(i);
+      double dist = sqrt(pow(p.x - pp.x, 2) + pow(p.y - pp.y, 2));
+
+      if (dist < std::max(0.45, 8.0 / screen.pin_size))
+	return (true);
+    }
+  if (!package_defined)
+    {
+      for (std::map<std::string, IComponent*>::const_iterator it = circuit.begin(); it != circuit.end(); ++it)
+	if (it->second->IsUnder(screen, pos))
+	  return (true);
+      return (false);
+    }
+  if (package_lines.empty() && external_pins.empty())
+    return (false);
+  double left = GetPinPosition(1).x;
+  double right = left;
+  double top = GetPinPosition(1).y;
+  double bottom = top;
+  for (size_t i = 1; i <= external_pins.size(); ++i)
+    {
+      hbs::Position pp = GetPinPosition(i);
+      left = std::min(left, pp.x);
+      right = std::max(right, pp.x);
+      top = std::min(top, pp.y);
+      bottom = std::max(bottom, pp.y);
+    }
+  for (size_t i = 0; i < package_lines.size(); ++i)
+    {
+      left = std::min(left, component_position.x + std::min(package_lines[i].from.x, package_lines[i].to.x));
+      right = std::max(right, component_position.x + std::max(package_lines[i].from.x, package_lines[i].to.x));
+      top = std::min(top, component_position.y + std::min(package_lines[i].from.y, package_lines[i].to.y));
+      bottom = std::max(bottom, component_position.y + std::max(package_lines[i].from.y, package_lines[i].to.y));
+    }
+  return (p.x >= left && p.x <= right && p.y >= top && p.y <= bottom);
 }
 
 hbs::Position		hbs::Circuit::GetPosition(void) const
 {
-  return (hbs::Position{0, 0});
+  return (component_position);
 }
 
 hbs::Position		hbs::Circuit::GetPinPosition(size_t		pin) const
 {
-  (void)pin;
-  return (hbs::Position{0, 0});
+  if (pin == 0 || pin > external_pins.size())
+    throw hbs::BadPin(GetType() + ": Bad pin.");
+  if (package_defined)
+    return (component_position + external_pins[pin - 1].position);
+  return (external_pins[pin - 1].component->GetPinPosition(external_pins[pin - 1].component_pin));
 }
 
 const std::string	&hbs::Circuit::GetType(void) const
 {
-  static std::string	type = "circuit";
+  static std::string	default_type = "circuit";
 
-  return (type);
+  if (component_instance)
+    return (component_type);
+  return (default_type);
 }
 
 const std::string	&hbs::Circuit::GetName(void) const
 {
-  static std::string	name = "circuit";
+  static std::string	default_name = "circuit";
 
-  return (name);
+  if (component_instance)
+    return (component_name);
+  return (default_name);
 }
 
 void			hbs::Circuit::SetName(const std::string &name)
 {
-  (void)name;
+  component_name = name;
+  component_instance = true;
 }
 
 void			hbs::Circuit::DisconnectFrom(const hbs::IComponent *component)
 {
+  for (std::map<size_t, std::list<CircuitConnection> >::iterator it = external_links.begin();
+       it != external_links.end(); ++it)
+    for (std::list<CircuitConnection>::iterator jt = it->second.begin(); jt != it->second.end();)
+      if (jt->component == component)
+	jt = it->second.erase(jt);
+      else
+	++jt;
   for (std::map<std::string, IComponent*>::iterator it = circuit.begin(); it != circuit.end(); ++it)
     if (it->second != component)
       it->second->DisconnectFrom(component);
@@ -355,7 +461,14 @@ void			hbs::Circuit::DisconnectFrom(const hbs::IComponent *component)
 
 size_t			hbs::Circuit::GetPinCount(void) const
 {
-  return (0);
+  return (external_pins.size());
+}
+
+bool			hbs::Circuit::DrivesPin(size_t pin) const
+{
+  if (pin == 0 || pin > external_pins.size())
+    return (false);
+  return (external_pins[pin - 1].kind == CIRCUIT_OUTPUT_PIN);
 }
 
 static double		orientation(const hbs::Position &a, const hbs::Position &b, const hbs::Position &c)
@@ -425,6 +538,31 @@ void			hbs::Circuit::ValidateRouting(void) const
 
 void			hbs::Circuit::Draw(hbs::Screen			&screen) const
 {
+  if (component_instance && package_defined)
+    {
+      for (size_t i = 0; i < package_lines.size(); ++i)
+	screen.Line(component_position + package_lines[i].from,
+		    component_position + package_lines[i].to,
+		    hbs::Screen::Teal);
+      for (size_t i = 1; i <= external_pins.size(); ++i)
+	{
+	  hbs::Position pp = GetPinPosition(i);
+	  hbs::Size sz;
+
+	  screen.Circle(pp, {0.4, 0.4}, hbs::Screen::Purple, true);
+	  screen.Circle(pp, {0.25, 0.25}, hbs::Screen::White, false);
+	  sz = screen.TextSize({10, 10}, external_pins[i - 1].name);
+	  sz.x = (-sz.x / 2.0) / screen.PinSize();
+	  sz.y = -1.0;
+	  screen.Text(pp + sz, {10, 10}, hbs::Screen::White, external_pins[i - 1].name);
+	}
+      hbs::Size sz = screen.TextSize({10, 10}, GetName());
+
+      sz.x = (-sz.x / 2.0) / screen.PinSize();
+      sz.y = -1.5;
+      screen.Text(component_position + sz, {10, 10}, hbs::Screen::White, GetName());
+      return ;
+    }
   ValidateRouting();
   for (auto it = tracks.begin(); it != tracks.end(); ++it)
     if (!screen.dragging_selection || screen.selected_tracks.find(it->second) == screen.selected_tracks.end())
@@ -532,6 +670,149 @@ hbs::Track		*hbs::Circuit::CreateImplicitTrack(const std::string	&geometry)
     ss.str(std::string()), ss.clear(), ss << "__wire_" << implicit_track_count++;
   while (circuit.find(ss.str()) != circuit.end());
   return (CreateTrack(ss.str(), geometry));
+}
+
+
+static void		collect_track_component(const std::vector<hbs::Track::Segment> &segments,
+						 size_t node,
+						 std::set<size_t> &nodes)
+{
+  bool			changed;
+
+  nodes.insert(node);
+  do
+    {
+      changed = false;
+      for (size_t i = 0; i < segments.size(); ++i)
+	{
+	  if (nodes.find(segments[i].from) != nodes.end() &&
+	      nodes.find(segments[i].to) == nodes.end())
+	    {
+	      nodes.insert(segments[i].to);
+	      changed = true;
+	    }
+	  if (nodes.find(segments[i].to) != nodes.end() &&
+	      nodes.find(segments[i].from) == nodes.end())
+	    {
+	      nodes.insert(segments[i].from);
+	      changed = true;
+	    }
+	}
+    }
+  while (changed);
+}
+
+static std::vector<std::set<size_t> > track_components(const hbs::Track *track)
+{
+  std::vector<std::set<size_t> > components;
+  std::set<size_t>		seen;
+  size_t			nodes = track->GetPath().size();
+
+  for (size_t i = 0; i < nodes; ++i)
+    if (seen.find(i) == seen.end())
+      {
+	std::set<size_t> component;
+
+	collect_track_component(track->GetSegments(), i, component);
+	seen.insert(component.begin(), component.end());
+	components.push_back(component);
+      }
+  return (components);
+}
+
+static size_t		component_containing(const std::vector<std::set<size_t> > &components,
+					     size_t node)
+{
+  if (node == hbs::Track::NoNode)
+    return (0);
+  for (size_t i = 0; i < components.size(); ++i)
+    if (components[i].find(node) != components[i].end())
+      return (i);
+  return (0);
+}
+
+hbs::Track		*hbs::Circuit::NormalizeTrack(hbs::Track *track,
+					     size_t preferred_node)
+{
+  std::vector<std::set<size_t> > components;
+  std::vector<hbs::Track*> new_tracks;
+  std::string		old_name;
+  size_t		preferred_component;
+
+  if (track == NULL || track->GetPath().empty())
+    return (track);
+  components = track_components(track);
+  if (components.size() <= 1)
+    return (track);
+
+  old_name = track->GetName();
+  preferred_component = component_containing(components, preferred_node);
+  const std::vector<hbs::Track::Segment> &segments = track->GetSegments();
+  const std::vector<hbs::Track::Attachment> &attachments = track->GetAttachments();
+
+  for (size_t c = 0; c < components.size(); ++c)
+    {
+      hbs::Track *out = CreateImplicitTrack("");
+      std::vector<size_t> remap(track->GetPath().size(), hbs::Track::NoNode);
+
+      for (size_t n = 0; n < track->GetPath().size(); ++n)
+	if (components[c].find(n) != components[c].end())
+	  remap[n] = out->AddFreeNode(track->GetNodePosition(n), track->GetNodeLayer(n));
+      for (size_t i = 0; i < segments.size(); ++i)
+	if (segments[i].from < remap.size() && segments[i].to < remap.size() &&
+	    remap[segments[i].from] != hbs::Track::NoNode &&
+	    remap[segments[i].to] != hbs::Track::NoNode)
+	  out->AddSegment(remap[segments[i].from], remap[segments[i].to]);
+      for (size_t i = 0; i < attachments.size(); ++i)
+	{
+	  bool keep = false;
+
+	  if (attachments[i].component == NULL || attachments[i].pin == 0)
+	    continue ;
+	  if (attachments[i].node == hbs::Track::NoNode)
+	    keep = (c == preferred_component);
+	  else if (attachments[i].node < remap.size() &&
+		   remap[attachments[i].node] != hbs::Track::NoNode)
+	    keep = true;
+	  if (keep)
+	    {
+	      size_t pin = out->GetPinCount() + 1;
+
+	      out->SetLink(pin, *attachments[i].component, attachments[i].pin, "");
+	      if (attachments[i].node != hbs::Track::NoNode)
+		out->SetAttachmentNode(pin, remap[attachments[i].node]);
+	      else
+		out->SetAttachmentNode(pin, hbs::Track::NoNode);
+	    }
+	}
+      new_tracks.push_back(out);
+    }
+
+  std::set<hbs::IComponent*> empty_components;
+  std::set<hbs::Track*> old_track;
+  old_track.insert(track);
+  DeleteSelected(empty_components, old_track);
+  if (preferred_component < new_tracks.size())
+    {
+      RenameComponent(new_tracks[preferred_component], old_name);
+      return (new_tracks[preferred_component]);
+    }
+  return (NULL);
+}
+
+void			hbs::Circuit::NormalizeTracks(void)
+{
+  std::vector<std::string> names;
+
+  for (std::map<std::string, hbs::Track*>::const_iterator it = tracks.begin(); it != tracks.end(); ++it)
+    names.push_back(it->first);
+  for (size_t i = 0; i < names.size(); ++i)
+    {
+      std::map<std::string, hbs::Track*>::iterator it = tracks.find(names[i]);
+
+      if (it != tracks.end())
+	NormalizeTrack(it->second, hbs::Track::NoNode);
+    }
 }
 
 bool			hbs::Circuit::ReadTracksInside(const std::string &code,
@@ -677,11 +958,103 @@ bool			hbs::Circuit::ReadLinks(const std::string	&code,
   ReadWhitespace(code, i);
   return (ReadLinksInside(code, i));
 }
+bool			hbs::Circuit::ReadPackageInside(const std::string &code,
+							int		&i)
+{
+  std::string		word;
+
+  package_defined = true;
+  package_lines.clear();
+  external_pins.clear();
+  while (true)
+    {
+      skip_spaces(code, i);
+      if (i >= (int)code.size() || code[i] == '.')
+	break;
+      word = read_token(code, i, "package directive");
+      if (word == "line")
+	{
+	  std::string from = read_between(code, i, '[', ']', "package line start");
+	  std::string to = read_between(code, i, '[', ']', "package line end");
+
+	  package_lines.push_back({parse_position(from), parse_position(to)});
+	}
+      else
+	{
+	  std::string name;
+	  std::string pos;
+	  CircuitPin pin;
+
+	  if (word == "pin")
+	    name = read_token(code, i, "package pin name");
+	  else
+	    name = word;
+	  pos = read_between(code, i, '[', ']', "package pin position");
+	  if (inputs.find(name) != inputs.end())
+	    pin = {name, CIRCUIT_INPUT_PIN, inputs[name], 1, parse_position(pos)};
+	  else if (outputs.find(name) != outputs.end())
+	    pin = {name, CIRCUIT_OUTPUT_PIN, outputs[name], 1, parse_position(pos)};
+	  else
+	    throw hbs::UnknownComponent(std::string("Unknown package pin ") + name);
+	  external_pins.push_back(pin);
+	}
+    }
+  return (true);
+}
+
+bool			hbs::Circuit::ReadPackage(const std::string	&code,
+						 int			&i)
+{
+  if (ReadText(code, i, ".package:") == false)
+    return (false);
+  ReadWhitespace(code, i);
+  return (ReadPackageInside(code, i));
+}
+void			hbs::Circuit::UpdateExternalInputs(void)
+{
+  for (size_t i = 0; i < external_pins.size(); ++i)
+    if (external_pins[i].kind == CIRCUIT_INPUT_PIN)
+      {
+	hbs::Tristate value = hbs::UNDEFINED;
+	std::map<size_t, std::list<CircuitConnection> >::iterator lnk = external_links.find(i + 1);
+
+	if (lnk != external_links.end())
+	  for (std::list<CircuitConnection>::iterator it = lnk->second.begin(); it != lnk->second.end(); ++it)
+	    if (it->component != NULL)
+	      {
+		hbs::Tristate tmp = it->component->Compute(it->pin);
+
+		if (tmp != hbs::UNDEFINED)
+		  {
+		    if (value != hbs::UNDEFINED)
+		      {
+			value = hbs::BROKEN;
+			break;
+		      }
+		    value = tmp;
+		  }
+	      }
+	if (external_pins[i].component != NULL)
+	  {
+	    hbs::Input *input = dynamic_cast<hbs::Input*>(external_pins[i].component);
+
+	    if (input != NULL)
+	      input->SetValue(value);
+	  }
+      }
+}
 
 hbs::Tristate		hbs::Circuit::Compute(size_t			output)
 {
   std::map<std::string, Output*>::iterator it;
 
+  if (component_instance)
+    {
+      if (output == 0 || output > external_pins.size())
+	throw hbs::BadPin(GetType() + ": Bad pin.");
+      UpdateExternalInputs();
+      return (external_pins[output - 1].component->Compute(external_pins[output - 1].component_pin));
+    }
   for (it = outputs.begin(); it != outputs.end() && output > 1; ++it, --output);
   return (it->second->Compute());
 }
@@ -690,6 +1063,14 @@ hbs::Tristate		hbs::Circuit::Compute(void)
 {
   std::map<std::string, Output*>::iterator it;
 
+  if (component_instance)
+    {
+      UpdateExternalInputs();
+      for (size_t i = 1; i <= external_pins.size(); ++i)
+	if (external_pins[i - 1].kind == CIRCUIT_OUTPUT_PIN)
+	  external_pins[i - 1].component->Compute(external_pins[i - 1].component_pin);
+      return (hbs::UNDEFINED);
+    }
   for (it = outputs.begin(); it != outputs.end(); ++it)
     it->second->Compute();
   return (hbs::UNDEFINED);
@@ -700,7 +1081,16 @@ void			hbs::Circuit::SetLink(size_t			pnthis,
 					      size_t			pntarg,
 					      const std::string		&pos)
 {
-  (void)pnthis; (void)com; (void)pntarg; (void)pos;
+  std::list<CircuitConnection>::iterator it;
+
+  if (pnthis == 0 || pnthis > external_pins.size())
+    throw hbs::BadPin(GetType() + ": Bad pin.");
+  for (it = external_links[pnthis].begin(); it != external_links[pnthis].end(); ++it)
+    if (it->component == &com && it->pin == pntarg)
+      return ;
+  external_links[pnthis].push_back({&com, pntarg});
+  if (pos.empty() || pos[0] != '!')
+    com.SetLink(pntarg, *this, pnthis, "!" + pos);
 }
 
 void			hbs::Circuit::Dump(void) const
@@ -897,7 +1287,10 @@ bool			hbs::Circuit::Load(const std::string		&file)
     ReadWhitespace(content, i);
   if (ReadLinks(content, i) == false)
     throw hbs::SyntaxError(std::string("Expected .links: section at ") + load_context(content, i));
+  NormalizeTracks();
   ReadWhitespace(content, i);
+  if (ReadPackage(content, i))
+    ReadWhitespace(content, i);
   if (i < (int)content.size())
     throw hbs::SyntaxError(std::string("Unexpected content after .links: at ") + load_context(content, i));
   return (true);
@@ -913,6 +1306,102 @@ void			hbs::Circuit::SetValue(const std::string		&input,
   it->second->SetValue(value);
 }
 
+bool			hbs::Circuit::HasInput(const std::string		&name) const
+{
+  return (inputs.find(name) != inputs.end());
+}
+
+bool			hbs::Circuit::HasOutput(const std::string	&name) const
+{
+  return (outputs.find(name) != outputs.end());
+}
+
+bool			hbs::Circuit::HasComponent(const std::string	&name) const
+{
+  return (circuit.find(name) != circuit.end());
+}
+
+bool			hbs::Circuit::HasComponentType(const std::string	&type) const
+{
+  for (std::map<std::string, IComponent*>::const_iterator it = circuit.begin(); it != circuit.end(); ++it)
+    if (file_type(*it->second) == type)
+      return (true);
+  return (false);
+}
+
+hbs::Tristate		hbs::Circuit::GetOutputValue(const std::string	&output)
+{
+  std::map<std::string, Output*>::iterator it;
+
+  if ((it = outputs.find(output)) == outputs.end())
+    throw hbs::MissingOutputs("Cannot found output " + output + ".");
+  return (it->second->Compute());
+}
+
+std::vector<std::string>	hbs::Circuit::GetInputNames(void) const
+{
+  std::vector<std::string>	ret;
+
+  for (std::map<std::string, Input*>::const_iterator it = inputs.begin(); it != inputs.end(); ++it)
+    ret.push_back(it->first);
+  return (ret);
+}
+
+std::vector<std::string>	hbs::Circuit::GetOutputNames(void) const
+{
+  std::vector<std::string>	ret;
+
+  for (std::map<std::string, Output*>::const_iterator it = outputs.begin(); it != outputs.end(); ++it)
+    ret.push_back(it->first);
+  return (ret);
+}
+
+std::vector<std::string>	hbs::Circuit::GetComponentNames(void) const
+{
+  std::vector<std::string>	ret;
+
+  for (std::map<std::string, IComponent*>::const_iterator it = circuit.begin(); it != circuit.end(); ++it)
+    ret.push_back(it->first);
+  return (ret);
+}
+
+std::string		hbs::Circuit::GetComponentType(const std::string	&component) const
+{
+  std::map<std::string, IComponent*>::const_iterator it;
+
+  if ((it = circuit.find(component)) == circuit.end())
+    throw hbs::UnknownComponent(component);
+  return (file_type(*it->second));
+}
+
+std::map<std::string, size_t> hbs::Circuit::GetComponentTypeCount(void) const
+{
+  std::map<std::string, size_t>	ret;
+
+  for (std::map<std::string, IComponent*>::const_iterator it = circuit.begin(); it != circuit.end(); ++it)
+    ret[file_type(*it->second)] += 1;
+  return (ret);
+}
+
+size_t			hbs::Circuit::GetComponentCount(bool			include_tracks) const
+{
+  size_t		count = 0;
+
+  for (std::map<std::string, IComponent*>::const_iterator it = circuit.begin(); it != circuit.end(); ++it)
+    if (include_tracks || !is_track(it->second))
+      count += 1;
+  return (count);
+}
+
+size_t			hbs::Circuit::GetLinkCount(void) const
+{
+  size_t		count = 0;
+
+  for (std::map<std::string, hbs::Track*>::const_iterator it = tracks.begin(); it != tracks.end(); ++it)
+    count += it->second->GetAttachments().size();
+  return (count);
+}
+
 size_t			hbs::Circuit::GetTime(void) const
 {
   return (timer.GetTime());
@@ -920,6 +1409,11 @@ size_t			hbs::Circuit::GetTime(void) const
 
 hbs::Circuit::Circuit(hbs::Timer		&tim)
   : timer(tim),
+    component_type("circuit"),
+    component_name("circuit"),
+    component_position({0, 0}),
+    component_instance(false),
+    package_defined(false),
     implicit_track_count(0)
 {
   const char *types[] = {
@@ -929,6 +1423,7 @@ hbs::Circuit::Circuit(hbs::Timer		&tim)
   };
 
   creatable_types.assign(types, types + sizeof(types) / sizeof(types[0]));
+  LoadExternalComponents();
 }
 
 hbs::Circuit::~Circuit(void)

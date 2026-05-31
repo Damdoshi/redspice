@@ -1,0 +1,4 @@
+usr/include/bcad
+usr/lib/*/libbcad.a
+usr/lib/*/libbcad.so
+usr/lib/*/pkgconfig/bcad.pc

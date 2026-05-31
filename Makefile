@@ -18,7 +18,7 @@ CFLAGS		+=	-Wno-missing-field-initializers
 CFLAGS		+=	-g -g3 -ggdb
 #CFLAGS		+=	-O2 -ffast-math -march=native
 
-LFLAGS		=
+LFLAGS		=	-ldl
 
 ## Define some stuff
 ECHO		=	/bin/echo -e
@@ -29,7 +29,7 @@ RED		=	"\033[0;31m"
 
 ## Source
 INC		=	-I./include/ -I./include/stdcmp -I./include/vircmp
-SRC		=	$(shell find . -name "*.cpp" | sort)
+SRC		=	$(shell find . -name "*.cpp" ! -name "main.cpp" | sort)
 OBJ		=	$(SRC:.cpp=.o)
 
 all:		erase $(BINNAME)
