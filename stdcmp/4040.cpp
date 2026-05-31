@@ -81,3 +81,29 @@ hbs::CMP_4040::CMP_4040(const hbs::Timer		&time,
 hbs::CMP_4040::~CMP_4040(void)
 {}
 
+
+bool			hbs::CMP_4040::TypeMatches(const std::string	&type)
+{
+  if (type == "4040")
+    return (true);
+  if (type == "74HC4040")
+    return (true);
+  return (false);
+}
+
+hbs::IComponent	*hbs::CMP_4040::Create(hbs::Timer		&timer,
+				       const std::string	&type,
+				       const std::string	&name,
+				       const std::string	&value,
+				       const std::string	&position)
+{
+  (void)value;
+  if (!TypeMatches(type))
+    return (NULL);
+  return (new hbs::CMP_4040(timer, name, position));
+}
+
+std::string		hbs::CMP_4040::GetDisplayType(void) const
+{
+  return ("4040 12-stage binary ripple counter");
+}

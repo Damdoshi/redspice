@@ -20,6 +20,15 @@ namespace			hbs
     size_t			last_tick_down;
 
   public:
+    static bool			TypeMatches(const std::string	&type);
+    static hbs::IComponent		*Create(hbs::Timer		&timer,
+					const std::string	&type,
+					const std::string	&name,
+					const std::string	&value,
+					const std::string	&position);
+    virtual std::string		GetDisplayType(void) const;
+
+  public:
     virtual bool			DrivesPin(size_t			n) const { return ((n >= 4 && n <= 8) || (n >= 9 && n <= 14)); }
 
     hbs::Tristate		Compute(size_t				n);

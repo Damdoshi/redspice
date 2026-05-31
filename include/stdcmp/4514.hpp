@@ -15,6 +15,15 @@ namespace			hbs
     const std::string		&GetType(void) const;
 
   public:
+    static bool			TypeMatches(const std::string	&type);
+    static hbs::IComponent		*Create(hbs::Timer		&timer,
+					const std::string	&type,
+					const std::string	&name,
+					const std::string	&value,
+					const std::string	&position);
+    virtual std::string		GetDisplayType(void) const;
+
+  public:
     virtual bool			DrivesPin(size_t			n) const { return ((n >= 4 && n <= 11) || (n >= 13 && n <= 20)); }
 
     hbs::Tristate		Compute(size_t				n);

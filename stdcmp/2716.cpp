@@ -109,3 +109,27 @@ hbs::CMP_2716::CMP_2716(const hbs::Timer		&time,
 hbs::CMP_2716::~CMP_2716(void)
 {}
 
+
+bool			hbs::CMP_2716::TypeMatches(const std::string	&type)
+{
+  if (type == "2716")
+    return (true);
+  return (false);
+}
+
+hbs::IComponent	*hbs::CMP_2716::Create(hbs::Timer		&timer,
+				       const std::string	&type,
+				       const std::string	&name,
+				       const std::string	&value,
+				       const std::string	&position)
+{
+  (void)value;
+  if (!TypeMatches(type))
+    return (NULL);
+  return (new hbs::CMP_2716(timer, name, value, position));
+}
+
+std::string		hbs::CMP_2716::GetDisplayType(void) const
+{
+  return ("2716 2 KiB EPROM");
+}

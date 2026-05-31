@@ -66,12 +66,13 @@ namespace				hbs
     static constexpr unsigned int	Purple = PURPLE;
     static constexpr unsigned int	Pink = PINK2;
 
-    static constexpr unsigned int	TristateColor[4] =
+    static constexpr unsigned int	TristateColor[5] =
       {
 	YELLOW,
 	0,
 	((unsigned int)GRAY(64)),
-	RED
+	RED,
+	BLUE
       };
     
     int					PinSize(int			p = 0);

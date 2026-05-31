@@ -57,3 +57,35 @@ hbs::CMP_4069::CMP_4069(const hbs::Timer	&tim,
 hbs::CMP_4069::~CMP_4069(void)
 {}
 
+
+bool			hbs::CMP_4069::TypeMatches(const std::string	&type)
+{
+  if (type == "4069")
+    return (true);
+  if (type == "7404")
+    return (true);
+  if (type == "74HC04")
+    return (true);
+  if (type == "74HCT04")
+    return (true);
+  if (type == "74LS04")
+    return (true);
+  return (false);
+}
+
+hbs::IComponent	*hbs::CMP_4069::Create(hbs::Timer		&timer,
+				       const std::string	&type,
+				       const std::string	&name,
+				       const std::string	&value,
+				       const std::string	&position)
+{
+  (void)value;
+  if (!TypeMatches(type))
+    return (NULL);
+  return (new hbs::CMP_4069(timer, name, position));
+}
+
+std::string		hbs::CMP_4069::GetDisplayType(void) const
+{
+  return ("4069/7404 Hex inverter");
+}

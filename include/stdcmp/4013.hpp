@@ -20,6 +20,15 @@ namespace			hbs
     size_t			last_tick[2];
 
   public:
+    static bool			TypeMatches(const std::string	&type);
+    static hbs::IComponent		*Create(hbs::Timer		&timer,
+					const std::string	&type,
+					const std::string	&name,
+					const std::string	&value,
+					const std::string	&position);
+    virtual std::string		GetDisplayType(void) const;
+
+  public:
     hbs::Tristate		Compute(size_t				n);
 
     CMP_4013(const hbs::Timer	&timer,

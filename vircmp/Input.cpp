@@ -48,6 +48,8 @@ hbs::Input::Input(hbs::Timer		&timer,
     value = hbs::TRUE;
   else if (val == "0")
     value = hbs::FALSE;
+  else if (val == "Z" || val == "z")
+    value = hbs::HIGH_IMPEDANCE;
 }
 
 hbs::Input::~Input(void)

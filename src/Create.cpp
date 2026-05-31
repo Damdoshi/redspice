@@ -263,6 +263,7 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
 {
   std::stringstream	ss;
   std::string		position;
+  hbs::IComponent	*tmp;
 
   if (pos == "")
     {
@@ -284,33 +285,32 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
   if (type == "false")
     return (new hbs::False(timer, name, position));
 
-  if (type == "4001")
-    return (new hbs::CMP_4001(timer, name, position));
-  if (type == "4008")
-    return (new hbs::CMP_4008(timer, name, position));
-  if (type == "4011")
-    return (new hbs::CMP_4011(timer, name, position));
-  if (type == "4013")
-    return (new hbs::CMP_4013(timer, name, position));
-  if (type == "4017")
-    return (new hbs::CMP_4017(timer, name, position));
-  if (type == "4030")
-    return (new hbs::CMP_4030(timer, name, position));
-  if (type == "4040")
-    return (new hbs::CMP_4040(timer, name, position));
-  if (type == "4069")
-    return (new hbs::CMP_4069(timer, name, position));
-  if (type == "4071")
-    return (new hbs::CMP_4071(timer, name, position));
-  if (type == "4081")
-    return (new hbs::CMP_4081(timer, name, position));
-  if (type == "4094")
-    return (new hbs::CMP_4094(timer, name, position));
-  if (type == "4514")
-    return (new hbs::CMP_4514(timer, name, position));
-
-  if (type == "2716")
-    return (new hbs::CMP_2716(timer, name, value, position));
+  if ((tmp = hbs::CMP_4001::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4008::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4011::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4013::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4017::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4030::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4040::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4069::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4071::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4081::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4094::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4514::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_2716::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
 
   if (type == "terminal")
     return (new hbs::Terminal(timer, name, position));

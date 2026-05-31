@@ -141,9 +141,15 @@ namespace				hbs
       for (; it != lnk->second.end(); ++it)
 	{
 	  tmp = it->component->Compute(it->pin);
+	  if (tmp == hbs::HIGH_IMPEDANCE)
+	    {
+	      if (out == hbs::UNDEFINED)
+		out = hbs::HIGH_IMPEDANCE;
+	      continue ;
+	    }
 	  if (tmp != hbs::UNDEFINED)
 	    {
-	      if (out != hbs::UNDEFINED)
+	      if (out != hbs::UNDEFINED && out != hbs::HIGH_IMPEDANCE && out != tmp)
 		return (timeline[timer.GetTime()][n] = hbs::BROKEN);
 	      out = tmp;
 	    }

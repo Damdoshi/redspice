@@ -19,7 +19,8 @@ namespace			hbs
       BROKEN			= -2,
       UNDEFINED			= -1,
       FALSE			= +0,
-      TRUE			= +1
+      TRUE			= +1,
+      HIGH_IMPEDANCE		= +2
     };
 
   class				IComponent
@@ -69,6 +70,11 @@ namespace			hbs
     /// The output won't be tested, but it may help you
     // as a trace.
     virtual void		Dump(void) const = 0;
+
+    /// Long, human-readable component type. Useful for documentation,
+    /// catalogues and error messages. The short type remains the one
+    /// drawn on the component and used in .chipsets.
+    virtual std::string		GetDisplayType(void) const;
 
     virtual ~IComponent(void) {}
   };

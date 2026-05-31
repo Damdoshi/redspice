@@ -34,3 +34,35 @@ hbs::CMP_4001::CMP_4001(const hbs::Timer	&timer,
 hbs::CMP_4001::~CMP_4001(void)
 {}
 
+
+bool			hbs::CMP_4001::TypeMatches(const std::string	&type)
+{
+  if (type == "4001")
+    return (true);
+  if (type == "7402")
+    return (true);
+  if (type == "74HC02")
+    return (true);
+  if (type == "74HCT02")
+    return (true);
+  if (type == "74LS02")
+    return (true);
+  return (false);
+}
+
+hbs::IComponent	*hbs::CMP_4001::Create(hbs::Timer		&timer,
+				       const std::string	&type,
+				       const std::string	&name,
+				       const std::string	&value,
+				       const std::string	&position)
+{
+  (void)value;
+  if (!TypeMatches(type))
+    return (NULL);
+  return (new hbs::CMP_4001(timer, name, position));
+}
+
+std::string		hbs::CMP_4001::GetDisplayType(void) const
+{
+  return ("4001/7402 Quad 2-input NOR");
+}

@@ -129,3 +129,29 @@ hbs::CMP_4013::CMP_4013(const hbs::Timer		&time,
 hbs::CMP_4013::~CMP_4013(void)
 {}
 
+
+bool			hbs::CMP_4013::TypeMatches(const std::string	&type)
+{
+  if (type == "4013")
+    return (true);
+  if (type == "74HC4013")
+    return (true);
+  return (false);
+}
+
+hbs::IComponent	*hbs::CMP_4013::Create(hbs::Timer		&timer,
+				       const std::string	&type,
+				       const std::string	&name,
+				       const std::string	&value,
+				       const std::string	&position)
+{
+  (void)value;
+  if (!TypeMatches(type))
+    return (NULL);
+  return (new hbs::CMP_4013(timer, name, position));
+}
+
+std::string		hbs::CMP_4013::GetDisplayType(void) const
+{
+  return ("4013 Dual D flip-flop");
+}

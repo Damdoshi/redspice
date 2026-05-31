@@ -15,6 +15,8 @@ std::ostream		&operator<<(std::ostream	&os,
     os << "0";
   else if (t == hbs::UNDEFINED)
     os << "U";
+  else if (t == hbs::HIGH_IMPEDANCE)
+    os << "Z";
   else
     os << "B";
   return (os);
@@ -29,5 +31,12 @@ char			&operator<<(char		&c,
     return (c = '0');
   if (t == hbs::UNDEFINED)
     return (c = 'U');
+  if (t == hbs::HIGH_IMPEDANCE)
+    return (c = 'Z');
   return (c = 'B');
+}
+
+std::string		hbs::IComponent::GetDisplayType(void) const
+{
+  return (GetType());
 }
