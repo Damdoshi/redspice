@@ -3,6 +3,7 @@
 //
 // RED Spice
 
+#include		"Logic.hpp"
 #include		"4030.hpp"
 
 const std::string	&hbs::CMP_4030::GetType(void) const
@@ -14,13 +15,9 @@ const std::string	&hbs::CMP_4030::GetType(void) const
 hbs::Tristate		hbs::CMP_4030::Logic(hbs::Tristate	a,
 					     hbs::Tristate	b) const
 {
-  if (a == hbs::TRUE && b == hbs::FALSE)
-    return (hbs::TRUE);
-  if (b == hbs::TRUE && a == hbs::FALSE)
-    return (hbs::TRUE);
-  if (a == hbs::UNDEFINED || b == hbs::UNDEFINED)
-    return (hbs::UNDEFINED);
-  return (hbs::FALSE);
+  hbs::Tristate values[] = {a, b};
+
+  return (hbs::LogicXor(values, 2));
 }
 
 hbs::CMP_4030::CMP_4030(const hbs::Timer	&timer,

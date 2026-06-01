@@ -79,7 +79,7 @@ hbs::Tristate		hbs::CMP_4094::Compute(size_t		n)
       // OE
       if (GetPin(15) != hbs::TRUE)
 	{
-	  p->second = hbs::UNDEFINED;
+	  p->second = hbs::HIGH_IMPEDANCE;
 	  return (p->second);
 	}
 
@@ -93,6 +93,7 @@ hbs::CMP_4094::CMP_4094(const hbs::Timer		&time,
 			const std::string		&name,
 			const std::string		&pos)
   : AComponent(time, name, pos),
+    qns(false),
     last_tick_up(0),
     last_tick_down(0)
 {}

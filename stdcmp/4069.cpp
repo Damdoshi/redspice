@@ -3,6 +3,7 @@
 //
 // RED Spice
 
+#include		"Logic.hpp"
 #include		"4069.hpp"
 
 const std::string	&hbs::CMP_4069::GetType(void) const
@@ -13,11 +14,7 @@ const std::string	&hbs::CMP_4069::GetType(void) const
 
 static hbs::Tristate	Reverse(hbs::Tristate			n)
 {
-  if (n == hbs::TRUE)
-    return (hbs::FALSE);
-  if (n == hbs::FALSE)
-    return (hbs::TRUE);
-  return (n);
+  return (hbs::LogicNot(n));
 }
 
 hbs::Tristate		hbs::CMP_4069::Compute(size_t		n)

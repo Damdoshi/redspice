@@ -592,9 +592,15 @@ hbs::Tristate		hbs::Track::Compute(size_t pin_num_this)
 	attachment_is_on_same_net(attachments, segments, pin_num_this, i))
       {
 	tmp = attachments[i].component->Compute(attachments[i].pin);
+	if (tmp == hbs::HIGH_IMPEDANCE)
+	  {
+	    if (out == hbs::UNDEFINED)
+	      out = hbs::HIGH_IMPEDANCE;
+	    continue ;
+	  }
 	if (tmp != hbs::UNDEFINED)
 	  {
-	    if (out != hbs::UNDEFINED)
+	    if (out != hbs::UNDEFINED && out != hbs::HIGH_IMPEDANCE && out != tmp)
 	      {
 		SetNetPins(pin_num_this, hbs::BROKEN);
 		computing = false;

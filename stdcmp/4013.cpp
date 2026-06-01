@@ -75,7 +75,7 @@ hbs::Tristate		hbs::CMP_4013::Compute(size_t		n)
 	if (GetPin(11) == hbs::TRUE && GetPrevious(11) == hbs::FALSE)
 	  {
 	    last_tick[1] = timer.GetTime();
-	    val[1] = GetPin(5);
+	    val[1] = GetPin(9);
 	  }
 
       /// SET 2
