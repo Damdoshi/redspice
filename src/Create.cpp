@@ -35,6 +35,11 @@
 #include		"4026.hpp"
 #include		"4028.hpp"
 #include		"4029.hpp"
+#include		"4031.hpp"
+#include		"4034.hpp"
+#include		"4095.hpp"
+#include		"74181.hpp"
+#include		"74182.hpp"
 #include		"4033.hpp"
 #include		"4035.hpp"
 #include		"4042.hpp"
@@ -49,13 +54,26 @@
 #include		"4516.hpp"
 #include		"4518.hpp"
 #include		"4520.hpp"
+#include		"4522.hpp"
 #include		"4555.hpp"
 #include		"4556.hpp"
 #include		"74164.hpp"
 #include		"74165.hpp"
 #include		"74194.hpp"
 #include		"74595.hpp"
+#include		"74166.hpp"
+#include		"74195.hpp"
+#include		"74299.hpp"
+#include		"74597.hpp"
 #include		"7474.hpp"
+#include		"7475.hpp"
+#include		"7490.hpp"
+#include		"7493.hpp"
+#include		"7473.hpp"
+#include		"7476.hpp"
+#include		"74107.hpp"
+#include		"74109.hpp"
+#include		"74112.hpp"
 #include		"74174.hpp"
 #include		"74175.hpp"
 #include		"74273.hpp"
@@ -63,6 +81,7 @@
 #include		"74374.hpp"
 #include		"74573.hpp"
 #include		"74574.hpp"
+#include		"74377.hpp"
 #include		"74125.hpp"
 #include		"74126.hpp"
 #include		"74240.hpp"
@@ -71,13 +90,24 @@
 #include		"74245.hpp"
 #include		"74540.hpp"
 #include		"74541.hpp"
+#include		"74137.hpp"
 #include		"74138.hpp"
+#include		"74237.hpp"
+#include		"74147.hpp"
+#include		"74148.hpp"
+#include		"74161.hpp"
+#include		"74193.hpp"
+#include		"74190.hpp"
+#include		"74390.hpp"
+#include		"74393.hpp"
 #include		"74238.hpp"
 #include		"74151.hpp"
 #include		"74251.hpp"
 #include		"74153.hpp"
 #include		"74253.hpp"
 #include		"74154.hpp"
+#include		"74155.hpp"
+#include		"74156.hpp"
 #include		"74157.hpp"
 #include		"74158.hpp"
 #include		"74257.hpp"
@@ -87,6 +117,11 @@
 #include		"4041.hpp"
 #include		"4049.hpp"
 #include		"4050.hpp"
+#include		"4051.hpp"
+#include		"4052.hpp"
+#include		"4053.hpp"
+#include		"4066.hpp"
+#include		"4067.hpp"
 #include		"4068.hpp"
 #include		"4072.hpp"
 #include		"4073.hpp"
@@ -96,6 +131,7 @@
 #include		"4082.hpp"
 #include		"4085.hpp"
 #include		"4086.hpp"
+#include		"4089.hpp"
 #include		"4093.hpp"
 #include		"4584.hpp"
 #include		"4001.hpp"
@@ -105,6 +141,7 @@
 #include		"4014.hpp"
 #include		"4015.hpp"
 #include		"4017.hpp"
+#include		"4018.hpp"
 #include		"4030.hpp"
 #include		"4040.hpp"
 #include		"4069.hpp"
@@ -422,6 +459,16 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
     return (tmp);
   if ((tmp = hbs::CMP_4050::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
+  if ((tmp = hbs::CMP_4051::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4052::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4053::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4066::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4067::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
   if ((tmp = hbs::CMP_4068::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_4072::Create(timer, type, name, value, position)) != NULL)
@@ -439,6 +486,8 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
   if ((tmp = hbs::CMP_4085::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_4086::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4089::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_4093::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
@@ -458,7 +507,13 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
     return (tmp);
   if ((tmp = hbs::CMP_4017::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
+  if ((tmp = hbs::CMP_4018::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
   if ((tmp = hbs::CMP_4030::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4031::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4034::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_4040::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
@@ -469,6 +524,8 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
   if ((tmp = hbs::CMP_4081::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_4094::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_4095::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_4502::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
@@ -488,9 +545,21 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
     return (tmp);
   if ((tmp = hbs::CMP_4520::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
+  if ((tmp = hbs::CMP_4522::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
   if ((tmp = hbs::CMP_4555::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_4556::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74161::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74193::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74190::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74390::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74393::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_74164::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
@@ -500,7 +569,31 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
     return (tmp);
   if ((tmp = hbs::CMP_74595::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
+  if ((tmp = hbs::CMP_74166::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74195::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74299::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74597::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
   if ((tmp = hbs::CMP_7474::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_7475::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_7490::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_7493::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_7473::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_7476::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74107::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74109::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74112::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_74174::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
@@ -515,6 +608,8 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
   if ((tmp = hbs::CMP_74573::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_74574::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74377::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_74125::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
@@ -532,7 +627,15 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
     return (tmp);
   if ((tmp = hbs::CMP_74541::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
+  if ((tmp = hbs::CMP_74137::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
   if ((tmp = hbs::CMP_74138::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74237::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74147::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74148::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_74238::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
@@ -546,6 +649,10 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
     return (tmp);
   if ((tmp = hbs::CMP_74154::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
+  if ((tmp = hbs::CMP_74155::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74156::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
   if ((tmp = hbs::CMP_74157::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_74158::Create(timer, type, name, value, position)) != NULL)
@@ -555,6 +662,10 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
   if ((tmp = hbs::CMP_74258::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_74280::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74181::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74182::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_74688::Create(timer, type, name, value, position)) != NULL)
     return (tmp);

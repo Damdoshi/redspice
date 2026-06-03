@@ -129,12 +129,6 @@ bool			hbs::CMP_4516::TypeMatches(const std::string &type)
 {
   if (type == "4516")
     return (true);
-  if (type == "74161")
-    return (true);
-  if (type == "74HC161")
-    return (true);
-  if (type == "74LS161")
-    return (true);
   if (type == "74HC4516")
     return (true);
   return (false);

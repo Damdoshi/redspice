@@ -41,7 +41,6 @@ hbs::Tristate           hbs::CMP_4027::Compute(size_t n)
   Preset                p;
   size_t                idx;
   size_t                qpin;
-  size_t                nqpin;
   size_t                clk;
   size_t                reset;
   size_t                k;
@@ -53,11 +52,11 @@ hbs::Tristate           hbs::CMP_4027::Compute(size_t n)
   p = PresetOutput(n);
   if (n == 1 || n == 2)
     {
-      idx = 0; qpin = 1; nqpin = 2; clk = 3; reset = 4; k = 5; j = 6; set = 7;
+      idx = 0; qpin = 1; clk = 3; reset = 4; k = 5; j = 6; set = 7;
     }
   else if (n == 14 || n == 15)
     {
-      idx = 1; qpin = 15; nqpin = 14; clk = 13; reset = 12; k = 11; j = 10; set = 9;
+      idx = 1; qpin = 15; clk = 13; reset = 12; k = 11; j = 10; set = 9;
     }
   else if (n == 8 || n == 16)
     return (hbs::UNDEFINED);
