@@ -55,6 +55,35 @@
 #include		"74165.hpp"
 #include		"74194.hpp"
 #include		"74595.hpp"
+#include		"7474.hpp"
+#include		"74174.hpp"
+#include		"74175.hpp"
+#include		"74273.hpp"
+#include		"74373.hpp"
+#include		"74374.hpp"
+#include		"74573.hpp"
+#include		"74574.hpp"
+#include		"74125.hpp"
+#include		"74126.hpp"
+#include		"74240.hpp"
+#include		"74241.hpp"
+#include		"74244.hpp"
+#include		"74245.hpp"
+#include		"74540.hpp"
+#include		"74541.hpp"
+#include		"74138.hpp"
+#include		"74238.hpp"
+#include		"74151.hpp"
+#include		"74251.hpp"
+#include		"74153.hpp"
+#include		"74253.hpp"
+#include		"74154.hpp"
+#include		"74157.hpp"
+#include		"74158.hpp"
+#include		"74257.hpp"
+#include		"74258.hpp"
+#include		"74280.hpp"
+#include		"74688.hpp"
 #include		"4041.hpp"
 #include		"4049.hpp"
 #include		"4050.hpp"
@@ -470,6 +499,64 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
   if ((tmp = hbs::CMP_74194::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_74595::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_7474::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74174::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74175::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74273::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74373::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74374::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74573::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74574::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74125::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74126::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74240::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74241::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74244::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74245::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74540::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74541::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74138::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74238::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74151::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74251::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74153::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74253::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74154::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74157::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74158::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74257::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74258::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74280::Create(timer, type, name, value, position)) != NULL)
+    return (tmp);
+  if ((tmp = hbs::CMP_74688::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
   if ((tmp = hbs::CMP_2716::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
