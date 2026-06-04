@@ -33,6 +33,8 @@ static std::string	file_type(const hbs::IComponent &cmp)
     return ("false");
   if (type == "Terminal")
     return ("terminal");
+  if (type == "screen")
+    return ("screen");
   return (type);
 }
 
@@ -235,7 +237,7 @@ hbs::IComponent		*hbs::Circuit::CreateUserComponent(const std::string &type,
   circuit[name] = Create(type, name, "", ss.str());
   if (type == "input" || type == "clock")
     inputs[name] = dynamic_cast<hbs::Input*>(circuit[name]);
-  else if (type == "output" || type == "terminal")
+  else if (type == "output" || type == "terminal" || type == "screen" || type == "screen" || type == "screen")
     outputs[name] = dynamic_cast<hbs::Output*>(circuit[name]);
   else if (type == "wire" || type == "track")
     tracks[name] = dynamic_cast<hbs::Track*>(circuit[name]);
@@ -634,7 +636,7 @@ bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
       circuit[name] = Create(type, name, value, position);
       if (type == "input" || type == "clock")
 	inputs[name] = dynamic_cast<hbs::Input*>(circuit[name]);
-      else if (type == "output" || type == "terminal")
+      else if (type == "output" || type == "terminal" || type == "screen" || type == "screen" || type == "screen")
 	outputs[name] = dynamic_cast<hbs::Output*>(circuit[name]);
     }
   return (true);

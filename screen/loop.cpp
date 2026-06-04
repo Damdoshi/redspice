@@ -20,7 +20,7 @@ t_bunny_response	screen_loop(LoopData			&ld)
   if (ld.screen.search_panel)
     {
       if (ld.screen.loopsim)
-	hbs::Command("simulate", ld.circuit, ld.timer);
+	hbs::Simulate(ld.circuit, ld.timer, ld.screen.loop_ticks_per_frame);
       return (GO_ON);
     }
 
@@ -35,7 +35,7 @@ t_bunny_response	screen_loop(LoopData			&ld)
   if (moved)
     ld.screen.context_menu = false;
   if (ld.screen.loopsim)
-    hbs::Command("simulate", ld.circuit, ld.timer);
+    hbs::Simulate(ld.circuit, ld.timer, ld.screen.loop_ticks_per_frame);
   return (GO_ON);
 }
 

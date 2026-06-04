@@ -155,6 +155,7 @@
 #include		"2716.hpp"
 
 #include		"Terminal.hpp"
+#include		"VideoScreen.hpp"
 #include		"Track.hpp"
 
 namespace
@@ -400,6 +401,8 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
     return (new hbs::Clock(timer, name, value, position));
   if (type == "output")
     return (new hbs::Output(timer, name, position));
+  if (type == "screen")
+    return (new hbs::VideoScreen(timer, name, value, position));
   if (type == "true")
     return (new hbs::True(timer, name, position));
   if (type == "false")

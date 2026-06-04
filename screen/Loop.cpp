@@ -29,7 +29,7 @@ bool			hbs::Screen::Loop(hbs::Circuit		&c,
   LoopData		ld{c, timer, *this};
 
   bunny_set_context(&gl_screen);
-  bunny_loop(win, 25, &ld);
+  bunny_loop(win, 50, &ld);
   return (true);
 }
 

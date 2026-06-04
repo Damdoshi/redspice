@@ -15,8 +15,8 @@ ERRLOG		=	errors~
 CC		=	b++
 CFLAGS		=	-W -Wall -fPIC -std=gnu++23
 CFLAGS		+=	-Wno-missing-field-initializers
-CFLAGS		+=	-g -g3 -ggdb
-#CFLAGS		+=	-O2 -ffast-math -march=native
+#CFLAGS		+=	-g -g3 -ggdb
+CFLAGS		+=	-O2 -ffast-math -march=native
 
 LFLAGS		=	-ldl
 

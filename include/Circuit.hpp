@@ -202,6 +202,9 @@ namespace				hbs
     virtual ~Circuit(void);
   };
 
+  void					Simulate(hbs::Circuit			&circuit,
+						 hbs::Timer			&timer,
+						 size_t				ticks = 1);
   int					Command(const std::string		&cmd,
 						hbs::Circuit			&circuit,
 						hbs::Timer			&timer);

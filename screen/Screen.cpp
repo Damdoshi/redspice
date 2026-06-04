@@ -12,6 +12,7 @@ hbs::Screen::Screen(std::string const &filename)
 {
   file_name = filename;
   loopsim = false;
+  loop_ticks_per_frame = 64;
   grabbed = NULL;
   grabbed_step = hbs::Packet();
   active_track = NULL;
@@ -34,6 +35,7 @@ hbs::Screen::Screen(std::string const &filename)
   pin_size = PINSIZE_DEFAULT;
   if ((win = bunny_start(1440, 900, false, "Bunny CAD")) == NULL)
     throw 0;
+  bunny_enable_full_blit(true);
   if ((pic = bunny_new_picture(win->buffer.width, win->buffer.height)) == NULL)
     throw 0;
   if ((author = bunny_load_picture("./auth.png")) == NULL)

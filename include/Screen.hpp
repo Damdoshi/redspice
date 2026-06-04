@@ -45,6 +45,7 @@ namespace				hbs
     std::string			search_query;
     t_bunny_position			pan_last;
     bool				loopsim;
+    size_t				loop_ticks_per_frame;
     IComponent				*grabbed;
     hbs::Packet				grabbed_step;
     hbs::Track				*active_track;
