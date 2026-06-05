@@ -153,6 +153,13 @@
 #include		"4514.hpp"
 
 #include		"2716.hpp"
+#include		"Memory8.hpp"
+#include		"62256.hpp"
+#include		"6264.hpp"
+#include		"28C256.hpp"
+#include		"28C64.hpp"
+#include		"6522.hpp"
+#include		"6502.hpp"
 
 #include		"Terminal.hpp"
 #include		"VideoScreen.hpp"
@@ -674,6 +681,20 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
     return (tmp);
   if ((tmp = hbs::CMP_2716::Create(timer, type, name, value, position)) != NULL)
     return (tmp);
+
+  if (hbs::CMP_6502::TypeMatches(type))
+    return (hbs::CMP_6502::Create(timer, type, name, value, position));
+
+  if (hbs::CMP_62256::TypeMatches(type))
+    return (hbs::CMP_62256::Create(timer, type, name, value, position));
+  if (hbs::CMP_6264::TypeMatches(type))
+    return (hbs::CMP_6264::Create(timer, type, name, value, position));
+  if (hbs::CMP_28C256::TypeMatches(type))
+    return (hbs::CMP_28C256::Create(timer, type, name, value, position));
+  if (hbs::CMP_28C64::TypeMatches(type))
+    return (hbs::CMP_28C64::Create(timer, type, name, value, position));
+  if (hbs::CMP_6522::TypeMatches(type))
+    return (hbs::CMP_6522::Create(timer, type, name, value, position));
 
   if (type == "terminal")
     return (new hbs::Terminal(timer, name, position));

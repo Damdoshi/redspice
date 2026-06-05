@@ -1435,10 +1435,15 @@ hbs::Circuit::Circuit(hbs::Timer		&tim)
     "74164", "74165", "74166", "74194", "74195", "74299", "74595", "74597",
     "7473", "7474", "7475", "7476", "7490", "7493", "74107", "74109", "74112",
     "74174", "74175", "74273", "74373", "74374", "74377", "74573", "74574",
-    "2716", "wire"
+    "2716", "6502", "wire"
   };
 
   creatable_types.assign(types, types + sizeof(types) / sizeof(types[0]));
+  const char *memory_io_types[] = {
+    "62256", "6264", "28C256", "28C64", "6522"
+  };
+
+  creatable_types.insert(creatable_types.end(), memory_io_types, memory_io_types + sizeof(memory_io_types) / sizeof(memory_io_types[0]));
   LoadExternalComponents();
 }
 
