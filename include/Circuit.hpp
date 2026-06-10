@@ -150,7 +150,8 @@ namespace				hbs
     bool				GetDisplayable(size_t			n) const;
     size_t				GetOutputNum(void) const;
 
-    bool				Load(const std::string			&file);
+    bool				Load(const std::string			&file,
+				     bool				create_if_missing = false);
     bool				Save(const std::string			&file) const;
     void				SetValue(const std::string		&input,
 						 hbs::Tristate			value);

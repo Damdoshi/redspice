@@ -13,6 +13,11 @@ t_bunny_response	screen_wheel(int			id,
 			     LoopData			&ld)
 {
   (void)id;
+  if (ld.file_browser)
+    {
+      hbs::FileBrowserWheel(delta, ld);
+      return (GO_ON);
+    }
   if (ld.screen.search_panel)
     {
       ld.screen.search_offset = std::max(0, ld.screen.search_offset - delta);

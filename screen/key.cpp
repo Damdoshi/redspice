@@ -18,7 +18,7 @@ static bool		ctrl_pressed(void)
 
 static std::string	current_menu_choice(const LoopData &ld)
 {
-  const std::vector<std::string> &types = ld.circuit.GetCreatableTypes();
+  const std::vector<std::string> &types = ld.CurrentCircuit().GetCreatableTypes();
   int			seen = 0;
 
   for (size_t i = 0; i < types.size(); ++i)
@@ -53,7 +53,7 @@ static void		begin_component_placement(LoopData &ld, const std::string &type)
   if (type.empty())
     return ;
   hbs::Position pos = snapped_mouse(ld.screen);
-  hbs::IComponent *cmp = ld.circuit.CreateUserComponent(type, pos);
+  hbs::IComponent *cmp = ld.CurrentCircuit().CreateUserComponent(type, pos);
 
   clear_selection(ld.screen);
   if (hbs::Track *track = dynamic_cast<hbs::Track*>(cmp))
@@ -78,7 +78,7 @@ static void		cancel_component_placement(LoopData &ld)
     tracks.insert(track);
   else
     components.insert(ld.screen.component_to_place);
-  ld.circuit.DeleteSelected(components, tracks);
+  ld.CurrentCircuit().DeleteSelected(components, tracks);
   ld.screen.placing_component = false;
   ld.screen.component_to_place = NULL;
   ld.screen.placing_type = "";
@@ -100,6 +100,21 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
 				   t_bunny_keysym	sym,
 				   LoopData		&ld)
 {
+  if (sym == BKS_F9 && state == GO_UP)
+    {
+      ld.file_browser = !ld.file_browser;
+      if (ld.file_browser)
+	ld.RefreshBrowser();
+      return (GO_ON);
+    }
+  if (ld.file_browser)
+    {
+      if (sym == BKS_ESCAPE && state == GO_UP)
+	ld.file_browser = false;
+      else if (state == GO_DOWN)
+	hbs::FileBrowserKey(sym, ld);
+      return (GO_ON);
+    }
   if (sym == BKS_ESCAPE && state == GO_UP)
     {
       if (ld.screen.placing_component)
@@ -129,7 +144,7 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
 	{
 	  hbs::IComponent *unique = ld.screen.GetUniqueSelection();
 	  if (unique)
-	    ld.circuit.RenameComponent(unique, ld.screen.rename_buffer);
+	    ld.CurrentCircuit().RenameComponent(unique, ld.screen.rename_buffer);
 	  ld.screen.rename_mode = false;
 	}
       if (sym == BKS_BACKSPACE && !ld.screen.rename_buffer.empty())
@@ -142,14 +157,14 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
       if (ld.screen.placing_component)
 	cancel_component_placement(ld);
       else
-	ld.circuit.DeleteSelected(ld.screen.selected_components, ld.screen.selected_tracks);
+	ld.CurrentCircuit().DeleteSelected(ld.screen.selected_components, ld.screen.selected_tracks);
       ld.screen.active_track = NULL;
       ld.screen.active_node = hbs::Track::NoNode;
       return (GO_ON);
     }
   if (ctrl_pressed() && sym == BKS_S)
     {
-      ld.circuit.Save(ld.screen.file_name);
+      ld.SaveCurrentDocument();
       return (GO_ON);
     }
   if ((sym == BKS_ADD || sym == BKS_EQUAL))
@@ -190,7 +205,7 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
   if (sym == BKS_T)
     ld.screen.loopsim = false;
   if (sym == BKS_N)
-    hbs::Command("simulate", ld.circuit, ld.timer);
+    hbs::Command("simulate", ld.CurrentCircuit(), ld.CurrentTimer());
   if (sym == BKS_R)
     ld.screen.loopsim = true;
 

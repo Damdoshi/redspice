@@ -20,6 +20,8 @@ extern "C"
 t_bunny_response	screen_type(uint32_t		unicode,
 				    LoopData		&ld)
 {
+  if (ld.file_browser)
+    return (GO_ON);
   if (ld.screen.rename_mode)
     {
       if (valid_name_char(unicode))

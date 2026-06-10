@@ -3,11 +3,13 @@
 //
 // RED Spice
 
+#include		<cerrno>
 #include		<cstdlib>
 #include		<cstring>
 #include		<ctime>
 #include		<fstream>
 #include		<iostream>
+#include		<sys/stat.h>
 #include		"Circuit.hpp"
 #include		"Screen.hpp"
 #include		"Shell.hpp"
@@ -20,7 +22,7 @@ static void		usage(const char	*prog)
 }
 
 static void		set_input_argument(hbs::Circuit	&circuit,
-					   const char		*arg)
+					   const char	*arg)
 {
   int			j;
 
@@ -31,11 +33,12 @@ static void		set_input_argument(hbs::Circuit	&circuit,
 }
 
 static int		load_circuit(hbs::Circuit	&circuit,
-				     const std::string	&file)
+				     const std::string	&file,
+				     bool		create_if_missing = false)
 {
   try
     {
-      circuit.Load(file);
+      circuit.Load(file, create_if_missing);
     }
   catch (const std::exception &e)
     {
@@ -124,7 +127,7 @@ int			main(int		argc,
     return (Batch(argc, argv));
   if (strcmp(argv[1], "--test") == 0)
     return (Test(argc, argv));
-  if (load_circuit(circuit, argv[1]) != EXIT_SUCCESS)
+  if (load_circuit(circuit, argv[1], true) != EXIT_SUCCESS)
     return (EXIT_FAILURE);
   try
     {

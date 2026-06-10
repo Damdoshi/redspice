@@ -7,6 +7,7 @@
 #include		<algorithm>
 #include		<cmath>
 #include		<fstream>
+#include		<unistd.h>
 #include		<cctype>
 #include		<sstream>
 #include		<iostream>
@@ -903,11 +904,13 @@ bool			hbs::Circuit::ReadLinksInside(const std::string	&code,
   LinkEnd		left;
   LinkEnd		right;
 
-  while (CheckChar(code, i))
+  while (true)
     {
       std::string	poslink;
 
       ReadWhitespace(code, i);
+      if (i >= (int)code.size() || code[i] == '.' || !CheckChar(code, i))
+	break ;
       ReadOneLink(code, i, left);
       ReadOneLink(code, i, right);
       ReadWhitespace(code, i);
@@ -1012,6 +1015,22 @@ bool			hbs::Circuit::ReadPackage(const std::string	&code,
   ReadWhitespace(code, i);
   return (ReadPackageInside(code, i));
 }
+
+static bool			ReadMisc(const std::string &code, int &i)
+{
+  if (ReadText(code, i, ".misc:") == false)
+    return (false);
+  while (i < (int)code.size())
+    {
+      skip_spaces(code, i);
+      if (i >= (int)code.size() || code[i] == '.')
+	break ;
+      while (i < (int)code.size() && code[i] != '\n')
+	i += 1;
+    }
+  return (true);
+}
+
 void			hbs::Circuit::UpdateExternalInputs(void)
 {
   for (size_t i = 0; i < external_pins.size(); ++i)
@@ -1254,22 +1273,42 @@ static std::string	load_context(const std::string &content, int pos)
   return (ss.str());
 }
 
-bool			hbs::Circuit::Load(const std::string		&file)
+static const char	*empty_circuit_file(void)
+{
+  return (".chipsets:\n\n.tracks:\n\n.links:\n");
+}
+
+bool			hbs::Circuit::Load(const std::string		&file,
+				  bool				create_if_missing)
 {
   std::ifstream		ss((char*)file.c_str(), std::ios::in | std::ios::binary);
-
-  if (!ss)
-    throw hbs::CannotOpenFile(std::string("Cannot open circuit file '") + file + "'.");
   std::string		content;
   bool			erase;
   int			i;
 
-  i = 0;
-  ss.seekg(0,  std::ios::end);
-  content.resize(ss.tellg());
-  ss.seekg(0, std::ios::beg);
-  if (!content.empty())
-    ss.read(&content[0], content.size());
+  if (!ss)
+    {
+      if (!create_if_missing || access(file.c_str(), F_OK) == 0)
+	throw hbs::CannotOpenFile(std::string("Cannot open circuit file '") + file + "'.");
+      std::ofstream	created((char*)file.c_str(), std::ios::out | std::ios::binary);
+
+      if (!created)
+	throw hbs::CannotOpenFile(std::string("Cannot create circuit file '") + file + "'.");
+      content = empty_circuit_file();
+      created << content;
+      if (!created)
+	throw hbs::CannotOpenFile(std::string("Cannot initialize circuit file '") + file + "'.");
+    }
+  else
+    {
+      ss.seekg(0,  std::ios::end);
+      content.resize(ss.tellg());
+      ss.seekg(0, std::ios::beg);
+      if (!content.empty())
+	ss.read(&content[0], content.size());
+    }
+  if (content.empty())
+    content = empty_circuit_file();
   for (i = 0, erase = false; i < (int)content.size(); ++i)
     if (content[i] == '#')
       {
@@ -1291,10 +1330,25 @@ bool			hbs::Circuit::Load(const std::string		&file)
     throw hbs::SyntaxError(std::string("Expected .links: section at ") + load_context(content, i));
   NormalizeTracks();
   ReadWhitespace(content, i);
-  if (ReadPackage(content, i))
-    ReadWhitespace(content, i);
+  while (true)
+    {
+      bool consumed = false;
+
+      if (ReadPackage(content, i))
+	{
+	  ReadWhitespace(content, i);
+	  consumed = true;
+	}
+      if (ReadMisc(content, i))
+	{
+	  ReadWhitespace(content, i);
+	  consumed = true;
+	}
+      if (!consumed)
+	break ;
+    }
   if (i < (int)content.size())
-    throw hbs::SyntaxError(std::string("Unexpected content after .links: at ") + load_context(content, i));
+    throw hbs::SyntaxError(std::string("Unexpected content after .links/.package/.misc: at ") + load_context(content, i));
   return (true);
 }
 

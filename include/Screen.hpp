@@ -127,18 +127,66 @@ namespace				hbs
   };
 }
 
+struct					LoopDocument
+{
+  std::string				file_name;
+  hbs::Timer				*timer;
+  hbs::Circuit				*circuit;
+  hbs::Position				camera;
+  int					pin_size;
+  bool					owned;
+
+  LoopDocument(hbs::Circuit &c, hbs::Timer &t, const std::string &file);
+  LoopDocument(const std::string &file);
+  ~LoopDocument(void);
+};
+
+struct					FileBrowserEntry
+{
+  std::string				name;
+  std::string				path;
+  bool					directory;
+};
+
 struct					LoopData
 {
-  hbs::Circuit				&circuit;
-  hbs::Timer				&timer;
   hbs::Screen				&screen;
-  LoopData(hbs::Circuit &c, hbs::Timer &t, hbs::Screen &s)
-    : circuit(c), timer(t), screen(s) {}
+  std::vector<LoopDocument*>		documents;
+  size_t				active_document;
+  bool					file_browser;
+  std::string				browser_directory;
+  std::vector<FileBrowserEntry>	browser_entries;
+  int					browser_offset;
+  int					opened_offset;
+  std::string				browser_error;
   t_bunny_position			last_mouse = {0, 0};
   std::map<
     std::string,
     hbs::ComponentLib
     >					library;
+
+  LoopData(hbs::Circuit &c, hbs::Timer &t, hbs::Screen &s);
+  ~LoopData(void);
+  hbs::Circuit				&CurrentCircuit(void);
+  hbs::Timer				&CurrentTimer(void);
+  const hbs::Circuit			&CurrentCircuit(void) const;
+  const hbs::Timer			&CurrentTimer(void) const;
+  void					SaveActiveView(void);
+  void					ApplyActiveView(void);
+  bool					SelectDocument(size_t index);
+  bool					OpenFile(const std::string &file);
+  bool					SaveCurrentDocument(void);
+  void					RefreshBrowser(void);
 };
+
+namespace					hbs
+{
+  void					DrawFileBrowser(LoopData &ld);
+  bool					FileBrowserKey(t_bunny_keysym sym, LoopData &ld);
+  bool					FileBrowserClick(t_bunny_event_state state,
+							 t_bunny_mouse_button sym,
+							 LoopData &ld);
+  bool					FileBrowserWheel(int delta, LoopData &ld);
+}
 
 #endif	//			__SCREEN_HPP__

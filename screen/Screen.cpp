@@ -33,7 +33,9 @@ hbs::Screen::Screen(std::string const &filename)
   search_query = "";
   pan_last = {0, 0};
   pin_size = PINSIZE_DEFAULT;
-  if ((win = bunny_start(1440, 900, false, "Bunny CAD")) == NULL)
+  if ((win = bunny_start_style(1440, 900,
+				  (t_bunny_window_style)(TITLEBAR | RESIZE_BUTTON | CLOSE_BUTTON),
+				  "Bunny CAD")) == NULL)
     throw 0;
   bunny_enable_full_blit(true);
   if ((pic = bunny_new_picture(win->buffer.width, win->buffer.height)) == NULL)

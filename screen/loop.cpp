@@ -17,10 +17,13 @@ t_bunny_response	screen_loop(LoopData			&ld)
     speed *= 3.0;
   bool moved = false;
 
+  if (ld.file_browser)
+    return (GO_ON);
+
   if (ld.screen.search_panel)
     {
       if (ld.screen.loopsim)
-	hbs::Simulate(ld.circuit, ld.timer, ld.screen.loop_ticks_per_frame);
+	hbs::Simulate(ld.CurrentCircuit(), ld.CurrentTimer(), ld.screen.loop_ticks_per_frame);
       return (GO_ON);
     }
 
@@ -35,7 +38,7 @@ t_bunny_response	screen_loop(LoopData			&ld)
   if (moved)
     ld.screen.context_menu = false;
   if (ld.screen.loopsim)
-    hbs::Simulate(ld.circuit, ld.timer, ld.screen.loop_ticks_per_frame);
+    hbs::Simulate(ld.CurrentCircuit(), ld.CurrentTimer(), ld.screen.loop_ticks_per_frame);
   return (GO_ON);
 }
 

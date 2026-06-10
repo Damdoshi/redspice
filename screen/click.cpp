@@ -39,7 +39,7 @@ static void		trigger_context_menu_action(LoopData &ld, t_bunny_position pos)
     }
   else
     {
-      ld.circuit.DeleteSelected(ld.screen.selected_components, ld.screen.selected_tracks);
+      ld.CurrentCircuit().DeleteSelected(ld.screen.selected_components, ld.screen.selected_tracks);
       ld.screen.active_track = NULL;
       ld.screen.active_node = hbs::Track::NoNode;
     }
@@ -106,7 +106,7 @@ static bool		shift_pressed(void)
 
 static bool		is_inside_component_menu(const hbs::Screen &screen, t_bunny_position pos)
 {
-  int x = screen.win->buffer.width - 330;
+  int x = screen.pic->buffer.width - 330;
   int y = 80;
 
   return (screen.search_panel && pos.x >= x && pos.x <= x + 320 && pos.y >= y && pos.y <= y + 500);
@@ -121,7 +121,7 @@ static bool		component_menu_choice_at(const LoopData &ld,
   int rel;
   int wanted;
   int seen = 0;
-  const std::vector<std::string> &types = ld.circuit.GetCreatableTypes();
+  const std::vector<std::string> &types = ld.CurrentCircuit().GetCreatableTypes();
 
   type = "";
   if (!is_inside_component_menu(ld.screen, pos))
@@ -160,7 +160,7 @@ static void		begin_component_placement(LoopData &ld, const std::string &type)
   if (type.empty())
     return ;
   hbs::Position pos = snapped_mouse(ld.screen);
-  hbs::IComponent *cmp = ld.circuit.CreateUserComponent(type, pos);
+  hbs::IComponent *cmp = ld.CurrentCircuit().CreateUserComponent(type, pos);
 
   clear_selection(ld.screen);
   if (hbs::Track *track = dynamic_cast<hbs::Track*>(cmp))
@@ -186,7 +186,7 @@ static void		cancel_component_placement(LoopData &ld)
     tracks.insert(track);
   else
     components.insert(ld.screen.component_to_place);
-  ld.circuit.DeleteSelected(components, tracks);
+  ld.CurrentCircuit().DeleteSelected(components, tracks);
   ld.screen.placing_component = false;
   ld.screen.component_to_place = NULL;
   ld.screen.placing_type = "";
@@ -272,7 +272,7 @@ static void		attach_pin_to_active_track(LoopData &ld,
   if (!pin.IsValid() || ld.screen.active_track == NULL)
     return ;
   size_t existing_node = hbs::Track::NoNode;
-  hbs::Track *existing = ld.circuit.FindTrackAttachedTo(pin.component, pin.pin, &existing_node);
+  hbs::Track *existing = ld.CurrentCircuit().FindTrackAttachedTo(pin.component, pin.pin, &existing_node);
 
   if (existing != NULL)
     existing_node = ensure_pin_attachment_node(existing, pin,
@@ -280,7 +280,7 @@ static void		attach_pin_to_active_track(LoopData &ld,
 					      current_layer(ld.screen));
   if (existing != NULL && existing != ld.screen.active_track)
     {
-      ld.screen.active_track = ld.circuit.MergeTracks(ld.screen.active_track, existing,
+      ld.screen.active_track = ld.CurrentCircuit().MergeTracks(ld.screen.active_track, existing,
 						       ld.screen.active_node, existing_node);
       detach_draw_cursor(ld.screen);
       return ;
@@ -305,7 +305,7 @@ static void		connect_pin_in_draw_mode(LoopData &ld,
     return ;
   hbs::Position pp = pin.component->GetPinPosition(pin.pin);
   size_t existing_node = hbs::Track::NoNode;
-  hbs::Track *existing = ld.circuit.FindTrackAttachedTo(pin.component, pin.pin, &existing_node);
+  hbs::Track *existing = ld.CurrentCircuit().FindTrackAttachedTo(pin.component, pin.pin, &existing_node);
 
   if (existing != NULL)
     existing_node = ensure_pin_attachment_node(existing, pin, pp, current_layer(ld.screen));
@@ -318,14 +318,14 @@ static void		connect_pin_in_draw_mode(LoopData &ld,
 	  ld.screen.active_node = existing_node;
 	  return ;
 	}
-      ld.screen.active_track = ld.circuit.CreateUserTrackAt(pp);
+      ld.screen.active_track = ld.CurrentCircuit().CreateUserTrackAt(pp);
       ld.screen.active_node = 0;
       attach_pin_to_active_track(ld, pin);
       return ;
     }
   if (existing != NULL && existing != ld.screen.active_track)
     {
-      ld.circuit.MergeTracks(ld.screen.active_track, existing, ld.screen.active_node, existing_node);
+      ld.CurrentCircuit().MergeTracks(ld.screen.active_track, existing, ld.screen.active_node, existing_node);
       detach_draw_cursor(ld.screen);
       return ;
     }
@@ -362,13 +362,13 @@ static void		connect_track_node_in_draw_mode(LoopData &ld,
       detach_draw_cursor(ld.screen);
       return ;
     }
-  ld.circuit.MergeTracks(ld.screen.active_track, track, ld.screen.active_node, node);
+  ld.CurrentCircuit().MergeTracks(ld.screen.active_track, track, ld.screen.active_node, node);
   detach_draw_cursor(ld.screen);
 }
 
 static void		draw_mode_left_click(LoopData &ld, t_bunny_position pos)
 {
-  hbs::ComponentPin pin = ld.circuit.GetPinAt(ld.screen, pos);
+  hbs::ComponentPin pin = ld.CurrentCircuit().GetPinAt(ld.screen, pos);
 
   if (pin.IsValid())
     {
@@ -376,14 +376,14 @@ static void		draw_mode_left_click(LoopData &ld, t_bunny_position pos)
       return ;
     }
 
-  hbs::Packet step = ld.circuit.GetLinkStep(ld.screen, pos);
-  if (step != ld.circuit.EndLinkStep())
+  hbs::Packet step = ld.CurrentCircuit().GetLinkStep(ld.screen, pos);
+  if (step != ld.CurrentCircuit().EndLinkStep())
     {
       connect_track_node_in_draw_mode(ld, step.track, step.node);
       return ;
     }
 
-  hbs::Track *track = ld.circuit.GetTrackAt(ld.screen, pos);
+  hbs::Track *track = ld.CurrentCircuit().GetTrackAt(ld.screen, pos);
   if (track != NULL)
     {
       size_t segment = track->FindSegment(ld.screen, pos);
@@ -397,7 +397,7 @@ static void		draw_mode_left_click(LoopData &ld, t_bunny_position pos)
 
   if (ld.screen.active_track == NULL)
     {
-      ld.screen.active_track = ld.circuit.CreateUserTrackAt({(double)pos.x, (double)pos.y});
+      ld.screen.active_track = ld.CurrentCircuit().CreateUserTrackAt({(double)pos.x, (double)pos.y});
       ld.screen.active_node = 0;
       return ;
     }
@@ -412,7 +412,7 @@ static void		draw_mode_right_click(LoopData &ld, t_bunny_position pos)
       ld.screen.active_node = hbs::Track::NoNode;
       return ;
     }
-  hbs::Track *track = ld.circuit.GetTrackAt(ld.screen, pos);
+  hbs::Track *track = ld.CurrentCircuit().GetTrackAt(ld.screen, pos);
   if (track != NULL)
     {
       size_t segment = track->FindSegment(ld.screen, pos);
@@ -420,7 +420,7 @@ static void		draw_mode_right_click(LoopData &ld, t_bunny_position pos)
       if (segment != hbs::Track::NoNode)
 	{
 	  track->DeleteBranchFromSegment(segment);
-	  ld.circuit.NormalizeTracks();
+	  ld.CurrentCircuit().NormalizeTracks();
 	}
       else
 	{
@@ -428,7 +428,7 @@ static void		draw_mode_right_click(LoopData &ld, t_bunny_position pos)
 	  std::set<hbs::Track*> tracks;
 
 	  tracks.insert(track);
-	  ld.circuit.DeleteSelected(components, tracks);
+	  ld.CurrentCircuit().DeleteSelected(components, tracks);
 	  clear_selection(ld.screen);
 	}
     }
@@ -441,6 +441,12 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 {
   t_bunny_position	pos = *bunny_get_mouse_position();
 
+  if (ld.file_browser)
+    {
+      hbs::FileBrowserClick(state, sym, ld);
+      return (GO_ON);
+    }
+
   if (is_toolbar(pos))
     {
       if (state == GO_UP && sym == BMB_LEFT)
@@ -448,11 +454,11 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 	  int but = pos.x / 100;
 
 	  if (but == 0)
-	    ld.circuit.Save(ld.screen.file_name);
+	    ld.SaveCurrentDocument();
 	  else if (but == 1)
 	    ld.screen.loopsim = false;
 	  else if (but == 2)
-	    hbs::Command("simulate", ld.circuit, ld.timer);
+	    hbs::Command("simulate", ld.CurrentCircuit(), ld.CurrentTimer());
 	  else if (but == 3)
 	    ld.screen.loopsim = true;
 	  else if (but == 4)
@@ -493,7 +499,7 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
     return (GO_ON);
 
   pos = world_mouse(ld.screen);
-  hbs::Input *in = ld.circuit.GetInput(ld.screen, pos);
+  hbs::Input *in = ld.CurrentCircuit().GetInput(ld.screen, pos);
 
   if (in && sym == BMB_MIDDLE && state == GO_UP)
     {
@@ -536,7 +542,7 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 
 	  if (elapsed < 360 && dist < std::max(0.75, 10.0 / ld.screen.pin_size))
 	    {
-	      hbs::Packet step = ld.circuit.GetLinkStep(ld.screen, pos);
+	      hbs::Packet step = ld.CurrentCircuit().GetLinkStep(ld.screen, pos);
 	      bool via_done = false;
 
 	      // Double-clicking the current drawing endpoint is the mouse equivalent
@@ -552,8 +558,8 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 		  if (adist < std::max(0.75, 10.0 / ld.screen.pin_size))
 		    via_done = place_via(ld);
 		}
-	      if (!via_done && !ld.circuit.GetPinAt(ld.screen, pos).IsValid() &&
-		  step != ld.circuit.EndLinkStep())
+	      if (!via_done && !ld.CurrentCircuit().GetPinAt(ld.screen, pos).IsValid() &&
+		  step != ld.CurrentCircuit().EndLinkStep())
 		{
 		  ld.screen.active_track = step.track;
 		  ld.screen.active_node = step.node;
@@ -574,9 +580,9 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
       return (GO_ON);
     }
 
-  hbs::IComponent *ic = ld.circuit.GetComponent(ld.screen, pos);
-  hbs::Packet step = ld.circuit.GetLinkStep(ld.screen, pos);
-  hbs::Track *track = ld.circuit.GetTrackAt(ld.screen, pos);
+  hbs::IComponent *ic = ld.CurrentCircuit().GetComponent(ld.screen, pos);
+  hbs::Packet step = ld.CurrentCircuit().GetLinkStep(ld.screen, pos);
+  hbs::Track *track = ld.CurrentCircuit().GetTrackAt(ld.screen, pos);
 
   if (sym == BMB_LEFT && state == GO_DOWN)
     {
@@ -584,7 +590,7 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
       ld.screen.selecting = false;
       ld.screen.dragging_selection = false;
       ld.screen.grabbed = NULL;
-      ld.screen.grabbed_step = ld.circuit.EndLinkStep();
+      ld.screen.grabbed_step = ld.CurrentCircuit().EndLinkStep();
       if (bunny_get_keyboard()[BKS_SPACE])
 	{
 	  ld.screen.panning = true;
@@ -609,14 +615,14 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 	  ld.screen.dragging_selection = true;
 	  return (GO_ON);
 	}
-      if (track && step == ld.circuit.EndLinkStep())
+      if (track && step == ld.CurrentCircuit().EndLinkStep())
 	{
 	  if (ld.screen.selected_tracks.find(track) == ld.screen.selected_tracks.end())
 	    select_track(ld.screen, track);
 	  ld.screen.dragging_selection = true;
 	  return (GO_ON);
 	}
-      if (step != ld.circuit.EndLinkStep())
+      if (step != ld.CurrentCircuit().EndLinkStep())
 	{
 	  ld.screen.grabbed_step = step;
 	  return (GO_ON);
@@ -641,7 +647,7 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 	  hbs::Position from = ld.screen.ScreenToWorld(ld.screen.grab_pos);
 	  hbs::Position to = ld.screen.ScreenToWorld(*bunny_get_mouse_position());
 
-	  ld.circuit.GetSelectionInRect(from, to, ld.screen.selected_components, ld.screen.selected_tracks);
+	  ld.CurrentCircuit().GetSelectionInRect(from, to, ld.screen.selected_components, ld.screen.selected_tracks);
 	  ld.screen.selecting = false;
 	}
       else if (ld.screen.dragging_selection)
@@ -656,9 +662,9 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 	ld.screen.grabbed->Move(npos);
       ld.screen.grabbed = NULL;
 
-      if (ld.screen.grabbed_step != ld.circuit.EndLinkStep())
+      if (ld.screen.grabbed_step != ld.CurrentCircuit().EndLinkStep())
 	ld.screen.grabbed_step.track->MoveNode(ld.screen.grabbed_step.node, npos);
-      ld.screen.grabbed_step = ld.circuit.EndLinkStep();
+      ld.screen.grabbed_step = ld.CurrentCircuit().EndLinkStep();
     }
 
   if (sym == BMB_RIGHT && state == GO_UP)
