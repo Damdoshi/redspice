@@ -17,7 +17,7 @@ t_bunny_response	screen_loop(LoopData			&ld)
     speed *= 3.0;
   bool moved = false;
 
-  if (ld.file_browser)
+  if (ld.file_browser || !ld.HasDocument())
     return (GO_ON);
 
   if (ld.screen.search_panel)
@@ -36,7 +36,10 @@ t_bunny_response	screen_loop(LoopData			&ld)
   if (keyboard[BKS_D] || keyboard[BKS_RIGHT])
     ld.screen.camera.x += speed, moved = true;
   if (moved)
-    ld.screen.context_menu = false;
+    {
+      ld.screen.context_menu = false;
+      ld.MarkDirty();
+    }
   if (ld.screen.loopsim)
     hbs::Simulate(ld.CurrentCircuit(), ld.CurrentTimer(), ld.screen.loop_ticks_per_frame);
   return (GO_ON);

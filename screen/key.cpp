@@ -9,6 +9,8 @@
 #include		<set>
 #include		"Circuit.hpp"
 #include		"Screen.hpp"
+#include		"Shortcuts.hpp"
+#include		"ComponentMenu.hpp"
 #include		"Track.hpp"
 
 static bool		ctrl_pressed(void)
@@ -23,7 +25,7 @@ static std::string	current_menu_choice(const LoopData &ld)
 
   for (size_t i = 0; i < types.size(); ++i)
     {
-      if (!ld.screen.search_query.empty() && types[i].find(ld.screen.search_query) == std::string::npos)
+      if (!hbs::ComponentMatchesQuery(types[i], ld.screen.search_query))
 	continue ;
       if (seen++ < ld.screen.search_offset)
 	continue ;
@@ -100,39 +102,32 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
 				   t_bunny_keysym	sym,
 				   LoopData		&ld)
 {
-  if (sym == BKS_F9 && state == GO_UP)
+  if (sym == BKS_ESCAPE && state == GO_UP)
     {
-      ld.file_browser = !ld.file_browser;
-      if (ld.file_browser)
-	ld.RefreshBrowser();
-      return (GO_ON);
+      if (ld.screen.search_panel)
+	{
+	  ld.screen.search_panel = false;
+	  ld.screen.search_query = "";
+	  ld.screen.search_offset = 0;
+	  return (GO_ON);
+	}
+      hbs::TriggerEscapeShortcut(ld);
+      return (ld.quit_requested ? EXIT_ON_SUCCESS : GO_ON);
+    }
+  if (hbs::FunctionKeyIndex(sym) >= 0 && state == GO_UP)
+    {
+      hbs::TriggerShortcut(sym, ld);
+      return (ld.quit_requested ? EXIT_ON_SUCCESS : GO_ON);
     }
   if (ld.file_browser)
     {
-      if (sym == BKS_ESCAPE && state == GO_UP)
-	ld.file_browser = false;
-      else if (state == GO_DOWN)
+      if (state == GO_DOWN)
 	hbs::FileBrowserKey(sym, ld);
-      return (GO_ON);
+      return (ld.quit_requested ? EXIT_ON_SUCCESS : GO_ON);
     }
-  if (sym == BKS_ESCAPE && state == GO_UP)
+  if (!ld.HasDocument())
     {
-      if (ld.screen.placing_component)
-	cancel_component_placement(ld);
-      else if (ld.screen.rename_mode)
-	ld.screen.rename_mode = false;
-      else if (ld.screen.search_panel)
-	ld.screen.search_panel = false;
-      else if (ld.screen.context_menu)
-	ld.screen.context_menu = false;
-      else if (ld.screen.drawing_mode)
-	{
-	  ld.screen.drawing_mode = false;
-	  ld.screen.active_track = NULL;
-	  ld.screen.active_node = hbs::Track::NoNode;
-	}
-      else
-	return (EXIT_ON_SUCCESS);
+      ld.BeginFileMenu();
       return (GO_ON);
     }
   if (state == GO_UP)
@@ -144,7 +139,10 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
 	{
 	  hbs::IComponent *unique = ld.screen.GetUniqueSelection();
 	  if (unique)
-	    ld.CurrentCircuit().RenameComponent(unique, ld.screen.rename_buffer);
+	    {
+	      ld.CurrentCircuit().RenameComponent(unique, ld.screen.rename_buffer);
+	      ld.MarkDirty();
+	    }
 	  ld.screen.rename_mode = false;
 	}
       if (sym == BKS_BACKSPACE && !ld.screen.rename_buffer.empty())
@@ -157,7 +155,10 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
       if (ld.screen.placing_component)
 	cancel_component_placement(ld);
       else
-	ld.CurrentCircuit().DeleteSelected(ld.screen.selected_components, ld.screen.selected_tracks);
+	{
+	  ld.CurrentCircuit().DeleteSelected(ld.screen.selected_components, ld.screen.selected_tracks);
+	  ld.MarkDirty();
+	}
       ld.screen.active_track = NULL;
       ld.screen.active_node = hbs::Track::NoNode;
       return (GO_ON);
@@ -171,16 +172,19 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
     {
       ld.screen.context_menu = false;
       ld.screen.ZoomAt(*bunny_get_mouse_position(), +2);
+      ld.MarkDirty();
     }
   if ((sym == BKS_SUBTRACT || sym == BKS_DASH))
     {
       ld.screen.context_menu = false;
       ld.screen.ZoomAt(*bunny_get_mouse_position(), -2);
+      ld.MarkDirty();
     }
   if (sym == BKS_HOME)
     {
       ld.screen.context_menu = false;
       ld.screen.ResetZoom(*bunny_get_mouse_position());
+      ld.MarkDirty();
     }
   if (sym == BKS_P)
     {
@@ -199,22 +203,10 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
   if (sym == BKS_V && ld.screen.active_track != NULL && ld.screen.active_node != hbs::Track::NoNode)
     {
       place_via(ld);
+      ld.MarkDirty();
       return (GO_ON);
     }
 
-  if (sym == BKS_T)
-    ld.screen.loopsim = false;
-  if (sym == BKS_N)
-    hbs::Command("simulate", ld.CurrentCircuit(), ld.CurrentTimer());
-  if (sym == BKS_R)
-    ld.screen.loopsim = true;
-
-  if (sym == BKS_TAB || sym == BKS_C)
-    {
-      ld.screen.search_panel = !ld.screen.search_panel;
-      ld.screen.search_offset = 0;
-      return (GO_ON);
-    }
   if (ld.screen.search_panel)
     {
       if (sym == BKS_BACKSPACE && !ld.screen.search_query.empty())
@@ -234,8 +226,25 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
 	{
 	  std::string type = current_menu_choice(ld);
 	  if (!type.empty())
-	    begin_component_placement(ld, type);
+	    {
+	      begin_component_placement(ld, type);
+	      ld.MarkDirty();
+	    }
 	}
+      return (GO_ON);
+    }
+
+  if (sym == BKS_T)
+    ld.screen.loopsim = false;
+  if (sym == BKS_N)
+    hbs::Command("simulate", ld.CurrentCircuit(), ld.CurrentTimer());
+  if (sym == BKS_R)
+    ld.screen.loopsim = true;
+
+  if (sym == BKS_TAB || sym == BKS_C)
+    {
+      ld.screen.search_panel = !ld.screen.search_panel;
+      ld.screen.search_offset = 0;
       return (GO_ON);
     }
   return (GO_ON);

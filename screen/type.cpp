@@ -16,12 +16,27 @@ static bool		valid_name_char(uint32_t unicode)
 	  unicode == '_');
 }
 
+static bool		valid_path_char(uint32_t unicode)
+{
+  return (unicode >= 32 && unicode < 127 && unicode != '\t');
+}
+
+static bool		save_mode(FileBrowserMode mode)
+{
+  return (mode == FILE_BROWSER_SAVE_ACTIVE || mode == FILE_BROWSER_SAVE_COPY ||
+	  mode == FILE_BROWSER_SAVE_THEN_CLOSE || mode == FILE_BROWSER_SAVE_THEN_QUIT);
+}
+
 extern "C"
 t_bunny_response	screen_type(uint32_t		unicode,
 				    LoopData		&ld)
 {
   if (ld.file_browser)
-    return (GO_ON);
+    {
+      if (save_mode(ld.file_browser_mode) && valid_path_char(unicode))
+	ld.browser_target.push_back((char)unicode);
+      return (GO_ON);
+    }
   if (ld.screen.rename_mode)
     {
       if (valid_name_char(unicode))

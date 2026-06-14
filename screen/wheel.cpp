@@ -18,6 +18,8 @@ t_bunny_response	screen_wheel(int			id,
       hbs::FileBrowserWheel(delta, ld);
       return (GO_ON);
     }
+  if (!ld.HasDocument())
+    return (GO_ON);
   if (ld.screen.search_panel)
     {
       ld.screen.search_offset = std::max(0, ld.screen.search_offset - delta);
@@ -25,5 +27,6 @@ t_bunny_response	screen_wheel(int			id,
     }
   ld.screen.context_menu = false;
   ld.screen.ZoomAt(*bunny_get_mouse_position(), delta);
+  ld.MarkDirty();
   return (GO_ON);
 }

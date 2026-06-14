@@ -9,12 +9,9 @@
 #include		<algorithm>
 #include		"Circuit.hpp"
 #include		"Screen.hpp"
+#include		"Shortcuts.hpp"
+#include		"ComponentMenu.hpp"
 #include		"Track.hpp"
-
-static bool		is_toolbar(t_bunny_position pos)
-{
-  return (pos.y >= 0 && pos.y < 75 && pos.x >= 0 && pos.x < 600);
-}
 
 static bool		is_inside_context_menu(const hbs::Screen &screen, t_bunny_position pos)
 {
@@ -104,48 +101,7 @@ static bool		shift_pressed(void)
   return (bunny_get_keyboard()[BKS_LSHIFT] || bunny_get_keyboard()[BKS_RSHIFT]);
 }
 
-static bool		is_inside_component_menu(const hbs::Screen &screen, t_bunny_position pos)
-{
-  int x = screen.pic->buffer.width - 330;
-  int y = 80;
-
-  return (screen.search_panel && pos.x >= x && pos.x <= x + 320 && pos.y >= y && pos.y <= y + 500);
-}
-
-static bool		component_menu_choice_at(const LoopData &ld,
-					 t_bunny_position pos,
-					 std::string &type)
-{
-  int y = 80;
-  int line = 24;
-  int rel;
-  int wanted;
-  int seen = 0;
-  const std::vector<std::string> &types = ld.CurrentCircuit().GetCreatableTypes();
-
-  type = "";
-  if (!is_inside_component_menu(ld.screen, pos))
-    return (false);
-  if (pos.y < y + 58 || pos.y >= y + 58 + 16 * line)
-    return (false);
-  rel = pos.y - (y + 58);
-  wanted = rel / line;
-  for (size_t i = 0; i < types.size(); ++i)
-    {
-      if (!ld.screen.search_query.empty() && types[i].find(ld.screen.search_query) == std::string::npos)
-	continue ;
-      if (seen++ < ld.screen.search_offset)
-	continue ;
-      if (wanted-- == 0)
-	{
-	  type = types[i];
-	  return (true);
-	}
-    }
-  return (false);
-}
-
-static void		move_placing_component_to_mouse(LoopData &ld)
+static void             move_placing_component_to_mouse(LoopData &ld)
 {
   if (!ld.screen.placing_component || ld.screen.component_to_place == NULL)
     return ;
@@ -441,49 +397,56 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 {
   t_bunny_position	pos = *bunny_get_mouse_position();
 
+  if (hbs::HandleShortcutBarClick(state, sym, pos, ld))
+    return (ld.quit_requested ? EXIT_ON_SUCCESS : GO_ON);
+
   if (ld.file_browser)
     {
       hbs::FileBrowserClick(state, sym, ld);
+      return (ld.quit_requested ? EXIT_ON_SUCCESS : GO_ON);
+    }
+
+  if (!ld.HasDocument())
+    {
+      ld.BeginFileMenu();
       return (GO_ON);
     }
 
-  if (is_toolbar(pos))
+  if (sym == BMB_RIGHT && state == GO_DOWN)
     {
-      if (state == GO_UP && sym == BMB_LEFT)
-	{
-	  int but = pos.x / 100;
-
-	  if (but == 0)
-	    ld.SaveCurrentDocument();
-	  else if (but == 1)
-	    ld.screen.loopsim = false;
-	  else if (but == 2)
-	    hbs::Command("simulate", ld.CurrentCircuit(), ld.CurrentTimer());
-	  else if (but == 3)
-	    ld.screen.loopsim = true;
-	  else if (but == 4)
-	    {
-	      ld.screen.search_panel = !ld.screen.search_panel;
-	      ld.screen.search_offset = 0;
-	    }
-	  else if (but == 5)
-	    {
-	      ld.screen.drawing_mode = !ld.screen.drawing_mode;
-	      ld.screen.context_menu = false;
-	      ld.screen.selecting = false;
-	      ld.screen.dragging_selection = false;
-	    }
-	}
+      ld.screen.panning = true;
+      ld.screen.right_panning = true;
+      ld.screen.right_panning_moved = false;
+      ld.screen.pan_last = *bunny_get_mouse_position();
+      ld.screen.pan_origin = ld.screen.pan_last;
+      ld.screen.context_menu = false;
       return (GO_ON);
+    }
+
+  if (sym == BMB_RIGHT && state == GO_UP && ld.screen.right_panning)
+    {
+      const t_bunny_position *mouse = bunny_get_mouse_position();
+      bool moved = ld.screen.right_panning_moved ||
+	(std::abs(mouse->x - ld.screen.pan_origin.x) > 3 ||
+	 std::abs(mouse->y - ld.screen.pan_origin.y) > 3);
+
+      ld.screen.panning = false;
+      ld.screen.right_panning = false;
+      ld.screen.right_panning_moved = false;
+      if (moved)
+	return (GO_ON);
     }
 
   if (ld.screen.search_panel && sym == BMB_LEFT && state == GO_DOWN)
     {
       std::string type;
 
-      if (component_menu_choice_at(ld, pos, type))
-	begin_component_placement(ld, type);
-      else if (!is_inside_component_menu(ld.screen, pos))
+      if (hbs::ComponentMenuChoiceAt(ld.CurrentCircuit(), ld.screen, pos, type))
+	{
+	  begin_component_placement(ld, type);
+	  ld.MarkDirty();
+	}
+      else if (!hbs::IsInsideComponentMenu(ld.screen, pos))
 	ld.screen.search_panel = false;
       return (GO_ON);
     }
@@ -491,7 +454,10 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
   if (ld.screen.context_menu && sym == BMB_LEFT && state == GO_DOWN)
     {
       if (is_inside_context_menu(ld.screen, pos))
-	trigger_context_menu_action(ld, pos);
+	{
+	  trigger_context_menu_action(ld, pos);
+	  ld.MarkDirty();
+	}
       ld.screen.context_menu = false;
       return (GO_ON);
     }
@@ -567,6 +533,7 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 		}
 	      if (via_done)
 		{
+		  ld.MarkDirty();
 		  last_click = std::chrono::steady_clock::time_point();
 		  return (GO_ON);
 		}
@@ -574,9 +541,13 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 	  last_click = now;
 	  last_pos = pos;
 	  draw_mode_left_click(ld, pos);
+	  ld.MarkDirty();
 	}
       else if (sym == BMB_RIGHT && state == GO_UP)
-	draw_mode_right_click(ld, pos);
+	{
+	  draw_mode_right_click(ld, pos);
+	  ld.MarkDirty();
+	}
       return (GO_ON);
     }
 
@@ -657,13 +628,20 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 	  for (auto it = ld.screen.selected_components.begin(); it != ld.screen.selected_components.end(); ++it)
 	    (*it)->Move(npos);
 	  ld.screen.dragging_selection = false;
+	  ld.MarkDirty();
 	}
       else if (ld.screen.grabbed)
-	ld.screen.grabbed->Move(npos);
+	{
+	  ld.screen.grabbed->Move(npos);
+	  ld.MarkDirty();
+	}
       ld.screen.grabbed = NULL;
 
       if (ld.screen.grabbed_step != ld.CurrentCircuit().EndLinkStep())
-	ld.screen.grabbed_step.track->MoveNode(ld.screen.grabbed_step.node, npos);
+	{
+	  ld.screen.grabbed_step.track->MoveNode(ld.screen.grabbed_step.node, npos);
+	  ld.MarkDirty();
+	}
       ld.screen.grabbed_step = ld.CurrentCircuit().EndLinkStep();
     }
 

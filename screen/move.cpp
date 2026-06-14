@@ -13,13 +13,22 @@ t_bunny_response	screen_move(const t_bunny_position	*rel,
 				    LoopData			&ld)
 {
   (void)rel;
+  if (!ld.HasDocument())
+    return (GO_ON);
   if (ld.screen.panning)
     {
       const t_bunny_position *mouse = bunny_get_mouse_position();
       ld.screen.context_menu = false;
-      ld.screen.PanByScreenDelta(mouse->x - ld.screen.pan_last.x,
-					 mouse->y - ld.screen.pan_last.y);
+      int dx = mouse->x - ld.screen.pan_last.x;
+      int dy = mouse->y - ld.screen.pan_last.y;
+
+      ld.screen.PanByScreenDelta(dx, dy);
+      if (ld.screen.right_panning &&
+	  (std::abs(mouse->x - ld.screen.pan_origin.x) > 3 ||
+	   std::abs(mouse->y - ld.screen.pan_origin.y) > 3))
+	ld.screen.right_panning_moved = true;
       ld.screen.pan_last = *mouse;
+      ld.MarkDirty();
     }
   if (ld.screen.placing_component && ld.screen.component_to_place != NULL)
     {

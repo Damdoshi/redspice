@@ -12,6 +12,9 @@ hbs::Screen::Screen(std::string const &filename)
 {
   file_name = filename;
   loopsim = false;
+  panning = false;
+  right_panning = false;
+  right_panning_moved = false;
   loop_ticks_per_frame = 64;
   grabbed = NULL;
   grabbed_step = hbs::Packet();

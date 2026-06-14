@@ -62,5 +62,5 @@ h:1 __wire_9:1
 counter:13 __wire_9:2
 
 .misc:
-camera [59.3372,26.9993]
+camera [61.2872,28.2993]
 zoom 18

@@ -5,10 +5,12 @@
 // RED Spice
 
 #include		<algorithm>
+#include		<cctype>
 #include		<chrono>
 #include		<filesystem>
 #include		<sstream>
 #include		"Screen.hpp"
+#include		"Shortcuts.hpp"
 
 static std::string	basename(const std::string &path)
 {
@@ -29,9 +31,28 @@ static std::string	shorten(const std::string &text, size_t max)
   return (text.substr(0, max - 3) + "...");
 }
 
+static bool		save_mode(FileBrowserMode mode)
+{
+  return (mode == FILE_BROWSER_SAVE_ACTIVE || mode == FILE_BROWSER_SAVE_COPY ||
+	  mode == FILE_BROWSER_SAVE_THEN_CLOSE || mode == FILE_BROWSER_SAVE_THEN_QUIT);
+}
+
+static const char	*mode_title(FileBrowserMode mode)
+{
+  if (mode == FILE_BROWSER_SAVE_ACTIVE)
+    return ("SAVE");
+  if (mode == FILE_BROWSER_SAVE_COPY)
+    return ("SAVE COPY");
+  if (mode == FILE_BROWSER_SAVE_THEN_CLOSE)
+    return ("SAVE BEFORE CLOSE");
+  if (mode == FILE_BROWSER_SAVE_THEN_QUIT)
+    return ("SAVE BEFORE QUIT");
+  return ("OPEN");
+}
+
 static int		visible_rows(const hbs::Screen &screen)
 {
-  int rows = (screen.pic->buffer.height - 118) / 24;
+  int rows = (screen.pic->buffer.height - 142) / 24;
 
   return (std::max(1, rows));
 }
@@ -122,18 +143,42 @@ static void		draw_right_panel(LoopData &ld, int x, int y, int w, int h)
   fixed_square(screen, x, y, w, h, hbs::Screen::Red, false);
   fixed_text(screen, x + 12, y + 10, {15, 22}, hbs::Screen::Red, "OPEN FILES");
   fixed_text(screen, x + 12, y + 44, {9, 14}, hbs::Screen::White,
+	     save_mode(ld.file_browser_mode) ?
+	     "clic: choisir ce chemin   double-clic: ecraser avec ce chemin" :
 	     "clic: afficher   double-clic: afficher et fermer ce menu");
+  if (ld.documents.empty())
+    fixed_text(screen, x + 20, y + 86, {10, 16}, hbs::Screen::Yellow, "Aucun fichier ouvert.");
   for (int row = 0; row < rows; ++row)
     {
       int idx = ld.opened_offset + row;
 
       if (idx >= (int)ld.documents.size())
 	break ;
+      std::string name = basename(ld.documents[idx]->file_name);
+      if (ld.documents[idx]->temporary)
+	name = "*" + name;
+      else if (ld.documents[idx]->dirty)
+	name = name + " *";
       draw_entry(screen, x + 10, y + 84 + row * 24, w - 20,
-		 basename(ld.documents[idx]->file_name), idx == (int)ld.active_document, false);
+		 name, idx == (int)ld.active_document, false);
       if (idx == (int)ld.active_document)
 	fixed_text(screen, x + w - 80, y + 84 + row * 24, {8, 13}, hbs::Screen::Yellow, "VISIBLE");
     }
+}
+
+static void		draw_save_prompt(LoopData &ld, int margin, int y, int w)
+{
+  if (!save_mode(ld.file_browser_mode))
+    return ;
+  hbs::Screen &screen = ld.screen;
+  std::string prompt = std::string("Nom: ") + ld.browser_target + "_";
+
+  fixed_square(screen, margin, y, w, 54, ALPHA(205, GRAY(30)), true);
+  fixed_square(screen, margin, y, w, 54, hbs::Screen::Yellow, false);
+  fixed_text(screen, margin + 10, y + 7, {10, 16}, hbs::Screen::Yellow,
+	     "Entree: sauvegarder   Shift+Entree: ne pas sauvegarder   clic fichier: nom   double-clic: ecraser");
+  fixed_text(screen, margin + 10, y + 30, {12, 18}, hbs::Screen::White,
+	     shorten(prompt, std::max(20, w / 9)));
 }
 
 void			hbs::DrawFileBrowser(LoopData &ld)
@@ -145,16 +190,21 @@ void			hbs::DrawFileBrowser(LoopData &ld)
   int h = screen.pic->buffer.height;
   int margin = 24;
   int gap = 18;
+  int top = hbs::ShortcutBarHeight + 10;
+  int save_h = save_mode(ld.file_browser_mode) ? 66 : 0;
   int panel_w = (w - margin * 2 - gap) / 2;
 
   bunny_clear(&screen.pic->buffer, BLACK);
   screen.pin_size = 1;
   screen.camera = {0, 0};
-  fixed_text(screen, margin, 12, {18, 28}, hbs::Screen::Red, "BUNNY CAD FILE SELECTOR");
-  fixed_text(screen, w - 430, 18, {9, 14}, hbs::Screen::White,
-	     "F9/Echap: retour CAO   molette: defiler");
-  draw_left_panel(ld, margin, 58, panel_w, h - 82);
-  draw_right_panel(ld, margin + panel_w + gap, 58, panel_w, h - 82);
+  hbs::DrawShortcutBar(screen, &ld);
+  fixed_text(screen, margin, top, {18, 28}, hbs::Screen::Red,
+	     std::string("BUNNY CAD FILE SELECTOR - ") + mode_title(ld.file_browser_mode));
+  fixed_text(screen, w - 610, top + 6, {9, 14}, hbs::Screen::White,
+	     "F1:new  F3:open  F4:menu  Shift+F1:close  F2:save  Shift+F2:save copy");
+  draw_save_prompt(ld, margin, top + 38, w - margin * 2);
+  draw_left_panel(ld, margin, top + 58 + save_h, panel_w, h - top - 82 - save_h);
+  draw_right_panel(ld, margin + panel_w + gap, top + 58 + save_h, panel_w, h - top - 82 - save_h);
   if (!ld.browser_error.empty())
     fixed_text(screen, margin, h - 20, {9, 14}, hbs::Screen::Yellow, shorten(ld.browser_error, 120));
   screen.camera = oldcam;
@@ -163,10 +213,22 @@ void			hbs::DrawFileBrowser(LoopData &ld)
   bunny_display(screen.win);
 }
 
+static bool		shift_pressed(void)
+{
+  return (bunny_get_keyboard()[BKS_LSHIFT] || bunny_get_keyboard()[BKS_RSHIFT]);
+}
+
 bool			hbs::FileBrowserKey(t_bunny_keysym sym, LoopData &ld)
 {
   int rows = visible_rows(ld.screen);
 
+  if (save_mode(ld.file_browser_mode))
+    {
+      if (sym == BKS_RETURN)
+	return (ld.CompleteSavePrompt(shift_pressed()), true);
+      if (sym == BKS_BACKSPACE && !ld.browser_target.empty())
+	ld.browser_target.erase(ld.browser_target.size() - 1);
+    }
   if (sym == BKS_UP)
     ld.browser_offset -= 1;
   if (sym == BKS_DOWN)
@@ -208,16 +270,19 @@ bool			hbs::FileBrowserClick(t_bunny_event_state state,
   int			w = ld.screen.pic->buffer.width;
   int			margin = 24;
   int			gap = 18;
+  int			top = hbs::ShortcutBarHeight + 10;
+  int			save_h = save_mode(ld.file_browser_mode) ? 66 : 0;
   int			panel_w = (w - margin * 2 - gap) / 2;
   int			left_x = margin;
   int			right_x = margin + panel_w + gap;
+  int			panel_y = top + 58 + save_h;
   int			row;
   int			idx;
 
   if (state != GO_DOWN || sym != BMB_LEFT)
     return (true);
-  row = (pos.y - (58 + 84)) / 24;
-  if (pos.y < 58 + 84 || row < 0 || row >= visible_rows(ld.screen))
+  row = (pos.y - (panel_y + 84)) / 24;
+  if (pos.y < panel_y + 84 || row < 0 || row >= visible_rows(ld.screen))
     return (true);
 
   std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
@@ -231,15 +296,23 @@ bool			hbs::FileBrowserClick(t_bunny_event_state state,
       last_side = 0;
       last_index = idx;
       last_click = now;
-      if (!dbl || idx < 0 || idx >= (int)ld.browser_entries.size())
+      if (idx < 0 || idx >= (int)ld.browser_entries.size())
 	return (true);
       if (ld.browser_entries[idx].directory)
 	{
+	  if (!dbl)
+	    return (true);
 	  ld.browser_directory = ld.browser_entries[idx].path;
 	  ld.browser_offset = 0;
 	  ld.RefreshBrowser();
 	}
-      else
+      else if (save_mode(ld.file_browser_mode))
+	{
+	  ld.browser_target = basename(ld.browser_entries[idx].path);
+	  if (dbl)
+	    ld.CompleteSavePrompt(false);
+	}
+      else if (dbl)
 	ld.OpenFile(ld.browser_entries[idx].path);
       return (true);
     }
@@ -252,9 +325,18 @@ bool			hbs::FileBrowserClick(t_bunny_event_state state,
       last_click = now;
       if (idx < 0 || idx >= (int)ld.documents.size())
 	return (true);
-      ld.SelectDocument((size_t)idx);
-      if (dbl)
-	ld.file_browser = false;
+      if (save_mode(ld.file_browser_mode))
+	{
+	  ld.browser_target = ld.documents[idx]->file_name;
+	  if (dbl)
+	    ld.CompleteSavePrompt(false);
+	}
+      else
+	{
+	  ld.SelectDocument((size_t)idx);
+	  if (dbl)
+	    ld.file_browser = false;
+	}
       return (true);
     }
   return (true);

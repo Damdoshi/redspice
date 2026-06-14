@@ -9,6 +9,7 @@
 #include		<ctime>
 #include		<fstream>
 #include		<iostream>
+#include		<string>
 #include		<sys/stat.h>
 #include		"Circuit.hpp"
 #include		"Screen.hpp"
@@ -16,7 +17,7 @@
 
 static void		usage(const char	*prog)
 {
-  std::cerr << prog << " circuit.bc [--simulate] [--screen] [input=value]*" << std::endl;
+  std::cerr << prog << " [circuit.rs] [--simulate] [--screen] [input=value]*" << std::endl;
   std::cerr << prog << " --batch circuit.bc [input=value]* < scenario.bcadtest" << std::endl;
   std::cerr << prog << " --test scenario.bcadtest circuit.bc [input=value]*" << std::endl;
 }
@@ -118,20 +119,25 @@ int			main(int		argc,
   hbs::Circuit		circuit(timer);
   hbs::Screen		*screen = NULL;
   bool			simulate_only = false;
+  std::string		initial_file = "";
+  int			arg_start = 1;
   int			i;
 
   srand(clock());
-  if (argc < 2)
-    return (usage(argv[0]), EXIT_FAILURE);
-  if (strcmp(argv[1], "--batch") == 0)
+  if (argc >= 2 && strcmp(argv[1], "--batch") == 0)
     return (Batch(argc, argv));
-  if (strcmp(argv[1], "--test") == 0)
+  if (argc >= 2 && strcmp(argv[1], "--test") == 0)
     return (Test(argc, argv));
-  if (load_circuit(circuit, argv[1], true) != EXIT_SUCCESS)
-    return (EXIT_FAILURE);
+  if (argc >= 2 && argv[1][0] != '-')
+    {
+      initial_file = argv[1];
+      arg_start = 2;
+      if (load_circuit(circuit, initial_file, true) != EXIT_SUCCESS)
+	return (EXIT_FAILURE);
+    }
   try
     {
-      for (i = 2; i < argc; ++i)
+      for (i = arg_start; i < argc; ++i)
 	{
 	  if (strcmp(argv[i], "--screen") == 0)
 	    continue ;
@@ -140,6 +146,8 @@ int			main(int		argc,
 	      simulate_only = true;
 	      continue ;
 	    }
+	  if (initial_file.empty())
+	    throw hbs::InvalidCommandLine("Input=value arguments require an opened circuit file.");
 	  set_input_argument(circuit, argv[i]);
 	}
     }
@@ -150,11 +158,13 @@ int			main(int		argc,
     }
   if (!simulate_only)
     {
-      screen = new hbs::Screen(argv[1]);
+      screen = new hbs::Screen(initial_file);
       int ret = Loop(circuit, timer, *screen);
       delete screen;
       return (ret);
     }
+  if (initial_file.empty())
+    return (usage(argv[0]), EXIT_FAILURE);
   for (i = 1; i <= (int)circuit.GetOutputNum(); ++i)
     if (circuit.GetDisplayable(i))
       std::cerr << circuit.GetOutputName(i) << "=" << circuit.Compute(i) << std::endl;

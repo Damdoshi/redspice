@@ -9,10 +9,9 @@
 extern "C"
 t_bunny_response	screen_display(LoopData			&ld)
 {
-  if (ld.file_browser)
+  if (ld.file_browser || !ld.HasDocument())
     hbs::DrawFileBrowser(ld);
   else
     ld.screen.Draw(ld.CurrentCircuit());
   return (GO_ON);
 }
-

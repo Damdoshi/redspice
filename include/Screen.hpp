@@ -44,6 +44,9 @@ namespace				hbs
     int				search_offset;
     std::string			search_query;
     t_bunny_position			pan_last;
+    t_bunny_position			pan_origin;
+    bool				right_panning;
+    bool				right_panning_moved;
     bool				loopsim;
     size_t				loop_ticks_per_frame;
     IComponent				*grabbed;
@@ -127,6 +130,15 @@ namespace				hbs
   };
 }
 
+enum					FileBrowserMode
+{
+  FILE_BROWSER_OPEN = 0,
+  FILE_BROWSER_SAVE_ACTIVE,
+  FILE_BROWSER_SAVE_COPY,
+  FILE_BROWSER_SAVE_THEN_CLOSE,
+  FILE_BROWSER_SAVE_THEN_QUIT
+};
+
 struct					LoopDocument
 {
   std::string				file_name;
@@ -135,9 +147,11 @@ struct					LoopDocument
   hbs::Position				camera;
   int					pin_size;
   bool					owned;
+  bool					dirty;
+  bool					temporary;
 
   LoopDocument(hbs::Circuit &c, hbs::Timer &t, const std::string &file);
-  LoopDocument(const std::string &file);
+  LoopDocument(const std::string &file, bool create_if_missing = false, bool temporary = false);
   ~LoopDocument(void);
 };
 
@@ -154,11 +168,14 @@ struct					LoopData
   std::vector<LoopDocument*>		documents;
   size_t				active_document;
   bool					file_browser;
+  FileBrowserMode			file_browser_mode;
   std::string				browser_directory;
   std::vector<FileBrowserEntry>	browser_entries;
   int					browser_offset;
   int					opened_offset;
   std::string				browser_error;
+  std::string				browser_target;
+  bool					quit_requested;
   t_bunny_position			last_mouse = {0, 0};
   std::map<
     std::string,
@@ -167,6 +184,7 @@ struct					LoopData
 
   LoopData(hbs::Circuit &c, hbs::Timer &t, hbs::Screen &s);
   ~LoopData(void);
+  bool					HasDocument(void) const;
   hbs::Circuit				&CurrentCircuit(void);
   hbs::Timer				&CurrentTimer(void);
   const hbs::Circuit			&CurrentCircuit(void) const;
@@ -175,7 +193,18 @@ struct					LoopData
   void					ApplyActiveView(void);
   bool					SelectDocument(size_t index);
   bool					OpenFile(const std::string &file);
+  bool					NewDocument(void);
+  bool					CloseCurrentDocument(bool discard = false);
   bool					SaveCurrentDocument(void);
+  bool					SaveCurrentDocumentAs(const std::string &file,
+						      bool copy_only = false);
+  void					BeginOpenFileBrowser(void);
+  void					BeginFileMenu(void);
+  void					BeginSaveAs(bool copy_only = false);
+  void					BeginSavePrompt(FileBrowserMode mode);
+  bool					CompleteSavePrompt(bool discard = false);
+  bool					RequestQuit(void);
+  void					MarkDirty(void);
   void					RefreshBrowser(void);
 };
 

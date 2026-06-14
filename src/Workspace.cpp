@@ -6,15 +6,17 @@
 
 #include		<algorithm>
 #include		<cctype>
+#include		<chrono>
 #include		<filesystem>
 #include		<fstream>
 #include		<iostream>
 #include		<sstream>
+#include		<unistd.h>
 #include		"Circuit.hpp"
 #include		"Screen.hpp"
 #include		"Track.hpp"
 
-static const char	*empty_circuit = ".chipsets:\n\n.tracks:\n\n.links:\n";
+// static const char	*empty_circuit = ".chipsets:\n\n.tracks:\n\n.links:\n";
 
 static std::string	canonical_filename(const std::string &file)
 {
@@ -22,6 +24,8 @@ static std::string	canonical_filename(const std::string &file)
   std::error_code	ec;
   fs::path		p = fs::absolute(fs::path(file), ec);
 
+  if (file.empty())
+    return ("");
   if (ec)
     p = fs::path(file);
   fs::path weak = fs::weakly_canonical(p, ec);
@@ -33,18 +37,38 @@ static std::string	canonical_filename(const std::string &file)
 static std::string	parent_directory(const std::string &file)
 {
   namespace fs = std::filesystem;
-  fs::path		p(file);
+  std::error_code	ec;
 
+  if (file.empty())
+    return (fs::current_path(ec).string());
+  fs::path		p(file);
   if (p.has_parent_path())
     return (p.parent_path().string());
-  return (fs::current_path().string());
+  return (fs::current_path(ec).string());
 }
 
-static bool		is_rs_file(const std::filesystem::path &path)
+static std::string	basename(const std::string &path)
 {
-  return (path.has_extension() && path.extension() == ".rs");
+  std::filesystem::path p(path);
+  std::string		name = p.filename().string();
+
+  if (name.empty())
+    return (path);
+  return (name);
 }
 
+static bool		is_rs_save_file(const std::filesystem::path &path)
+{
+  return (path.has_extension() &&
+	  (path.extension() == ".rs" || path.extension() == ".rs~"));
+}
+
+static std::string	with_default_rs_extension(std::filesystem::path path)
+{
+  if (!path.has_extension())
+    path += ".rs";
+  return (path.string());
+}
 
 static std::string	trim(const std::string &str)
 {
@@ -157,6 +181,19 @@ static bool		save_circuit_with_view(hbs::Circuit &circuit,
   return ((bool)os);
 }
 
+static std::string	make_temporary_filename(void)
+{
+  namespace fs = std::filesystem;
+  static unsigned int counter = 0;
+  std::stringstream ss;
+  std::error_code ec;
+
+  ss << "untitled-" << (long)getpid() << "-"
+     << std::chrono::steady_clock::now().time_since_epoch().count()
+     << "-" << counter++ << ".rs~";
+  return ((fs::current_path(ec) / ss.str()).string());
+}
+
 static void		reset_document_interaction(hbs::Screen &screen)
 {
   screen.panning = false;
@@ -179,6 +216,18 @@ static void		reset_document_interaction(hbs::Screen &screen)
   screen.selected_tracks.clear();
 }
 
+static std::string	build_browser_target_path(const LoopData &ld)
+{
+  namespace fs = std::filesystem;
+  fs::path		path(trim(ld.browser_target));
+
+  if (path.empty())
+    return ("");
+  if (path.is_relative())
+    path = fs::path(ld.browser_directory) / path;
+  return (canonical_filename(with_default_rs_extension(path)));
+}
+
 LoopDocument::LoopDocument(hbs::Circuit &c,
 			   hbs::Timer &t,
 			   const std::string &file)
@@ -187,23 +236,29 @@ LoopDocument::LoopDocument(hbs::Circuit &c,
     circuit(&c),
     camera({0, 0}),
     pin_size(PINSIZE_DEFAULT),
-    owned(false)
+    owned(false),
+    dirty(false),
+    temporary(false)
 {
   load_document_view(file_name, camera, pin_size);
 }
 
-LoopDocument::LoopDocument(const std::string &file)
+LoopDocument::LoopDocument(const std::string &file,
+			   bool create_if_missing,
+			   bool tmp)
   : file_name(canonical_filename(file)),
     timer(new hbs::Timer()),
     circuit(NULL),
     camera({0, 0}),
     pin_size(PINSIZE_DEFAULT),
-    owned(true)
+    owned(true),
+    dirty(tmp),
+    temporary(tmp)
 {
   try
     {
       circuit = new hbs::Circuit(*timer);
-      circuit->Load(file_name);
+      circuit->Load(file_name, create_if_missing);
       load_document_view(file_name, camera, pin_size);
     }
   catch (...)
@@ -231,14 +286,26 @@ LoopData::LoopData(hbs::Circuit &c,
   : screen(s),
     active_document(0),
     file_browser(false),
+    file_browser_mode(FILE_BROWSER_OPEN),
     browser_directory(parent_directory(canonical_filename(s.file_name))),
     browser_offset(0),
     opened_offset(0),
-    browser_error("")
+    browser_error(""),
+    browser_target(""),
+    quit_requested(false)
 {
-  documents.push_back(new LoopDocument(c, t, s.file_name));
-  screen.file_name = documents[0]->file_name;
-  ApplyActiveView();
+  if (!s.file_name.empty())
+    {
+      documents.push_back(new LoopDocument(c, t, s.file_name));
+      screen.file_name = documents[0]->file_name;
+      ApplyActiveView();
+    }
+  else
+    {
+      file_browser = true;
+      screen.file_name = "";
+      reset_document_interaction(screen);
+    }
   RefreshBrowser();
 }
 
@@ -246,6 +313,12 @@ LoopData::~LoopData(void)
 {
   for (size_t i = 0; i < documents.size(); ++i)
     delete documents[i];
+}
+
+bool			LoopData::HasDocument(void) const
+{
+  return (!documents.empty() && active_document < documents.size() &&
+	  documents[active_document]->circuit != NULL && documents[active_document]->timer != NULL);
 }
 
 hbs::Circuit		&LoopData::CurrentCircuit(void)
@@ -268,9 +341,15 @@ const hbs::Timer	&LoopData::CurrentTimer(void) const
   return (*documents[active_document]->timer);
 }
 
+void			LoopData::MarkDirty(void)
+{
+  if (HasDocument())
+    documents[active_document]->dirty = true;
+}
+
 void			LoopData::SaveActiveView(void)
 {
-  if (active_document >= documents.size())
+  if (!HasDocument())
     return ;
   documents[active_document]->camera = screen.camera;
   documents[active_document]->pin_size = screen.pin_size;
@@ -278,8 +357,12 @@ void			LoopData::SaveActiveView(void)
 
 void			LoopData::ApplyActiveView(void)
 {
-  if (active_document >= documents.size())
-    return ;
+  if (!HasDocument())
+    {
+      screen.file_name = "";
+      reset_document_interaction(screen);
+      return ;
+    }
   screen.camera = documents[active_document]->camera;
   screen.pin_size = documents[active_document]->pin_size;
   screen.file_name = documents[active_document]->file_name;
@@ -312,6 +395,8 @@ bool			LoopData::OpenFile(const std::string &file)
       documents.push_back(doc);
       active_document = documents.size() - 1;
       ApplyActiveView();
+      file_browser = false;
+      file_browser_mode = FILE_BROWSER_OPEN;
       browser_error = "";
     }
   catch (const std::exception &e)
@@ -322,21 +407,221 @@ bool			LoopData::OpenFile(const std::string &file)
   return (true);
 }
 
-
-bool			LoopData::SaveCurrentDocument(void)
+bool			LoopData::NewDocument(void)
 {
-  if (active_document >= documents.size())
+  std::string		name = make_temporary_filename();
+
+  try
+    {
+      LoopDocument *doc = new LoopDocument(name, true, true);
+
+      SaveActiveView();
+      documents.push_back(doc);
+      active_document = documents.size() - 1;
+      ApplyActiveView();
+      file_browser = false;
+      browser_error = "";
+      browser_directory = parent_directory(name);
+      RefreshBrowser();
+    }
+  catch (const std::exception &e)
+    {
+      browser_error = e.what();
+      file_browser = true;
+      file_browser_mode = FILE_BROWSER_OPEN;
+      return (false);
+    }
+  return (true);
+}
+
+void			LoopData::BeginOpenFileBrowser(void)
+{
+  file_browser = true;
+  file_browser_mode = FILE_BROWSER_OPEN;
+  browser_target = "";
+  RefreshBrowser();
+}
+
+void			LoopData::BeginFileMenu(void)
+{
+  file_browser = !file_browser;
+  file_browser_mode = FILE_BROWSER_OPEN;
+  browser_target = "";
+  if (!HasDocument())
+    file_browser = true;
+  if (file_browser)
+    RefreshBrowser();
+}
+
+void			LoopData::BeginSaveAs(bool copy_only)
+{
+  BeginSavePrompt(copy_only ? FILE_BROWSER_SAVE_COPY : FILE_BROWSER_SAVE_ACTIVE);
+}
+
+void			LoopData::BeginSavePrompt(FileBrowserMode mode)
+{
+  if (!HasDocument())
+    {
+      BeginFileMenu();
+      return ;
+    }
+  SaveActiveView();
+  file_browser = true;
+  file_browser_mode = mode;
+  browser_directory = parent_directory(documents[active_document]->file_name);
+  if (documents[active_document]->temporary)
+    browser_target = "untitled.rs";
+  else if (mode == FILE_BROWSER_SAVE_COPY)
+    {
+      std::filesystem::path p(documents[active_document]->file_name);
+      browser_target = p.stem().string() + "-copy.rs";
+    }
+  else
+    browser_target = basename(documents[active_document]->file_name);
+  RefreshBrowser();
+}
+
+bool			LoopData::SaveCurrentDocumentAs(const std::string &file,
+						 bool copy_only)
+{
+  std::string		name = canonical_filename(file);
+  std::string		old_tmp;
+  bool			adopt;
+
+  if (!HasDocument() || name.empty())
     return (false);
   SaveActiveView();
   if (!save_circuit_with_view(*documents[active_document]->circuit,
-			      documents[active_document]->file_name,
+			      name,
 			      documents[active_document]->camera,
 			      documents[active_document]->pin_size))
     {
-      browser_error = std::string("Cannot save ") + documents[active_document]->file_name;
+      browser_error = std::string("Cannot save ") + name;
       return (false);
     }
+  adopt = (!copy_only || documents[active_document]->temporary);
+  if (adopt)
+    {
+      if (documents[active_document]->temporary)
+	old_tmp = documents[active_document]->file_name;
+      documents[active_document]->file_name = name;
+      documents[active_document]->temporary = false;
+      documents[active_document]->dirty = false;
+      screen.file_name = name;
+      browser_directory = parent_directory(name);
+      if (!old_tmp.empty() && old_tmp != name)
+	std::filesystem::remove(old_tmp);
+    }
   browser_error = "";
+  RefreshBrowser();
+  return (true);
+}
+
+bool			LoopData::SaveCurrentDocument(void)
+{
+  if (!HasDocument())
+    return (false);
+  if (documents[active_document]->temporary)
+    {
+      BeginSavePrompt(FILE_BROWSER_SAVE_ACTIVE);
+      return (false);
+    }
+  return (SaveCurrentDocumentAs(documents[active_document]->file_name, false));
+}
+
+bool			LoopData::CompleteSavePrompt(bool discard)
+{
+  FileBrowserMode	mode = file_browser_mode;
+  std::string		path;
+
+  if (!HasDocument())
+    {
+      BeginFileMenu();
+      return (false);
+    }
+  if (discard)
+    {
+      browser_error = "";
+      if (mode == FILE_BROWSER_SAVE_THEN_CLOSE || mode == FILE_BROWSER_SAVE_THEN_QUIT)
+	{
+	  if (documents[active_document]->temporary)
+	    std::filesystem::remove(documents[active_document]->file_name);
+	  documents[active_document]->temporary = false;
+	  documents[active_document]->dirty = false;
+	  if (mode == FILE_BROWSER_SAVE_THEN_CLOSE)
+	    return (CloseCurrentDocument(true));
+	  return (RequestQuit());
+	}
+      file_browser = false;
+      return (true);
+    }
+  path = build_browser_target_path(*this);
+  if (path.empty())
+    {
+      browser_error = "Nom de fichier vide.";
+      return (false);
+    }
+  if (!SaveCurrentDocumentAs(path, mode == FILE_BROWSER_SAVE_COPY))
+    return (false);
+  if (mode == FILE_BROWSER_SAVE_THEN_CLOSE)
+    return (CloseCurrentDocument(true));
+  if (mode == FILE_BROWSER_SAVE_THEN_QUIT)
+    return (RequestQuit());
+  file_browser = false;
+  return (true);
+}
+
+bool			LoopData::CloseCurrentDocument(bool discard)
+{
+  LoopDocument		*doc;
+  std::string		tmp;
+
+  if (!HasDocument())
+    {
+      BeginFileMenu();
+      return (true);
+    }
+  if (!discard && (documents[active_document]->dirty || documents[active_document]->temporary))
+    {
+      BeginSavePrompt(FILE_BROWSER_SAVE_THEN_CLOSE);
+      return (false);
+    }
+  doc = documents[active_document];
+  if (doc->temporary)
+    tmp = doc->file_name;
+  documents.erase(documents.begin() + active_document);
+  delete doc;
+  if (!tmp.empty())
+    std::filesystem::remove(tmp);
+  if (documents.empty())
+    {
+      active_document = 0;
+      screen.file_name = "";
+      file_browser = true;
+      file_browser_mode = FILE_BROWSER_OPEN;
+      reset_document_interaction(screen);
+    }
+  else
+    {
+      if (active_document >= documents.size())
+	active_document = documents.size() - 1;
+      ApplyActiveView();
+    }
+  RefreshBrowser();
+  return (true);
+}
+
+bool			LoopData::RequestQuit(void)
+{
+  if (!documents.empty())
+    for (size_t i = 0; i < documents.size(); ++i)
+      if (documents[i]->dirty || documents[i]->temporary)
+	{
+	  SelectDocument(i);
+	  BeginSavePrompt(FILE_BROWSER_SAVE_THEN_QUIT);
+	  return (false);
+	}
+  quit_requested = true;
   return (true);
 }
 
@@ -372,7 +657,7 @@ void			LoopData::RefreshBrowser(void)
       std::error_code type_ec;
       if (entry.is_directory(type_ec))
 	dirs.push_back(FileBrowserEntry{name + "/", path.string(), true});
-      else if (entry.is_regular_file(type_ec) && is_rs_file(path))
+      else if (entry.is_regular_file(type_ec) && is_rs_save_file(path))
 	files.push_back(FileBrowserEntry{name, path.string(), false});
     }
   if (ec)
