@@ -5,6 +5,12 @@ include /usr/share/dpkg/architecture.mk
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 CXX = b++
+# b++ is the LibLapin compiler/linker wrapper.  It appends LibLapin,
+# SFML and the rest of the graphical stack as static libraries.  That is
+# correct for final executables, but not for libbcad.so: some of those
+# static archives are not built with -fPIC and cannot be folded into a
+# shared object.
+LDXX ?= g++
 AR ?= ar
 RANLIB ?= ranlib
 
@@ -38,7 +44,7 @@ debian/build/libbcad.a: $(BCAD_OBJECTS)
 
 debian/build/$(SOVERSION): $(BCAD_OBJECTS)
 	mkdir -p debian/build
-	$(CXX) -shared -Wl,-soname,$(SONAME) $(LDFLAGS) -o $@ $(BCAD_OBJECTS)
+	$(LDXX) -shared -Wl,-soname,$(SONAME) $(LDFLAGS) -o $@ $(BCAD_OBJECTS)
 	ln -sf $(SOVERSION) debian/build/$(SONAME)
 	ln -sf $(SONAME) debian/build/libbcad.so
 
