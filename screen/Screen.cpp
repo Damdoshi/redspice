@@ -5,11 +5,15 @@
 // RED Spice
 
 #include		<lapin.h>
+#include		"ResourcePath.hpp"
 #include		"Screen.hpp"
 #include		"Track.hpp"
 
 hbs::Screen::Screen(std::string const &filename)
 {
+  std::string		author_path;
+  std::string		controls_path;
+
   file_name = filename;
   loopsim = false;
   panning = false;
@@ -43,10 +47,12 @@ hbs::Screen::Screen(std::string const &filename)
   bunny_enable_full_blit(true);
   if ((pic = bunny_new_picture(win->buffer.width, win->buffer.height)) == NULL)
     throw 0;
-  if ((author = bunny_load_picture("./auth.png")) == NULL)
+  author_path = hbs::BcadResourcePath("auth.png");
+  if ((author = bunny_load_picture(author_path.c_str())) == NULL)
     throw 0;
   author->position.y = pic->buffer.height - author->buffer.height;
-  if ((controls = bunny_load_picture("./control.png")) == NULL)
+  controls_path = hbs::BcadResourcePath("control.png");
+  if ((controls = bunny_load_picture(controls_path.c_str())) == NULL)
     throw 0;
   camera.x = 0;
   camera.y = 0;

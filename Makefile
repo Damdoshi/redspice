@@ -20,6 +20,11 @@ CFLAGS		+=	-O2 -ffast-math -march=native
 
 LFLAGS		=	-ldl
 
+PREFIX		?=	/usr
+DESTDIR		?=
+DATADIR		?=	$(PREFIX)/share/$(BINNAME)
+CFLAGS		+=	-DBCAD_DEFAULT_DATADIR=\"$(DATADIR)\"
+
 ## Define some stuff
 ECHO		=	/bin/echo -e
 DEFAULT		=	"\033[00m"
@@ -58,8 +63,6 @@ $(BINNAME):	$(NAME) main.cpp
 		 $(ECHO) $(RED) "[XX]" $< $(DEFAULT)
 
 ## Package ---------------------------------------------------------------------
-PREFIX		?=	/usr
-DESTDIR		?=
 PACKAGE_NAME	?=	$(BINNAME)
 PACKAGE_VERSION	?=	1.0+$(shell date +%s)
 PACKAGE_ARCH	?=	$(shell dpkg --print-architecture 2>/dev/null || echo amd64)
@@ -71,9 +74,11 @@ PACKAGE_FILE	=	$(PACKAGE_NAME)_$(PACKAGE_VERSION)_$(PACKAGE_ARCH).deb
 install: all
 		@install -d $(DESTDIR)$(PREFIX)/bin
 		@install -m 0755 $(BINNAME) $(DESTDIR)$(PREFIX)/bin/$(BINNAME)
+		@install -d $(DESTDIR)$(DATADIR)
+		@install -m 0644 auth.png control.png $(DESTDIR)$(DATADIR)/
 		@if [ -d res ]; then \
-			install -d $(DESTDIR)$(PREFIX)/share/$(BINNAME); \
-			cp -a res $(DESTDIR)$(PREFIX)/share/$(BINNAME)/; \
+			cp -a res $(DESTDIR)$(DATADIR)/; \
+			find $(DESTDIR)$(DATADIR)/res -type f -exec chmod 0644 {} +; \
 		fi
 
 package: all
@@ -82,9 +87,11 @@ package: all
 		@install -d $(PACKAGE_ROOT)/DEBIAN
 		@install -d $(PACKAGE_ROOT)$(PREFIX)/bin
 		@install -m 0755 $(BINNAME) $(PACKAGE_ROOT)$(PREFIX)/bin/$(BINNAME)
+		@install -d $(PACKAGE_ROOT)$(DATADIR)
+		@install -m 0644 auth.png control.png $(PACKAGE_ROOT)$(DATADIR)/
 		@if [ -d res ]; then \
-			install -d $(PACKAGE_ROOT)$(PREFIX)/share/$(BINNAME); \
-			cp -a res $(PACKAGE_ROOT)$(PREFIX)/share/$(BINNAME)/; \
+			cp -a res $(PACKAGE_ROOT)$(DATADIR)/; \
+			find $(PACKAGE_ROOT)$(DATADIR)/res -type f -exec chmod 0644 {} +; \
 		fi
 		@printf '%s\n' \
 			'Package: $(PACKAGE_NAME)' \

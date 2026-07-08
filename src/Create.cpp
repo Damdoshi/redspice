@@ -16,6 +16,7 @@
 #include		<vector>
 #include		"Exception.hpp"
 #include		"Circuit.hpp"
+#include		"ResourcePath.hpp"
 #include		"Clock.hpp"
 #include		"True.hpp"
 #include		"False.hpp"
@@ -312,7 +313,7 @@ namespace
     std::vector<std::string> paths;
     const char		*env = std::getenv("BCAD_PATH");
 
-    paths.push_back("/usr/share/bcad");
+    paths.push_back(hbs::BcadDataDirectory());
     if (env != NULL)
       {
 	std::string all = env;

@@ -5,6 +5,7 @@
 
 #include		<fstream>
 #include		"2716.hpp"
+#include		"ResourcePath.hpp"
 #define			XXX					0
 #define			PIN					-1 + 
 
@@ -87,7 +88,8 @@ hbs::CMP_2716::CMP_2716(const hbs::Timer		&time,
 			const std::string		&pos)
   : Memory(time, name, pos)
 {
-  std::ifstream		ss((char*)file.c_str(), std::ios::in | std::ios::binary);
+  std::string		path = hbs::BcadResolveReadablePath(file);
+  std::ifstream		ss((char*)path.c_str(), std::ios::in | std::ios::binary);
 
   if (!ss)
     throw hbs::CannotOpenFile(file);

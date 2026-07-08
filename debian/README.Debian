@@ -11,11 +11,14 @@ The packages install:
   * /usr/lib/<multiarch>/libbcad.a
   * /usr/include/bcad/
   * /usr/lib/<multiarch>/pkgconfig/bcad.pc
-  * /usr/share/bcad/
+  * /usr/share/bcad/auth.png
+  * /usr/share/bcad/control.png
+  * /usr/share/bcad/res/
 
-/usr/share/bcad is reserved as the default system directory for external
-BunnyCAD components, including future .rs components and shared-object
-components.
+/usr/share/bcad is the default system data directory. BunnyCAD uses it for
+its GUI resources and for bundled example circuits and ROM files. It is also
+kept as the default system directory for external BunnyCAD components,
+including future .rs components and shared-object components.
 
 Development flags
 -----------------

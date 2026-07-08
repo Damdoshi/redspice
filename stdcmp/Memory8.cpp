@@ -6,6 +6,7 @@
 #include                <fstream>
 #include                "Exception.hpp"
 #include                "Memory8.hpp"
+#include                "ResourcePath.hpp"
 
 bool                    hbs::Memory8Utility::LoadFile(const std::string &file,
                                                        std::vector<uint8_t> &memory,
@@ -19,7 +20,9 @@ bool                    hbs::Memory8Utility::LoadFile(const std::string &file,
     memory[i] = fill;
   if (file.empty())
     return (false);
-  ss.open(file.c_str(), std::ios::in | std::ios::binary);
+  std::string           path = hbs::BcadResolveReadablePath(file);
+
+  ss.open(path.c_str(), std::ios::in | std::ios::binary);
   if (!ss)
     throw hbs::CannotOpenFile(file);
   ss.seekg(0, std::ios::end);

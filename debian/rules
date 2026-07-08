@@ -14,7 +14,7 @@ LDXX ?= g++
 AR ?= ar
 RANLIB ?= ranlib
 
-BCAD_CPPFLAGS = -I./include -I./include/stdcmp -I./include/vircmp
+BCAD_CPPFLAGS = -I./include -I./include/stdcmp -I./include/vircmp -DBCAD_DEFAULT_DATADIR=\"/usr/share/bcad\"
 BCAD_CXXFLAGS = -W -Wall -fPIC -std=gnu++23 -Wno-missing-field-initializers
 BCAD_SOURCES = $(shell find . -name "*.cpp" ! -name "main.cpp" | sort)
 BCAD_OBJECTS = $(patsubst ./%.cpp,debian/build/obj/%.o,$(BCAD_SOURCES))
@@ -75,3 +75,6 @@ override_dh_auto_install:
 	  'Cflags: -I$${includedir} -I$${includedir}/stdcmp -I$${includedir}/vircmp' \
 	  > debian/tmp$(LIBDIR)/pkgconfig/bcad.pc
 	install -d debian/tmp/usr/share/bcad
+	install -m 0644 auth.png control.png debian/tmp/usr/share/bcad/
+	cp -a res debian/tmp/usr/share/bcad/
+	find debian/tmp/usr/share/bcad/res -type f -exec chmod 0644 {} +
