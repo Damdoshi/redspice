@@ -1,4 +1,4 @@
-bcad (0.0.1-1) unstable; urgency=medium
+bcad (0.0.1+XXX) unstable; urgency=medium
 
   * Initial Debian packaging.
 
