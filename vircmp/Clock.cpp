@@ -19,6 +19,7 @@ hbs::Tristate		hbs::Clock::Compute(size_t			pin_num_this)
 
   if (pin_num_this != 1)
     throw hbs::BadPin(GetType() + ":Bad pin.");
+  CleanOld();
   tim = timer.GetTime();
   if ((it = timeline.find(tim)) == timeline.end())
     {

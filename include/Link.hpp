@@ -10,6 +10,7 @@
 # include				<list>
 # include				<map>
 # include				<cmath>
+# include                                <stdexcept>
 # include				"IComponent.hpp"
 # include				"ILink.hpp"
 # include				"Screen.hpp"
@@ -30,9 +31,9 @@ namespace				hbs
     {
       auto				it = third.begin();
 
-      for (; it != third.end() && i + 1 > 0; ++it, --i);
+      for (size_t step = 0; it != third.end() && step < i; ++it, ++step);
       if (it == third.end())
-	throw 0;
+	throw std::out_of_range("Bad link step.");
       return (std::pair<int, int>(round(it->first.x), round(it->first.y)));
     }
     size_t				GetNbrSteps(void) const

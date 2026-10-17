@@ -23,9 +23,9 @@ bool                    hbs::CMP_4098::DrivesPin(size_t n) const
 
 bool                    hbs::CMP_4098::Triggered(size_t id)
 {
-  if (GetPrevious(a_pin[id]) == hbs::TRUE && GetPin(a_pin[id]) == hbs::FALSE)
+  if (GetPin(a_pin[id]) == hbs::FALSE && GetPrevious(a_pin[id]) == hbs::TRUE)
     return (true);
-  if (GetPrevious(b_pin[id]) == hbs::FALSE && GetPin(b_pin[id]) == hbs::TRUE)
+  if (GetPin(b_pin[id]) == hbs::TRUE && GetPrevious(b_pin[id]) == hbs::FALSE)
     return (true);
   return (false);
 }

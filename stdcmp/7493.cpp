@@ -20,9 +20,9 @@ void                    hbs::CMP_7493::UpdateCounter(void)
       last_tick = timer.GetTime();
       return ;
     }
-  if (GetPrevious(14) == hbs::TRUE && GetPin(14) == hbs::FALSE)
+  if (GetPin(14) == hbs::FALSE && GetPrevious(14) == hbs::TRUE)
     value ^= 0x01;
-  if (GetPrevious(1) == hbs::TRUE && GetPin(1) == hbs::FALSE)
+  if (GetPin(1) == hbs::FALSE && GetPrevious(1) == hbs::TRUE)
     value = (value & 0x01) | (((((value >> 1) + 1) & 0x07) << 1));
   last_tick = timer.GetTime();
 }

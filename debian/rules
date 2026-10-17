@@ -16,7 +16,7 @@ RANLIB ?= ranlib
 
 BCAD_CPPFLAGS = -I./include -I./include/stdcmp -I./include/vircmp -DBCAD_DEFAULT_DATADIR=\"/usr/share/bcad\"
 BCAD_CXXFLAGS = -W -Wall -fPIC -std=gnu++23 -Wno-missing-field-initializers
-BCAD_SOURCES = $(shell find . -name "*.cpp" ! -name "main.cpp" | sort)
+BCAD_SOURCES = $(shell find ./src ./screen ./stdcmp ./vircmp -name "*.cpp" | sort)
 BCAD_OBJECTS = $(patsubst ./%.cpp,debian/build/obj/%.o,$(BCAD_SOURCES))
 LIBDIR = /usr/lib/$(DEB_HOST_MULTIARCH)
 SONAME = libbcad.so.0
@@ -44,7 +44,7 @@ debian/build/libbcad.a: $(BCAD_OBJECTS)
 
 debian/build/$(SOVERSION): $(BCAD_OBJECTS)
 	mkdir -p debian/build
-	$(LDXX) -shared -Wl,-soname,$(SONAME) $(LDFLAGS) -o $@ $(BCAD_OBJECTS)
+	$(LDXX) -shared -Wl,-soname,$(SONAME) $(LDFLAGS) -o $@ $(BCAD_OBJECTS) -ldl -pthread
 	ln -sf $(SOVERSION) debian/build/$(SONAME)
 	ln -sf $(SONAME) debian/build/libbcad.so
 

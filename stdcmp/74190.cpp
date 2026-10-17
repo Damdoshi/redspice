@@ -50,7 +50,7 @@ void                    hbs::CMP_74190::UpdateCounter(void)
       last_tick = timer.GetTime();
       return ;
     }
-  if (GetPrevious(14) == hbs::FALSE && GetPin(14) == hbs::TRUE)
+  if (GetPin(14) == hbs::TRUE && GetPrevious(14) == hbs::FALSE)
     if (GetPin(4) == hbs::FALSE)
       {
         if (Down())
@@ -131,7 +131,10 @@ hbs::CMP_74190::CMP_74190(const hbs::Timer  &time,
     modulo(modulo),
     value(0),
     last_tick(0)
-{}
+{
+  if (modulo == 0)
+    throw std::invalid_argument("74190: modulo must be positive.");
+}
 
 hbs::CMP_74190::~CMP_74190(void)
 {}

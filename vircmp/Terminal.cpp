@@ -4,7 +4,36 @@
 // RED Spice
 
 #include		<unistd.h>
+#include                <cerrno>
+#include                <csignal>
+#include                <pthread.h>
+#include                <stdexcept>
 #include		"Terminal.hpp"
+
+// The library must not change its host process's SIGPIPE disposition.
+static bool write_terminal_byte(char c)
+{
+  sigset_t mask, oldmask, pending;
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGPIPE);
+  int error = pthread_sigmask(SIG_BLOCK, &mask, &oldmask);
+  if (error != 0)
+    return (false);
+  if (sigpending(&pending) < 0)
+    { pthread_sigmask(SIG_SETMASK, &oldmask, NULL); return (false); }
+  bool already_pending = (sigismember(&pending, SIGPIPE) == 1);
+  ssize_t count;
+  do count = write(STDOUT_FILENO, &c, 1); while (count < 0 && errno == EINTR);
+  int saved_errno = errno;
+  if (count < 0 && saved_errno == EPIPE && !already_pending)
+    {
+      const struct timespec timeout = {0, 0};
+      while (sigtimedwait(&mask, NULL, &timeout) < 0 && errno == EINTR) {}
+    }
+  pthread_sigmask(SIG_SETMASK, &oldmask, NULL);
+  errno = saved_errno;
+  return (count == 1);
+}
 
 const std::string	&hbs::Terminal::GetType(void) const
 {
@@ -40,7 +69,9 @@ hbs::Position		hbs::Terminal::GetPosition(void) const
 
 hbs::Position		hbs::Terminal::GetPinPosition(size_t		pin) const
 {
-  return (hbs::Position{0, (double)pin});
+  if (pin < 1 || pin > 9)
+    throw hbs::BadPin(GetType() + ": Bad pin.");
+  return (hbs::AComponent<9>::position + hbs::Position{0, (double)(pin - 1)});
 }
 
 bool			hbs::Terminal::IsUnder(const hbs::Screen	&screen,
@@ -87,19 +118,23 @@ hbs::Tristate		hbs::Terminal::Compute(size_t		n)
 {
   int			i;
 
-  (void)n;
+  if (n < 1 || n > 9)
+    throw hbs::BadPin(GetType() + ": Bad pin.");
+  hbs::Tristate strobe = hbs::AComponent<9>::GetPin(9);
   if (hbs::AComponent<9>::GetPrevious(9) == hbs::FALSE &&
-      hbs::AComponent<9>::GetPin(9) == hbs::TRUE &&
+      strobe == hbs::TRUE &&
       last_tick != hbs::AComponent<9>::timer.GetTime())
     {
       c = 0;
       last_tick = hbs::AComponent<9>::timer.GetTime();
-      for (i = 0; i < 7; ++i)
-	c |= AComponent<9>::GetPin(i + 1) << i;
-      if (write(1, &c, 1)) {}
+      for (i = 0; i < 8; ++i)
+	if (AComponent<9>::GetPin(i + 1) == hbs::TRUE)
+	  c = (char)((unsigned char)c | (1u << i));
+      if (!write_terminal_byte(c))
+        throw std::runtime_error("Cannot write terminal output.");
     }
   else
-    for (i = 1; i < 8; ++i)
+    for (i = 1; i <= 8; ++i)
       AComponent<9>::GetPin(i);
   return (hbs::TRUE);
 }

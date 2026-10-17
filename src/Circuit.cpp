@@ -11,6 +11,11 @@
 #include		<cctype>
 #include		<sstream>
 #include		<iostream>
+#include                <iomanip>
+#include                <limits>
+#include                <memory>
+#include                <cerrno>
+#include                "SafeFile.hpp"
 #include		"Circuit.hpp"
 
 static bool		is_track(const hbs::IComponent *cmp)
@@ -238,7 +243,7 @@ hbs::IComponent		*hbs::Circuit::CreateUserComponent(const std::string &type,
   circuit[name] = Create(type, name, "", ss.str());
   if (type == "input" || type == "clock")
     inputs[name] = dynamic_cast<hbs::Input*>(circuit[name]);
-  else if (type == "output" || type == "terminal" || type == "screen" || type == "screen" || type == "screen")
+  else if (type == "output" || type == "terminal" || type == "screen")
     outputs[name] = dynamic_cast<hbs::Output*>(circuit[name]);
   else if (type == "wire" || type == "track")
     tracks[name] = dynamic_cast<hbs::Track*>(circuit[name]);
@@ -250,10 +255,10 @@ bool			hbs::Circuit::RenameComponent(hbs::IComponent *component,
 {
   std::string		old;
 
-  if (component == NULL || name.empty() || circuit.find(name) != circuit.end())
+  if (component == NULL || !ValidIdentifier(name) || circuit.find(name) != circuit.end())
     return (false);
   old = component->GetName();
-  if (circuit.find(old) == circuit.end())
+  if (circuit.find(old) == circuit.end() || circuit.find(old)->second != component)
     return (false);
   circuit.erase(old);
   circuit[name] = component;
@@ -273,6 +278,9 @@ bool			hbs::Circuit::RenameComponent(hbs::IComponent *component,
       tracks.erase(old);
     }
   component->SetName(name);
+  for (size_t i = 0; i < external_pins.size(); ++i)
+    if (external_pins[i].component == component)
+      external_pins[i].name = name;
   return (true);
 }
 
@@ -281,12 +289,15 @@ bool			hbs::Circuit::DeleteSelected(std::set<hbs::IComponent*> &components,
 {
   std::set<hbs::IComponent*> victims;
 
-  for (std::set<hbs::IComponent*>::iterator it = components.begin(); it != components.end(); ++it)
-    victims.insert(*it);
-  for (std::set<hbs::Track*>::iterator it = selected_tracks.begin(); it != selected_tracks.end(); ++it)
-    victims.insert(*it);
+  // Ignore stale/non-owned selections without dereferencing their pointers.
+  for (auto it = circuit.begin(); it != circuit.end(); ++it)
+    if (components.count(it->second) ||
+        (is_track(it->second) && selected_tracks.count(dynamic_cast<hbs::Track*>(it->second))))
+      victims.insert(it->second);
   if (victims.empty())
-    return (false);
+    { components.clear(); selected_tracks.clear(); return (false); }
+  external_pins.erase(std::remove_if(external_pins.begin(), external_pins.end(),
+    [&victims](const CircuitPin &pin) { return (victims.count(pin.component) != 0); }), external_pins.end());
   for (std::set<hbs::IComponent*>::iterator v = victims.begin(); v != victims.end(); ++v)
     for (std::map<std::string, IComponent*>::iterator it = circuit.begin(); it != circuit.end(); ++it)
       if (victims.find(it->second) == victims.end())
@@ -309,19 +320,15 @@ bool			hbs::Circuit::DeleteSelected(std::set<hbs::IComponent*> &components,
 static hbs::Position	parse_position(const std::string &pos)
 {
   hbs::Position		position = {0, 0};
-  size_t		idx = 0;
-  int			idy;
-
-  position.x = std::stof(pos, &idx);
-  if (idx == 0)
+  int idy = 0;
+  if (!ReadNumber(pos, idy, position.x))
     throw hbs::SyntaxError(pos);
-  idy = idx;
   ReadWhitespace(pos, idy);
-  idy += pos[idy] == ',';
+  ReadText(pos, idy, ",");
+  if (!ReadNumber(pos, idy, position.y))
+    throw hbs::SyntaxError(pos);
   ReadWhitespace(pos, idy);
-  idx = idy;
-  position.y = std::stof(&pos[idx], &idx);
-  if (idx == 0)
+  if ((size_t)idy != pos.size())
     throw hbs::SyntaxError(pos);
   return (position);
 }
@@ -336,14 +343,18 @@ void			hbs::Circuit::ConfigureAsComponent(const std::string	&type,
   component_position = parse_position(position);
   BuildExternalPins();
   if (!package_defined)
-    Move(component_position);
+    {
+      hbs::Position offset = component_position;
+      component_position = {0, 0};
+      Move(offset);
+    }
 }
 
 void			hbs::Circuit::BuildExternalPins(void)
 {
-  external_pins.clear();
   if (package_defined)
     return ;
+  external_pins.clear();
   for (std::map<std::string, Input*>::iterator it = inputs.begin(); it != inputs.end(); ++it)
     external_pins.push_back({it->first, CIRCUIT_INPUT_PIN, it->second, 1, it->second->GetPinPosition(1)});
   for (std::map<std::string, Output*>::iterator it = outputs.begin(); it != outputs.end(); ++it)
@@ -388,9 +399,10 @@ bool			hbs::Circuit::IsUnder(const hbs::Screen			&screen,
     }
   if (package_lines.empty() && external_pins.empty())
     return (false);
-  double left = GetPinPosition(1).x;
+  hbs::Position anchor = external_pins.empty() ? component_position : GetPinPosition(1);
+  double left = anchor.x;
   double right = left;
-  double top = GetPinPosition(1).y;
+  double top = anchor.y;
   double bottom = top;
   for (size_t i = 1; i <= external_pins.size(); ++i)
     {
@@ -630,6 +642,8 @@ bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
 	break;
       type = read_token(code, i, "component type");
       name = read_token(code, i, "component name");
+      if (!ValidIdentifier(name))
+        throw hbs::SyntaxError("Invalid component name: " + name);
       value = read_between(code, i, '(', ')', "component value");
       position = read_between(code, i, '[', ']', "component position");
       if (circuit.find(name) != circuit.end())
@@ -637,8 +651,10 @@ bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
       circuit[name] = Create(type, name, value, position);
       if (type == "input" || type == "clock")
 	inputs[name] = dynamic_cast<hbs::Input*>(circuit[name]);
-      else if (type == "output" || type == "terminal" || type == "screen" || type == "screen" || type == "screen")
+      else if (type == "output" || type == "terminal" || type == "screen")
 	outputs[name] = dynamic_cast<hbs::Output*>(circuit[name]);
+      else if (type == "wire" || type == "track")
+        tracks[name] = dynamic_cast<hbs::Track*>(circuit[name]);
     }
   return (true);
 }
@@ -657,6 +673,8 @@ hbs::Track		*hbs::Circuit::CreateTrack(const std::string		&name,
 {
   hbs::Track		*track;
 
+  if (!ValidIdentifier(name))
+    throw hbs::SyntaxError("Invalid track name: " + name);
   if (circuit.find(name) != circuit.end())
     throw hbs::BadComponent(std::string("Duplicated component ") + name);
   track = new hbs::Track(timer, name, geometry);
@@ -869,6 +887,7 @@ bool			hbs::Circuit::ReadOneLink(const std::string	&code,
 						  LinkEnd		&end)
 {
   int			j;
+  size_t pin;
 
   end.node = hbs::Track::NoNode;
   j = i;
@@ -878,20 +897,18 @@ bool			hbs::Circuit::ReadOneLink(const std::string	&code,
     throw hbs::SyntaxError("Expected ':' and pin specification.");
   if (code[++j] < '0' || code[j] > '9')
     throw hbs::SyntaxError("Expected pin specification after component.");
-  end.pin = std::atoi(&code.c_str()[j]);
-  ReadChar(code, j);
+  if (!ReadUnsigned(code, j, pin) || pin == 0 || pin > 65536)
+    throw hbs::BadPin("Pin index out of range.");
+  end.pin = (int)pin;
   if (code[j] == '@')
     {
-      int k = ++j;
+      ++j;
 
       if (code[j] < '0' || code[j] > '9')
 	throw hbs::SyntaxError("Expected node specification after '@'.");
-      end.node = (size_t)std::atoi(&code.c_str()[j]);
-      if (end.node == 0)
+      if (!ReadUnsigned(code, j, end.node) || end.node == 0)
 	throw hbs::SyntaxError("Track node numbers start at 1.");
       end.node -= 1;
-      ReadChar(code, j);
-      (void)k;
     }
   ReadWhitespace(code, j);
   i = j;
@@ -927,9 +944,9 @@ bool			hbs::Circuit::ReadLinksInside(const std::string	&code,
 	}
       else
 	poslink = "";
-      if (circuit[left.cmp] == NULL)
+      if (circuit.find(left.cmp) == circuit.end())
 	throw hbs::UnknownComponent(left.cmp);
-      if (circuit[right.cmp] == NULL)
+      if (circuit.find(right.cmp) == circuit.end())
 	throw hbs::UnknownComponent(right.cmp);
       if (!is_track(circuit[left.cmp]) && !is_track(circuit[right.cmp]))
 	{
@@ -1073,10 +1090,21 @@ hbs::Tristate		hbs::Circuit::Compute(size_t			output)
     {
       if (output == 0 || output > external_pins.size())
 	throw hbs::BadPin(GetType() + ": Bad pin.");
-      UpdateExternalInputs();
-      return (external_pins[output - 1].component->Compute(external_pins[output - 1].component_pin));
+      if (!computing_pins.insert(output).second)
+        return (hbs::UNDEFINED);
+      try
+        {
+          UpdateExternalInputs();
+          hbs::Tristate value = external_pins[output - 1].component->Compute(external_pins[output - 1].component_pin);
+          computing_pins.erase(output);
+          return (value);
+        }
+      catch (...)
+        { computing_pins.erase(output); throw; }
     }
-  for (it = outputs.begin(); it != outputs.end() && output > 1; ++it, --output);
+  if (output == 0 || output > outputs.size())
+    throw hbs::BadPin("Circuit: Bad output pin.");
+  for (it = outputs.begin(); output > 1; ++it, --output);
   return (it->second->Compute());
 }
 
@@ -1086,10 +1114,9 @@ hbs::Tristate		hbs::Circuit::Compute(void)
 
   if (component_instance)
     {
-      UpdateExternalInputs();
       for (size_t i = 1; i <= external_pins.size(); ++i)
 	if (external_pins[i - 1].kind == CIRCUIT_OUTPUT_PIN)
-	  external_pins[i - 1].component->Compute(external_pins[i - 1].component_pin);
+	  Compute(i);
       return (hbs::UNDEFINED);
     }
   for (it = outputs.begin(); it != outputs.end(); ++it)
@@ -1106,6 +1133,8 @@ void			hbs::Circuit::SetLink(size_t			pnthis,
 
   if (pnthis == 0 || pnthis > external_pins.size())
     throw hbs::BadPin(GetType() + ": Bad pin.");
+  if (pntarg == 0 || (dynamic_cast<hbs::Track*>(&com) == NULL && pntarg > com.GetPinCount()))
+    throw hbs::BadPin(com.GetType() + ": Bad target pin.");
   for (it = external_links[pnthis].begin(); it != external_links[pnthis].end(); ++it)
     if (it->component == &com && it->pin == pntarg)
       return ;
@@ -1165,6 +1194,8 @@ const std::string	&hbs::Circuit::GetOutputName(size_t		n) const
 {
   std::map<std::string, Output*>::const_iterator it;
 
+  if (n == 0)
+    throw hbs::MissingOutputs("Output indices start at 1.");
   for (it = outputs.begin(); it != outputs.end() && n > 1; --n, ++it);
   if (it == outputs.end())
     throw hbs::MissingOutputs("Cannot found output.");
@@ -1175,6 +1206,8 @@ bool			hbs::Circuit::GetDisplayable(size_t		n) const
 {
   std::map<std::string, Output*>::const_iterator it;
 
+  if (n == 0)
+    throw hbs::MissingOutputs("Output indices start at 1.");
   for (it = outputs.begin(); it != outputs.end() && n > 1; --n, ++it);
   if (it == outputs.end())
     throw hbs::MissingOutputs("Cannot found output.");
@@ -1186,12 +1219,10 @@ size_t			hbs::Circuit::GetOutputNum(void) const
   return (outputs.size());
 }
 
-bool			hbs::Circuit::Save(const std::string		&file) const
+void hbs::Circuit::Serialize(std::ostream &os) const
 {
-  std::ofstream		os((char*)file.c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
-
-  if (!os)
-    return (false);
+  os.imbue(std::locale::classic());
+  os << std::setprecision(std::numeric_limits<double>::max_digits10);
   os << ".chipsets:\n";
   for (auto it = circuit.begin(); it != circuit.end(); ++it)
     if (!is_track(it->second))
@@ -1218,7 +1249,7 @@ bool			hbs::Circuit::Save(const std::string		&file) const
 	  os << (p->second == hbs::ILink::TOP ? "t " : "b ") << p->first.x << "," << p->first.y;
 	}
       os << "]";
-      if (!segments.empty())
+      // Empty braces matter: a path with no segments must stay disconnected.
 	{
 	  os << " {";
 	  for (size_t i = 0; i < segments.size(); ++i)
@@ -1246,7 +1277,45 @@ bool			hbs::Circuit::Save(const std::string		&file) const
 	    os << "\n";
 	  }
     }
-  return (true);
+  if (package_defined)
+    {
+      os << "\n.package:\n";
+      for (size_t i = 0; i < package_lines.size(); ++i)
+        os << "line [" << package_lines[i].from.x << "," << package_lines[i].from.y
+           << "] [" << package_lines[i].to.x << "," << package_lines[i].to.y << "]\n";
+      for (size_t i = 0; i < external_pins.size(); ++i)
+        os << "pin " << external_pins[i].name << " [" << external_pins[i].position.x
+           << "," << external_pins[i].position.y << "]\n";
+    }
+}
+
+bool hbs::Circuit::Save(const std::string &file) const
+{
+  try
+    {
+      std::ostringstream os;
+      Serialize(os);
+      return (os.good() && hbs::AtomicWriteFile(file, os.str()));
+    }
+  catch (const std::exception &)
+    { return (false); }
+}
+
+bool hbs::Circuit::Save(const std::string &file, const hbs::Position &camera,
+                        int pin_size) const
+{
+  if (!std::isfinite(camera.x) || !std::isfinite(camera.y) || pin_size <= 0)
+    return (false);
+  try
+    {
+      std::ostringstream os;
+      Serialize(os);
+      os << "\n.misc:\ncamera [" << camera.x << "," << camera.y << "]\nzoom "
+         << std::clamp(pin_size, PINSIZE_DEFAULT / 4, PINSIZE_DEFAULT * 10) << "\n";
+      return (os.good() && hbs::AtomicWriteFile(file, os.str()));
+    }
+  catch (const std::exception &)
+    { return (false); }
 }
 
 static std::string	load_context(const std::string &content, int pos)
@@ -1281,32 +1350,40 @@ static const char	*empty_circuit_file(void)
 bool			hbs::Circuit::Load(const std::string		&file,
 				  bool				create_if_missing)
 {
-  std::ifstream		ss((char*)file.c_str(), std::ios::in | std::ios::binary);
   std::string		content;
-  bool			erase;
-  int			i;
-
-  if (!ss)
+  try
     {
-      if (!create_if_missing || access(file.c_str(), F_OK) == 0)
-	throw hbs::CannotOpenFile(std::string("Cannot open circuit file '") + file + "'.");
-      std::ofstream	created((char*)file.c_str(), std::ios::out | std::ios::binary);
-
-      if (!created)
-	throw hbs::CannotOpenFile(std::string("Cannot create circuit file '") + file + "'.");
+      content = hbs::ReadFile(file, 64 * 1024 * 1024);
+    }
+  catch (const hbs::CannotOpenFile &)
+    {
+      if (!create_if_missing || access(file.c_str(), F_OK) == 0 || errno != ENOENT)
+        throw;
+      if (!hbs::AtomicWriteFile(file, empty_circuit_file(), true))
+        throw hbs::CannotOpenFile("Cannot create circuit file '" + file + "'.");
       content = empty_circuit_file();
-      created << content;
-      if (!created)
-	throw hbs::CannotOpenFile(std::string("Cannot initialize circuit file '") + file + "'.");
     }
-  else
-    {
-      ss.seekg(0,  std::ios::end);
-      content.resize(ss.tellg());
-      ss.seekg(0, std::ios::beg);
-      if (!content.empty())
-	ss.read(&content[0], content.size());
-    }
+  // Parse into an isolated circuit: a rejected load leaves the current one usable.
+  Circuit next(timer);
+  next.LoadContents(content);
+  circuit.swap(next.circuit);
+  inputs.swap(next.inputs);
+  outputs.swap(next.outputs);
+  tracks.swap(next.tracks);
+  external_pins.swap(next.external_pins);
+  package_lines.swap(next.package_lines);
+  std::swap(package_defined, next.package_defined);
+  std::swap(implicit_track_count, next.implicit_track_count);
+  return (true);
+}
+
+bool hbs::Circuit::LoadContents(const std::string &source)
+{
+  std::string content = source;
+  bool erase;
+  int i;
+  if (content.find('\0') != std::string::npos)
+    throw hbs::SyntaxError("NUL byte in circuit file.");
   if (content.empty())
     content = empty_circuit_file();
   for (i = 0, erase = false; i < (int)content.size(); ++i)

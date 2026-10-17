@@ -33,12 +33,13 @@ void		hbs::Screen::Text(Position		pos,
 				  unsigned int		color,
 				  const std::string	&str)
 {
-  char		c;
+  int c;
 
-  for (size_t i = 0; str[i]; ++i)
+  for (size_t i = 0; i < str.size(); ++i)
     {
-      if (isalpha(c = tolower(str[i])))
-	c = c - 'a';
+      c = (unsigned char)str[i];
+      if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+	c = tolower(c) - 'a';
       else if (c >= '0' && c <= '9')
 	c = c - '0' + BFT_0;
       else if (c == '!')

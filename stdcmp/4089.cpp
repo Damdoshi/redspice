@@ -40,7 +40,7 @@ void                    hbs::CMP_4089::Update(void)
     }
   if (GetPin(11) == hbs::TRUE)
     return ;
-  if (!(GetPrevious(9) == hbs::FALSE && GetPin(9) == hbs::TRUE))
+  if (!(GetPin(9) == hbs::TRUE && GetPrevious(9) == hbs::FALSE))
     return ;
   rate = ReadRate();
   sum = accumulator + rate;
@@ -94,7 +94,10 @@ hbs::CMP_4089::CMP_4089(const hbs::Timer  &time,
     accumulator(0),
     pulse(hbs::FALSE),
     last_tick(0)
-{}
+{
+  if (modulo == 0)
+    throw std::invalid_argument("4089: modulo must be positive.");
+}
 
 hbs::CMP_4089::~CMP_4089(void)
 {}

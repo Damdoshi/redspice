@@ -50,7 +50,7 @@ namespace				hbs
     void				CleanOld(void)
     {
       if (timer.GetTime() > 4)
-	timeline.erase(timeline.begin(), timeline.find(timer.GetTime() - 3));
+	timeline.erase(timeline.begin(), timeline.lower_bound(timer.GetTime() - 3));
     }
 
     //// Check if the pin was already computed at this current timeline
@@ -110,22 +110,27 @@ namespace				hbs
 	  timeline[timer.GetTime()][n] = hbs::UNDEFINED;
 	  return ;
 	}
-      timeline[timer.GetTime()][n] = timeline[timer.GetTime() - 1][n];
+      timeline[timer.GetTime()][n] = GetPrevious(n);
     }
 
     hbs::Tristate			GetPrevious(size_t		n)
     {
-      std::map<size_t,  PinState>::reverse_iterator			it;
-
       if (timer.GetTime() == 0)
 	return (hbs::UNDEFINED);
-      return (timeline[timer.GetTime() - 1][n]);
+      auto previous = timeline.find(timer.GetTime() - 1);
+      if (previous == timeline.end())
+        return (hbs::UNDEFINED);
+      auto pin = previous->second.find(n);
+      return (pin == previous->second.end() ? hbs::UNDEFINED : pin->second);
     }
 
   public:
     //// Get a pin value
     virtual hbs::Tristate		GetPin(size_t			n)
     {
+      if (n < 1 || n > Pin)
+        throw hbs::BadPin(GetType() + ": Bad pin.");
+      CleanOld();
       typename std::map<size_t, std::list<Connection> >::iterator	lnk;
       typename std::list<Connection>::iterator			it;
       hbs::Tristate							out;
@@ -168,6 +173,10 @@ namespace				hbs
       /// If the pin is out of bound
       if (pin_num_this > Pin || pin_num_this == 0)
 	throw hbs::BadPin(GetType() + ": Bad pin.");
+      if (pin_num_target == 0 ||
+          (component.GetType() != "wire" && component.GetType() != "track" &&
+           pin_num_target > component.GetPinCount()))
+        throw hbs::BadPin(component.GetType() + ": Bad target pin.");
 
       /// Already linked
       if ((it = links.find(pin_num_this)) != links.end())
@@ -277,7 +286,7 @@ namespace				hbs
 	{
 	  int col = 0;
 
-	  if (last != timeline.rend())
+	  if (last != timeline.rend() && last->second.find(1) != last->second.end())
 	    col = hbs::Screen::TristateColor[(int)(last->second.at(1) - BROKEN)];
 
 	  screen.Circle(GetPinPosition(1), {0.7, 0.7}, col, true);
@@ -317,7 +326,7 @@ namespace				hbs
 	      screen.Circle(GetPinPosition(i), {0.25, 0.25}, hbs::Screen::Purple, true);
 	      screen.Circle(GetPinPosition(i), {0.25, 0.25}, hbs::Screen::White, false);
 	    }
-	  for (size_t i = 0; i <= 2; ++i)
+	  for (int i = 0; i <= 2; ++i)
 	    {
 	      hbs::Position xx = {0, (i - 1) / (double)screen.PinSize()};
 	      hbs::Position yy = {(i - 1) / (double)screen.PinSize(), 0};
@@ -377,19 +386,15 @@ namespace				hbs
 	name(nam),
 	orientation(false)
     {
-      size_t				idx = 0;
       int				idy = 0;
-
-      position.x = std::stof(pos, &idx);
-      if (idx == 0)
+      if (!ReadNumber(pos, idy, position.x))
 	throw hbs::SyntaxError(pos);
-      idy = idx;
       ReadWhitespace(pos, idy);
-      idy += pos[idy] == ',';
+      ReadText(pos, idy, ",");
+      if (!ReadNumber(pos, idy, position.y))
+	throw hbs::SyntaxError(pos);
       ReadWhitespace(pos, idy);
-      idx = idy;
-      position.y = std::stof(&pos[idx], &idx);
-      if (idx == 0)
+      if ((size_t)idy != pos.size())
 	throw hbs::SyntaxError(pos);
     }
     virtual ~AComponent(void) {}

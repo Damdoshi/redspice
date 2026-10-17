@@ -37,6 +37,9 @@ static void		trigger_context_menu_action(LoopData &ld, t_bunny_position pos)
   else
     {
       ld.CurrentCircuit().DeleteSelected(ld.screen.selected_components, ld.screen.selected_tracks);
+      ld.screen.grabbed = NULL;
+      ld.screen.grabbed_step = hbs::Packet();
+      ld.screen.selecting = ld.screen.dragging_selection = false;
       ld.screen.active_track = NULL;
       ld.screen.active_node = hbs::Track::NoNode;
     }
@@ -143,6 +146,10 @@ static void		cancel_component_placement(LoopData &ld)
   else
     components.insert(ld.screen.component_to_place);
   ld.CurrentCircuit().DeleteSelected(components, tracks);
+  clear_selection(ld.screen);
+  ld.screen.grabbed = NULL;
+  ld.screen.grabbed_step = hbs::Packet();
+  ld.screen.selecting = ld.screen.dragging_selection = false;
   ld.screen.placing_component = false;
   ld.screen.component_to_place = NULL;
   ld.screen.placing_type = "";
@@ -377,6 +384,9 @@ static void		draw_mode_right_click(LoopData &ld, t_bunny_position pos)
 	{
 	  track->DeleteBranchFromSegment(segment);
 	  ld.CurrentCircuit().NormalizeTracks();
+	  clear_selection(ld.screen);
+	  ld.screen.grabbed = NULL;
+	  ld.screen.grabbed_step = hbs::Packet();
 	}
       else
 	{
@@ -394,6 +404,7 @@ extern "C"
 t_bunny_response	screen_click(t_bunny_event_state	state,
 			     t_bunny_mouse_button	sym,
 			     LoopData			&ld)
+try
 {
   t_bunny_position	pos = *bunny_get_mouse_position();
 
@@ -487,6 +498,10 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 
   if (ld.screen.drawing_mode)
     {
+      clear_selection(ld.screen);
+      ld.screen.grabbed = NULL;
+      ld.screen.grabbed_step = hbs::Packet();
+      ld.screen.selecting = ld.screen.dragging_selection = false;
       if (sym == BMB_LEFT && state == GO_DOWN && bunny_get_keyboard()[BKS_SPACE])
 	{
 	  ld.screen.panning = true;
@@ -661,5 +676,10 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 	}
     }
 
+  return (GO_ON);
+}
+catch (const std::exception &error)
+{
+  hbs::ReportScreenError(ld, error);
   return (GO_ON);
 }

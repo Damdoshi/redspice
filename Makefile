@@ -16,9 +16,9 @@ CC		=	b++
 CFLAGS		=	-W -Wall -fPIC -std=gnu++23
 CFLAGS		+=	-Wno-missing-field-initializers
 #CFLAGS		+=	-g -g3 -ggdb
-CFLAGS		+=	-O2 -ffast-math -march=native
+CFLAGS		+=	-O2 -march=native
 
-LFLAGS		=	-ldl
+LFLAGS		=	-ldl -pthread
 
 PREFIX		?=	/usr
 DESTDIR		?=
@@ -34,7 +34,7 @@ RED		=	"\033[0;31m"
 
 ## Source
 INC		=	-I./include/ -I./include/stdcmp -I./include/vircmp
-SRC		=	$(shell find . -name "*.cpp" ! -name "main.cpp" | sort)
+SRC		=	$(shell find src screen stdcmp vircmp -name "*.cpp" | sort)
 OBJ		=	$(SRC:.cpp=.o)
 
 all:		erase $(BINNAME)
@@ -42,6 +42,8 @@ erase:
 		@rm -f $(ERRLOG)
 clean:		erase
 		@rm -f $(OBJ)
+		@rm -f $(OBJ:.o=.d)
+		@rm -rf .test-build
 fclean:		clean
 		@rm -f $(NAME)
 		@rm -f $(BINNAME)
@@ -49,18 +51,19 @@ re:		fclean all
 
 ## Compile ---------------------------------------------------------------------
 $(NAME):	$(OBJ)
-		@ar r $(NAME) $(OBJ) 2>> $(ERRLOG) && \
-		 $(ECHO) $(GREEN) "[AR]" $(TEAL) $(NAME) $(DEFAULT) || \
-		 $(ECHO) $(RED) "[XX]" $(TEAL) $(NAME)
-		@ranlib $(NAME) && \
-		 $(ECHO) $(GREEN) "[OK]" $(TEAL) $(NAME) $(DEFAULT) || \
-		 $(ECHO) $(RED) "[XX]" $(TEAL) $(NAME)
+		@ar rcs $(NAME) $(OBJ) 2>> $(ERRLOG)
+		@$(ECHO) $(GREEN) "[AR]" $(TEAL) $(NAME) $(DEFAULT)
 $(BINNAME):	$(NAME) main.cpp
 		@$(CC) main.cpp -o $(BINNAME) $(INC) -L./ $(NAME) $(CFLAGS) $(LFLAGS)
 .cpp.o:
-		@$(CC) $(INC) $(CFLAGS) -c $< -o $@ 2>> $(ERRLOG) && \
-		 $(ECHO) $(GREEN) "[OK]" $< $(DEFAULT) || \
-		 $(ECHO) $(RED) "[XX]" $< $(DEFAULT)
+		@$(CC) $(INC) $(CFLAGS) -MMD -MP -c $< -o $@ 2>> $(ERRLOG)
+		@$(ECHO) $(GREEN) "[OK]" $< $(DEFAULT)
+
+-include $(OBJ:.o=.d)
+
+.PHONY: all erase clean fclean re test
+test:
+		@python3 tests/run.py
 
 ## Package ---------------------------------------------------------------------
 PACKAGE_NAME	?=	$(BINNAME)

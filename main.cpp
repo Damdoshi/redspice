@@ -7,6 +7,8 @@
 #include		<cstdlib>
 #include		<cstring>
 #include		<ctime>
+#include                <csignal>
+#include                <memory>
 #include		<fstream>
 #include		<iostream>
 #include		<string>
@@ -30,7 +32,15 @@ static void		set_input_argument(hbs::Circuit	&circuit,
   for (j = 0; arg[j] && arg[j] != '='; ++j);
   if (arg[j] != '=')
     throw hbs::InvalidCommandLine("Expected '=' after input name.");
-  circuit.SetValue(std::string(arg).substr(0, j), atoi(&arg[j + 1]) ? hbs::TRUE : hbs::FALSE);
+  std::string value(&arg[j + 1]);
+  hbs::Tristate state;
+  if (value == "0") state = hbs::FALSE;
+  else if (value == "1") state = hbs::TRUE;
+  else if (value == "U" || value == "u") state = hbs::UNDEFINED;
+  else if (value == "Z" || value == "z") state = hbs::HIGH_IMPEDANCE;
+  else if (value == "B" || value == "b") state = hbs::BROKEN;
+  else throw hbs::InvalidCommandLine("Expected input=0, 1, U, Z or B.");
+  circuit.SetValue(std::string(arg).substr(0, j), state);
 }
 
 static int		load_circuit(hbs::Circuit	&circuit,
@@ -112,7 +122,7 @@ static int		Loop(hbs::Circuit	&circuit,
   return (0);
 }
 
-int			main(int		argc,
+static int              run(int                 argc,
 			     char		**argv)
 {
   hbs::Timer		timer;
@@ -158,9 +168,9 @@ int			main(int		argc,
     }
   if (!simulate_only)
     {
-      screen = new hbs::Screen(initial_file);
+      std::unique_ptr<hbs::Screen> owned_screen(new hbs::Screen(initial_file));
+      screen = owned_screen.get();
       int ret = Loop(circuit, timer, *screen);
-      delete screen;
       return (ret);
     }
   if (initial_file.empty())
@@ -171,4 +181,25 @@ int			main(int		argc,
     else
       circuit.Compute(i);
   return (hbs::Shell(circuit, timer));
+}
+
+int main(int argc, char **argv)
+{
+  struct sigaction action = {};
+  action.sa_handler = SIG_IGN;
+  sigemptyset(&action.sa_mask);
+  if (sigaction(SIGPIPE, &action, NULL) < 0)
+    return (EXIT_FAILURE);
+  try
+    {
+      int result = run(argc, argv);
+      std::cout.flush();
+      std::cerr.flush();
+      return (std::cout && std::cerr ? result : EXIT_FAILURE);
+    }
+  catch (const std::exception &e)
+    { std::cerr << "bcad: " << e.what() << std::endl; }
+  catch (...)
+    { std::cerr << "bcad: unexpected error." << std::endl; }
+  return (EXIT_FAILURE);
 }

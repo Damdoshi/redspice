@@ -25,6 +25,10 @@ std::string		hbs::Input::GetDefinitionValue(void) const
     return ("1");
   if (value == hbs::FALSE)
     return ("0");
+  if (value == hbs::HIGH_IMPEDANCE)
+    return ("Z");
+  if (value == hbs::BROKEN)
+    return ("B");
   return ("");
 }
 
@@ -50,6 +54,8 @@ hbs::Input::Input(hbs::Timer		&timer,
     value = hbs::FALSE;
   else if (val == "Z" || val == "z")
     value = hbs::HIGH_IMPEDANCE;
+  else if (val == "B" || val == "b")
+    value = hbs::BROKEN;
 }
 
 hbs::Input::~Input(void)

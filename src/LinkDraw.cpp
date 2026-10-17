@@ -14,7 +14,9 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 					size_t			ori_pin) const
 {
   auto			prev = third.begin();
-  auto			now = (int)(50 * clock() / CLOCKS_PER_SEC) % 2;
+  auto now = (int)std::fmod(50.0 * clock() / CLOCKS_PER_SEC, 2.0);
+  if (first == NULL)
+    return;
 
   //if (&origin == screen.grabbed || first == screen.grabbed) return ;
   // Pas de positions déterminées

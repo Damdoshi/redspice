@@ -23,11 +23,11 @@ bool                    hbs::CMP_4047::AstableMode(void)
 
 bool                    hbs::CMP_4047::Triggered(void)
 {
-  if (GetPrevious(8) == hbs::FALSE && GetPin(8) == hbs::TRUE)
+  if (GetPin(8) == hbs::TRUE && GetPrevious(8) == hbs::FALSE)
     return (true);
-  if (GetPrevious(6) == hbs::TRUE && GetPin(6) == hbs::FALSE)
+  if (GetPin(6) == hbs::FALSE && GetPrevious(6) == hbs::TRUE)
     return (true);
-  if (GetPrevious(12) == hbs::FALSE && GetPin(12) == hbs::TRUE)
+  if (GetPin(12) == hbs::TRUE && GetPrevious(12) == hbs::FALSE)
     return (true);
   return (false);
 }

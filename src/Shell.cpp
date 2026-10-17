@@ -7,6 +7,7 @@
 #include		<algorithm>
 #include		<cctype>
 #include		<cstdlib>
+#include                <cerrno>
 #include		<csignal>
 #include		<iostream>
 #include		<sstream>
@@ -14,14 +15,28 @@
 #include		<unistd.h>
 #include		"Shell.hpp"
 
-static bool		getout;
+static volatile sig_atomic_t getout;
 
 static void		handler(int		unused)
 {
   (void)unused;
   getout = true;
-  std::cerr << std::endl;
 }
+
+class InterruptHandler
+{
+  struct sigaction previous;
+public:
+  InterruptHandler()
+  {
+    struct sigaction action = {};
+    action.sa_handler = handler;
+    sigemptyset(&action.sa_mask);
+    if (sigaction(SIGINT, &action, &previous) < 0)
+      throw std::runtime_error("Cannot install SIGINT handler.");
+  }
+  ~InterruptHandler() { sigaction(SIGINT, &previous, NULL); }
+};
 
 static std::string	trim(const std::string	&str)
 {
@@ -66,6 +81,8 @@ static bool		parse_tristate(const std::string	&str,
     return (value = hbs::UNDEFINED, true);
   if (lower == "b" || lower == "broken")
     return (value = hbs::BROKEN, true);
+  if (lower == "z" || lower == "high-impedance")
+    return (value = hbs::HIGH_IMPEDANCE, true);
   return (false);
 }
 
@@ -106,18 +123,14 @@ static hbs::CommandResult execute_tick(const std::string	&verb,
 					       hbs::Timer	&timer)
 {
   int			count = 1;
-
-  if (verb == "tick")
+  iss >> std::ws;
+  if (!iss.eof())
     {
-      if (!(iss >> count))
-	count = 1;
-      if (count < 0)
-	return (error("tick count cannot be negative"));
-    }
-  else if (verb == "simulate")
-    {
-      if (iss >> count && count < 0)
-	return (error("simulate count cannot be negative"));
+      if (!(iss >> count) || count < 0)
+        return (error(verb + " requires a non-negative integer count"));
+      iss >> std::ws;
+      if (!iss.eof())
+        return (error("unexpected text after " + verb + " count"));
     }
   for (int i = 0; i < count; ++i)
     {
@@ -282,13 +295,13 @@ hbs::CommandResult	hbs::ExecuteCommand(const std::string	&raw_cmd,
       if (batch)
 	return (error("loop is not available in batch mode"));
       getout = false;
-      signal(SIGINT, handler);
-      while (!getout)
+      InterruptHandler interrupt;
+      while (!getout && out && err)
 	{
 	  timer.Tick();
 	  compute_outputs(circuit);
 	}
-      signal(SIGINT, NULL);
+      err << std::endl;
       return (ok("loop"));
     }
   if (verb == "require-input")
@@ -379,6 +392,8 @@ int			hbs::ExecuteScript(hbs::Circuit	&circuit,
       std::string trimmed;
 
       lineno += 1;
+      if (!out || !err)
+        return (2);
       if (line.find('#') != std::string::npos)
 	line.resize(line.find('#'));
       trimmed = trim(line);
@@ -394,7 +409,7 @@ int			hbs::ExecuteScript(hbs::Circuit	&circuit,
 	  return (2);
 	}
       if (result.status == hbs::COMMAND_EXIT)
-	return (0);
+	return (out && err ? 0 : 2);
       if (result.status == hbs::COMMAND_OK)
 	out << "OK " << line_prefix(lineno) << result.message << std::endl;
       else if (result.status == hbs::COMMAND_FAIL)
@@ -408,37 +423,32 @@ int			hbs::ExecuteScript(hbs::Circuit	&circuit,
 	  return (2);
 	}
     }
-  return (0);
+  return (input.bad() || !out || !err ? 2 : 0);
 }
 
 int			hbs::Shell(hbs::Circuit	&circuit,
 				   hbs::Timer	&timer)
 {
-  char			buffer[4096];
   std::string		str;
-  int			i;
-
-  do
+  while (true)
     {
       std::cerr << "> " << std::flush;
-      if ((i = read(0, &buffer[0], sizeof(buffer) - 1)) == 0)
-	{
-	  std::cerr << std::endl;
-	  return (EXIT_SUCCESS);
-	}
-      if (i > 1 && buffer[i - 1])
-	buffer[i - 1] = '\0';
-      buffer[i] = '\0';
-      str = buffer;
-      if (str != "exit")
+      if (!std::cerr || !std::cout)
+        return (EXIT_FAILURE);
+      errno = 0;
+      if (!std::getline(std::cin, str))
+        return (std::cin.eof() && !std::cin.bad() && errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
+      try
 	{
 	  hbs::CommandResult result = hbs::ExecuteCommand(str, circuit, timer, std::cout, std::cerr, false, 0);
+	  if (result.status == hbs::COMMAND_EXIT)
+	    return (EXIT_SUCCESS);
 	  if (result.status == hbs::COMMAND_FAIL || result.status == hbs::COMMAND_ERROR)
 	    std::cerr << result.message << std::endl;
 	}
+      catch (const std::exception &e)
+        { std::cerr << e.what() << std::endl; }
     }
-  while (str != "exit");
-  return (EXIT_SUCCESS);
 }
 
 int			hbs::Command(const std::string	&cmd,

@@ -8,11 +8,16 @@
 #include		"ResourcePath.hpp"
 #include		"Screen.hpp"
 #include		"Track.hpp"
+#include                <stdexcept>
 
 hbs::Screen::Screen(std::string const &filename)
 {
   std::string		author_path;
   std::string		controls_path;
+
+  win = NULL;
+  pic = author = controls = NULL;
+  grab_pos = pan_origin = {0, 0};
 
   file_name = filename;
   loopsim = false;
@@ -40,22 +45,33 @@ hbs::Screen::Screen(std::string const &filename)
   search_query = "";
   pan_last = {0, 0};
   pin_size = PINSIZE_DEFAULT;
+  try
+  {
   if ((win = bunny_start_style(1440, 900,
 				  (t_bunny_window_style)(TITLEBAR | RESIZE_BUTTON | CLOSE_BUTTON),
 				  "Bunny CAD")) == NULL)
-    throw 0;
+    throw std::runtime_error("Cannot create BCAD window.");
   bunny_enable_full_blit(true);
   if ((pic = bunny_new_picture(win->buffer.width, win->buffer.height)) == NULL)
-    throw 0;
+    throw std::runtime_error("Cannot allocate BCAD drawing buffer.");
   author_path = hbs::BcadResourcePath("auth.png");
   if ((author = bunny_load_picture(author_path.c_str())) == NULL)
-    throw 0;
+    throw std::runtime_error("Cannot load " + author_path);
   author->position.y = pic->buffer.height - author->buffer.height;
   controls_path = hbs::BcadResourcePath("control.png");
   if ((controls = bunny_load_picture(controls_path.c_str())) == NULL)
-    throw 0;
+    throw std::runtime_error("Cannot load " + controls_path);
   camera.x = 0;
   camera.y = 0;
+  }
+  catch (...)
+    {
+      if (author) bunny_delete_clipable(author);
+      if (controls) bunny_delete_clipable(controls);
+      if (pic) bunny_delete_clipable(pic);
+      if (win) bunny_stop(win);
+      throw;
+    }
 }
 
 hbs::Screen::~Screen(void)

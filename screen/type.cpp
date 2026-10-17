@@ -30,6 +30,7 @@ static bool		save_mode(FileBrowserMode mode)
 extern "C"
 t_bunny_response	screen_type(uint32_t		unicode,
 				    LoopData		&ld)
+try
 {
   if (ld.file_browser)
     {
@@ -51,5 +52,10 @@ t_bunny_response	screen_type(uint32_t		unicode,
 	  ld.screen.search_offset = 0;
 	}
     }
+  return (GO_ON);
+}
+catch (const std::exception &error)
+{
+  hbs::ReportScreenError(ld, error);
   return (GO_ON);
 }

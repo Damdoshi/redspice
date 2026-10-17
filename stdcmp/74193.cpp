@@ -49,8 +49,8 @@ void                    hbs::CMP_74193::UpdateCounter(void)
       last_tick = timer.GetTime();
       return ;
     }
-  up_edge = (GetPrevious(5) == hbs::FALSE && GetPin(5) == hbs::TRUE);
-  down_edge = (GetPrevious(4) == hbs::FALSE && GetPin(4) == hbs::TRUE);
+  up_edge = (GetPin(5) == hbs::TRUE && GetPrevious(5) == hbs::FALSE);
+  down_edge = (GetPin(4) == hbs::TRUE && GetPrevious(4) == hbs::FALSE);
   if (up_edge && !down_edge && GetPin(4) == hbs::TRUE)
     value = (value + 1) % Modulo();
   else if (down_edge && !up_edge && GetPin(5) == hbs::TRUE)

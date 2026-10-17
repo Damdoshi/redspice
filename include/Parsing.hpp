@@ -6,6 +6,11 @@
 #ifndef			__PARSING_HPP__
 # define		__PARSING_HPP__
 # include		<string>
+# include                <cstddef>
+
+bool ReadNumber(const std::string &code, int &i, double &value);
+bool ReadUnsigned(const std::string &code, int &i, size_t &value);
+bool ValidIdentifier(const std::string &name);
 
 bool			ReadWhitespace(const std::string		&code,
 				       int				&i);

@@ -6,6 +6,7 @@
 #include		<fstream>
 #include		"2716.hpp"
 #include		"ResourcePath.hpp"
+#include                "SafeFile.hpp"
 #define			XXX					0
 #define			PIN					-1 + 
 
@@ -86,22 +87,12 @@ hbs::CMP_2716::CMP_2716(const hbs::Timer		&time,
 			const std::string		&name,
 			const std::string		&file,
 			const std::string		&pos)
-  : Memory(time, name, pos)
+  : Memory(time, name, pos), definition(file)
 {
   std::string		path = hbs::BcadResolveReadablePath(file);
-  std::ifstream		ss((char*)path.c_str(), std::ios::in | std::ios::binary);
-
-  if (!ss)
-    throw hbs::CannotOpenFile(file);
-  std::string		content;
+  std::string content = hbs::ReadFile(path, GetMemorySize());
   size_t		i;
 
-  ss.seekg(0,  std::ios::end);
-  if (ss.tellg() > (int)GetMemorySize())
-    throw hbs::FileIsTooBig(file);
-  content.resize(ss.tellg());
-  ss.seekg(0, std::ios::beg);
-  ss.read(&content[0], content.size());
   for (i = 0; i < content.size(); ++i)
     SetData(i, content[i]);
   while (i < GetMemorySize())

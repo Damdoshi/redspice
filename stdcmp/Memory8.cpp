@@ -7,6 +7,7 @@
 #include                "Exception.hpp"
 #include                "Memory8.hpp"
 #include                "ResourcePath.hpp"
+#include                "SafeFile.hpp"
 
 bool                    hbs::Memory8Utility::LoadFile(const std::string &file,
                                                        std::vector<uint8_t> &memory,
@@ -22,15 +23,7 @@ bool                    hbs::Memory8Utility::LoadFile(const std::string &file,
     return (false);
   std::string           path = hbs::BcadResolveReadablePath(file);
 
-  ss.open(path.c_str(), std::ios::in | std::ios::binary);
-  if (!ss)
-    throw hbs::CannotOpenFile(file);
-  ss.seekg(0, std::ios::end);
-  if (ss.tellg() > (std::streampos)memory.size())
-    throw hbs::FileIsTooBig(file);
-  content.resize(ss.tellg());
-  ss.seekg(0, std::ios::beg);
-  ss.read(&content[0], content.size());
+  content = hbs::ReadFile(path, memory.size());
   for (i = 0; i < content.size(); ++i)
     memory[i] = (uint8_t)content[i];
   return (true);

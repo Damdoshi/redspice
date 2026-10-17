@@ -14,6 +14,8 @@
 #include		<sstream>
 #include		<string>
 #include		<vector>
+#include                <memory>
+#include                <filesystem>
 #include		"Exception.hpp"
 #include		"Circuit.hpp"
 #include		"ResourcePath.hpp"
@@ -188,6 +190,20 @@ namespace
   static std::map<std::string, std::string> circuit_components;
   static std::set<std::string>		registered_types;
   static std::vector<void*>		dynamic_handles;
+  static thread_local std::vector<std::string> loading_circuits;
+
+  struct CircuitLoadGuard
+  {
+    CircuitLoadGuard(const std::string &path)
+    {
+      std::string canonical = std::filesystem::canonical(path).string();
+      if (loading_circuits.size() >= 64 ||
+          std::find(loading_circuits.begin(), loading_circuits.end(), canonical) != loading_circuits.end())
+        throw hbs::BadComponent("Recursive circuit definition: " + path);
+      loading_circuits.push_back(canonical);
+    }
+    ~CircuitLoadGuard() { loading_circuits.pop_back(); }
+  };
 
   static bool		has_suffix(const std::string &str, const std::string &suffix)
   {
@@ -705,16 +721,22 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
 
   std::map<std::string, DynamicComponent>::iterator dyn = dynamic_components.find(type);
   if (dyn != dynamic_components.end())
-    return (dyn->second.create(timer, type, name, value, position));
+    {
+      tmp = dyn->second.create(timer, type, name, value, position);
+      if (tmp == NULL)
+        throw hbs::BadComponent("Component factory returned NULL: " + type);
+      return (tmp);
+    }
 
   std::map<std::string, std::string>::iterator rs = circuit_components.find(type);
   if (rs != circuit_components.end())
     {
-      hbs::Circuit *component = new hbs::Circuit(timer);
+      CircuitLoadGuard guard(rs->second);
+      std::unique_ptr<hbs::Circuit> component(new hbs::Circuit(timer));
 
       component->Load(rs->second);
       component->ConfigureAsComponent(type, name, position);
-      return (component);
+      return (component.release());
     }
 
   throw hbs::BadComponent(std::string("Unknown component ") + type);

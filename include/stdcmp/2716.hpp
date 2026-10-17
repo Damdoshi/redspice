@@ -13,6 +13,7 @@ namespace			hbs
   {
   private:
     const std::string		&GetType(void) const;
+    std::string definition;
 
   public:
     static bool			TypeMatches(const std::string	&type);
@@ -22,6 +23,7 @@ namespace			hbs
 					const std::string	&value,
 					const std::string	&position);
     virtual std::string		GetDisplayType(void) const;
+    std::string GetDefinitionValue(void) const { return (definition); }
 
   public:
     virtual bool			DrivesPin(size_t			n) const { return ((n >= 9 && n <= 11) || (n >= 13 && n <= 17)); }

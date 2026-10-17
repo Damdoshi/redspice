@@ -4,6 +4,10 @@ Bunny CAD est un éditeur et simulateur de circuits logiques décrits par fichie
 
 Par défaut, le programme ouvre maintenant l'interface graphique. Le mode simulation/shell sans fenêtre reste disponible avec `--simulate`.
 
+`make test` lance les vérifications de fiabilité avec sanitizers, sans installer
+LibLapin. Les garanties de sauvegarde et les limites de ces tests sont décrites
+dans [RELIABILITY.md](RELIABILITY.md).
+
 ## Lancement
 
 ```sh

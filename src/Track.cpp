@@ -17,7 +17,7 @@ const size_t		hbs::Track::NoNode = std::numeric_limits<size_t>::max();
 void			hbs::Track::CleanOld(void)
 {
   if (timer.GetTime() > 4)
-    timeline.erase(timeline.begin(), timeline.find(timer.GetTime() - 3));
+    timeline.erase(timeline.begin(), timeline.lower_bound(timer.GetTime() - 3));
 }
 
 bool			hbs::Track::AlreadyComputed(size_t n, hbs::Tristate &out)
@@ -84,23 +84,12 @@ size_t			hbs::Track::DefaultNodeForPin(size_t pin, const hbs::IComponent &, size
 
 static bool		read_number_pair(const std::string &geometry, int &i, hbs::Position &pos)
 {
-  int			j;
-  size_t		tmp = 0;
-
-  ReadWhitespace(geometry, i);
-  j = i;
-  ReadChar(geometry, i);
-  pos.x = std::stof(&geometry[j], &tmp);
-  if (tmp == 0)
+  if (!ReadNumber(geometry, i, pos.x))
     return (false);
   ReadWhitespace(geometry, i);
   if (!ReadText(geometry, i, ","))
     return (false);
-  ReadWhitespace(geometry, i);
-  j = i;
-  ReadChar(geometry, i);
-  pos.y = std::stof(&geometry[j], &tmp);
-  return (tmp != 0);
+  return (ReadNumber(geometry, i, pos.y));
 }
 
 void			hbs::Track::SetPath(const std::string &geometry)
@@ -119,6 +108,8 @@ void			hbs::Track::SetPath(const std::string &geometry)
   while (geometry[i] != '\0' && geometry[i] != ']')
     {
       ReadWhitespace(geometry, i);
+      if (geometry[i] == ']')
+        break;
       if (ReadText(geometry, i, "t"))
 	layer = hbs::ILink::TOP;
       else if (ReadText(geometry, i, "b"))
@@ -134,9 +125,8 @@ void			hbs::Track::SetPath(const std::string &geometry)
   ReadWhitespace(geometry, i);
   if (geometry[i] == '{')
     {
-      int		j;
-      int		from;
-      int		to;
+      size_t from;
+      size_t to;
 
       i += 1;
       segments.clear();
@@ -145,28 +135,24 @@ void			hbs::Track::SetPath(const std::string &geometry)
 	  ReadWhitespace(geometry, i);
 	  if (geometry[i] == '}')
 	    break ;
-	  j = i;
-	  while (geometry[i] >= '0' && geometry[i] <= '9')
-	    i += 1;
-	  from = std::atoi(&geometry[j]);
-	  if (from <= 0)
+	  if (!ReadUnsigned(geometry, i, from) || from == 0)
 	    throw hbs::SyntaxError(&geometry[i]);
 	  ReadWhitespace(geometry, i);
 	  if (!ReadText(geometry, i, "-"))
 	    throw hbs::SyntaxError(&geometry[i]);
 	  ReadWhitespace(geometry, i);
-	  j = i;
-	  while (geometry[i] >= '0' && geometry[i] <= '9')
-	    i += 1;
-	  to = std::atoi(&geometry[j]);
-	  if (to <= 0)
+	  if (!ReadUnsigned(geometry, i, to) || to == 0)
 	    throw hbs::SyntaxError(&geometry[i]);
 	  AddSegment((size_t)from - 1, (size_t)to - 1);
 	  ReadWhitespace(geometry, i);
 	}
       if (geometry[i] != '}')
 	throw hbs::SyntaxError("Missing '}'.");
+      ++i;
     }
+  ReadWhitespace(geometry, i);
+  if ((size_t)i != geometry.size())
+    throw hbs::SyntaxError("Unexpected track geometry suffix.");
 }
 
 const hbs::Positions	&hbs::Track::GetPath(void) const
@@ -584,6 +570,11 @@ hbs::Tristate		hbs::Track::Compute(size_t pin_num_this)
   if (computing)
     return (hbs::UNDEFINED);
   computing = true;
+  struct ResetComputing
+  {
+    bool &flag;
+    ~ResetComputing() { flag = false; }
+  } reset{computing};
   PresetOutput(pin_num_this);
   out = hbs::UNDEFINED;
   for (size_t i = 0; i < attachments.size(); ++i)
@@ -619,13 +610,22 @@ void			hbs::Track::SetLink(size_t pin_num_this,
 					 size_t pin_num_target,
 					 const std::string &pos)
 {
-  if (pin_num_this == 0)
+  if (pin_num_this == 0 || pin_num_this > 65536)
     throw hbs::BadPin(GetType() + ": Bad pin.");
+  // Physical junctions are represented by MergeTracks, never reciprocal
+  // track attachments (which recurse when locating a pin and cannot be saved).
+  if (dynamic_cast<hbs::Track*>(&component) != NULL)
+    throw hbs::BadComponent("Track-to-track attachment: merge the tracks instead.");
+  if (pin_num_target == 0 ||
+      (dynamic_cast<hbs::Track*>(&component) == NULL && pin_num_target > component.GetPinCount()))
+    throw hbs::BadPin(component.GetType() + ": Bad target pin.");
   if (attachments.size() < pin_num_this)
     attachments.resize(pin_num_this, {NULL, 0, NoNode});
   Attachment &att = attachments[pin_num_this - 1];
   if (att.component == &component && att.pin == pin_num_target)
     return ;
+  if (att.component != NULL)
+    throw hbs::BadPin("Track attachment already occupied.");
   att.component = &component;
   att.pin = pin_num_target;
   if (att.node == NoNode)
@@ -766,7 +766,7 @@ std::pair<int, int>	hbs::Track::GetStep(size_t i) const
   hbs::Positions::const_iterator it = NodeIterator(i);
 
   if (it == path.end())
-    throw 0;
+    throw hbs::BadPin("Bad track step.");
   return (std::pair<int, int>(round(it->first.x), round(it->first.y)));
 }
 

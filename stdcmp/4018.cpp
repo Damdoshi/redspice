@@ -47,7 +47,7 @@ void                    hbs::CMP_4018::Update(void)
         qbar[i] = hbs::LogicNot(ReadJam(i));
       return ;
     }
-  if (!(GetPrevious(14) == hbs::FALSE && GetPin(14) == hbs::TRUE))
+  if (!(GetPin(14) == hbs::TRUE && GetPrevious(14) == hbs::FALSE))
     return ;
   for (size_t i = 0; i < 5; ++i)
     old[i] = qbar[i];

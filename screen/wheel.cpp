@@ -11,6 +11,7 @@ extern "C"
 t_bunny_response	screen_wheel(int			id,
 			     int			delta,
 			     LoopData			&ld)
+try
 {
   (void)id;
   if (ld.file_browser)
@@ -28,5 +29,10 @@ t_bunny_response	screen_wheel(int			id,
   ld.screen.context_menu = false;
   ld.screen.ZoomAt(*bunny_get_mouse_position(), delta);
   ld.MarkDirty();
+  return (GO_ON);
+}
+catch (const std::exception &error)
+{
+  hbs::ReportScreenError(ld, error);
   return (GO_ON);
 }

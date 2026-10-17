@@ -39,7 +39,7 @@ void                    hbs::CMP_4522::Update(void)
     }
   if (GetPin(4) == hbs::TRUE)
     return ;
-  if (!(GetPrevious(6) == hbs::FALSE && GetPin(6) == hbs::TRUE))
+  if (!(GetPin(6) == hbs::TRUE && GetPrevious(6) == hbs::FALSE))
     return ;
   if (value == 0)
     value = ReadPreset();
@@ -96,7 +96,10 @@ hbs::CMP_4522::CMP_4522(const hbs::Timer  &time,
     modulo(modulo),
     value(0),
     last_tick(0)
-{}
+{
+  if (modulo == 0)
+    throw std::invalid_argument("4522: modulo must be positive.");
+}
 
 hbs::CMP_4522::~CMP_4522(void)
 {}

@@ -838,7 +838,7 @@ void                    hbs::CMP_6502::CompleteRtsPullHigh(uint8_t value)
 
 bool                    hbs::CMP_6502::ExternalInterruptPending(void)
 {
-  if (GetPrevious(6) == hbs::TRUE && GetPin(6) == hbs::FALSE)
+  if (GetPin(6) == hbs::FALSE && GetPrevious(6) == hbs::TRUE)
     return (true);
   if (GetPin(4) == hbs::FALSE && !GetFlag(FLAG_I))
     return (true);
@@ -950,11 +950,11 @@ void                    hbs::CMP_6502::Tick(void)
     return ;
   if (GetPin(2) == hbs::FALSE) // RDY
     return ;
-  if (GetPrevious(37) != hbs::FALSE || GetPin(37) != hbs::TRUE)
+  if (GetPin(37) != hbs::TRUE || GetPrevious(37) != hbs::FALSE)
     return ;
   last_tick = timer.GetTime();
   reset_seen_high = true;
-  if (GetPrevious(38) == hbs::TRUE && GetPin(38) == hbs::FALSE)
+  if (GetPin(38) == hbs::FALSE && GetPrevious(38) == hbs::TRUE)
     SetFlag(FLAG_V, true);
   data = ReadDataBus();
 
@@ -973,7 +973,7 @@ void                    hbs::CMP_6502::Tick(void)
       PrepareFetch();
       break ;
     case FETCH_OPCODE:
-      if (GetPrevious(6) == hbs::TRUE && GetPin(6) == hbs::FALSE)
+      if (GetPin(6) == hbs::FALSE && GetPrevious(6) == hbs::TRUE)
         BeginInterrupt(0xFFFA, false);
       else if (GetPin(4) == hbs::FALSE && !GetFlag(FLAG_I))
         BeginInterrupt(0xFFFE, false);

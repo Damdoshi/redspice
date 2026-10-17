@@ -11,6 +11,7 @@
 extern "C"
 t_bunny_response	screen_move(const t_bunny_position	*rel,
 				    LoopData			&ld)
+try
 {
   (void)rel;
   if (!ld.HasDocument())
@@ -41,4 +42,8 @@ t_bunny_response	screen_move(const t_bunny_position	*rel,
     }
   return (GO_ON);
 }
-
+catch (const std::exception &error)
+{
+  hbs::ReportScreenError(ld, error);
+  return (GO_ON);
+}

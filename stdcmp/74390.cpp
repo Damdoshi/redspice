@@ -36,9 +36,9 @@ void                    hbs::CMP_74390::UpdateHalf(size_t half)
       last_tick[half] = timer.GetTime();
       return ;
     }
-  if (GetPrevious(cp0_pin(half)) == hbs::TRUE && GetPin(cp0_pin(half)) == hbs::FALSE)
+  if (GetPin(cp0_pin(half)) == hbs::FALSE && GetPrevious(cp0_pin(half)) == hbs::TRUE)
     q0[half] = !q0[half];
-  if (GetPrevious(cp1_pin(half)) == hbs::TRUE && GetPin(cp1_pin(half)) == hbs::FALSE)
+  if (GetPin(cp1_pin(half)) == hbs::FALSE && GetPrevious(cp1_pin(half)) == hbs::TRUE)
     div5[half] = (div5[half] + 1) % 5;
   last_tick[half] = timer.GetTime();
 }

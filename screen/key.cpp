@@ -81,6 +81,10 @@ static void		cancel_component_placement(LoopData &ld)
   else
     components.insert(ld.screen.component_to_place);
   ld.CurrentCircuit().DeleteSelected(components, tracks);
+  clear_selection(ld.screen);
+  ld.screen.grabbed = NULL;
+  ld.screen.grabbed_step = hbs::Packet();
+  ld.screen.selecting = ld.screen.dragging_selection = false;
   ld.screen.placing_component = false;
   ld.screen.component_to_place = NULL;
   ld.screen.placing_type = "";
@@ -101,6 +105,7 @@ extern "C"
 t_bunny_response	screen_key(t_bunny_event_state	state,
 				   t_bunny_keysym	sym,
 				   LoopData		&ld)
+try
 {
   if (sym == BKS_ESCAPE && state == GO_UP)
     {
@@ -161,6 +166,9 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
 	}
       ld.screen.active_track = NULL;
       ld.screen.active_node = hbs::Track::NoNode;
+      ld.screen.grabbed = NULL;
+      ld.screen.grabbed_step = hbs::Packet();
+      ld.screen.dragging_selection = ld.screen.selecting = false;
       return (GO_ON);
     }
   if (ctrl_pressed() && sym == BKS_S)
@@ -247,5 +255,10 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
       ld.screen.search_offset = 0;
       return (GO_ON);
     }
+  return (GO_ON);
+}
+catch (const std::exception &error)
+{
+  hbs::ReportScreenError(ld, error);
   return (GO_ON);
 }

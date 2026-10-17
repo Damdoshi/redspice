@@ -6,6 +6,7 @@
 
 #include		<algorithm>
 #include		<cctype>
+#include                <cmath>
 #include		<chrono>
 #include		<filesystem>
 #include		<fstream>
@@ -96,7 +97,8 @@ static bool		parse_position_value(const std::string &line,
 
       if (!(ss >> word >> pos.x >> pos.y))
 	return (false);
-      return (true);
+      return (std::isfinite(pos.x) && std::isfinite(pos.y) &&
+              std::abs(pos.x) <= 1000000.0 && std::abs(pos.y) <= 1000000.0);
     }
   comma = line.find(',', open + 1);
   close = line.find(']', open + 1);
@@ -111,7 +113,8 @@ static bool		parse_position_value(const std::string &line,
     {
       return (false);
     }
-  return (true);
+  return (std::isfinite(pos.x) && std::isfinite(pos.y) &&
+          std::abs(pos.x) <= 1000000.0 && std::abs(pos.y) <= 1000000.0);
 }
 
 static bool		load_document_view(const std::string &file,
@@ -157,7 +160,7 @@ static bool		load_document_view(const std::string &file,
 	  int loaded;
 
 	  if (ss >> loaded && loaded > 0)
-	    pin_size = loaded, found = true;
+	    pin_size = std::clamp(loaded, PINSIZE_DEFAULT / 4, PINSIZE_DEFAULT * 10), found = true;
 	}
     }
   return (found);
@@ -168,17 +171,7 @@ static bool		save_circuit_with_view(hbs::Circuit &circuit,
 				       const hbs::Position &camera,
 				       int pin_size)
 {
-  std::ofstream		os;
-
-  if (!circuit.Save(file))
-    return (false);
-  os.open(file.c_str(), std::ios::out | std::ios::binary | std::ios::app);
-  if (!os)
-    return (false);
-  os << "\n.misc:\n";
-  os << "camera [" << camera.x << "," << camera.y << "]\n";
-  os << "zoom " << pin_size << "\n";
-  return ((bool)os);
+  return (circuit.Save(file, camera, pin_size));
 }
 
 static std::string	make_temporary_filename(void)
@@ -209,11 +202,22 @@ static void		reset_document_interaction(hbs::Screen &screen)
   screen.search_offset = 0;
   screen.search_query = "";
   screen.grabbed = NULL;
+  screen.loopsim = false;
+  screen.right_panning = false;
+  screen.right_panning_moved = false;
   screen.grabbed_step = hbs::Packet();
   screen.active_track = NULL;
   screen.active_node = hbs::Track::NoNode;
   screen.selected_components.clear();
   screen.selected_tracks.clear();
+}
+
+void hbs::ReportScreenError(LoopData &ld, const std::exception &error)
+{
+  reset_document_interaction(ld.screen);
+  ld.browser_error = *error.what() ? error.what() : "Erreur pendant l'edition du circuit.";
+  ld.file_browser = true;
+  ld.file_browser_mode = FILE_BROWSER_OPEN;
 }
 
 static std::string	build_browser_target_path(const LoopData &ld)
@@ -323,21 +327,29 @@ bool			LoopData::HasDocument(void) const
 
 hbs::Circuit		&LoopData::CurrentCircuit(void)
 {
+  if (!HasDocument())
+    throw std::runtime_error("No active circuit.");
   return (*documents[active_document]->circuit);
 }
 
 hbs::Timer		&LoopData::CurrentTimer(void)
 {
+  if (!HasDocument())
+    throw std::runtime_error("No active circuit.");
   return (*documents[active_document]->timer);
 }
 
 const hbs::Circuit	&LoopData::CurrentCircuit(void) const
 {
+  if (!HasDocument())
+    throw std::runtime_error("No active circuit.");
   return (*documents[active_document]->circuit);
 }
 
 const hbs::Timer	&LoopData::CurrentTimer(void) const
 {
+  if (!HasDocument())
+    throw std::runtime_error("No active circuit.");
   return (*documents[active_document]->timer);
 }
 
@@ -490,6 +502,12 @@ bool			LoopData::SaveCurrentDocumentAs(const std::string &file,
 
   if (!HasDocument() || name.empty())
     return (false);
+  for (size_t i = 0; i < documents.size(); ++i)
+    if (i != active_document && documents[i]->file_name == name)
+      {
+        browser_error = "Ce fichier est deja ouvert dans un autre document.";
+        return (false);
+      }
   SaveActiveView();
   if (!save_circuit_with_view(*documents[active_document]->circuit,
 			      name,

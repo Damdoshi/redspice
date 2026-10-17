@@ -48,7 +48,7 @@ void                    hbs::CMP_74161::UpdateCounter(void)
       last_tick = timer.GetTime();
       return ;
     }
-  if (!(GetPrevious(2) == hbs::FALSE && GetPin(2) == hbs::TRUE))
+  if (!(GetPin(2) == hbs::TRUE && GetPrevious(2) == hbs::FALSE))
     return ;
   if (IsSynchronousClear() && GetPin(1) == hbs::FALSE)
     value = 0;

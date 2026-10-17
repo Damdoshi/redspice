@@ -12,6 +12,7 @@
 # include				<set>
 # include				<string>
 # include				<vector>
+# include                                <exception>
 # include				"Positions.hpp"
 # include				"Timer.hpp"
 
@@ -216,6 +217,7 @@ namespace					hbs
 							 t_bunny_mouse_button sym,
 							 LoopData &ld);
   bool					FileBrowserWheel(int delta, LoopData &ld);
+  void ReportScreenError(LoopData &ld, const std::exception &error);
 }
 
 #endif	//			__SCREEN_HPP__

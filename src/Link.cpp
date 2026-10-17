@@ -16,12 +16,11 @@ hbs::Link::Link(const hbs::Position		&from,
   : first(icom),
     second(pin)
 {
-  int			i, j;
+  int i;
   hbs::Position		pos;
-  size_t		tmp = 0;
   Layer			layer = BOTTOM;
 
-  i = j = 0;
+  i = 0;
   if (str != "")
     {
       ReadWhitespace(str, i);
@@ -31,33 +30,33 @@ hbs::Link::Link(const hbs::Position		&from,
   while (str[i] != '\0' && str[i] != ']')
     {
       ReadWhitespace(str, i);
+      if (str[i] == ']')
+        break;
       if (ReadText(str, i, "t"))
 	layer = TOP;
       else if (ReadText(str, i, "b"))
 	layer = BOTTOM;
-      ReadWhitespace(str, i);
-      j = i;
-      ReadChar(str, i);
+      if (!ReadNumber(str, i, pos.x))
+        throw SyntaxError("Invalid link coordinate.");
       ReadWhitespace(str, i);
       if (!ReadText(str, i, ","))
 	throw SyntaxError(&str[i]);
-      ReadWhitespace(str, i);
-      pos.x = std::stof(&str[j], &tmp);
-      if (tmp == 0)
-	throw SyntaxError(&str[i]);
-      j = i;
-      ReadWhitespace(str, i);
-      ReadChar(str, i);
-      pos.y = std::stof(&str[j], &tmp);
-      if (tmp == 0)
-	throw SyntaxError(&str[i]);
-      j = i;
+      if (!ReadNumber(str, i, pos.y))
+        throw SyntaxError("Invalid link coordinate.");
       ReadWhitespace(str, i);
 
       if (!rev)
 	third.push_back({pos, layer});
       else
 	third.push_front({pos, layer});
+    }
+  if (!str.empty())
+    {
+      if (!ReadText(str, i, "]"))
+        throw SyntaxError("Missing ']'.");
+      ReadWhitespace(str, i);
+      if ((size_t)i != str.size())
+        throw SyntaxError("Unexpected link geometry suffix.");
     }
   (void)from;
   (void)to;

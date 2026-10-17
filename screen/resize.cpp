@@ -10,6 +10,7 @@ extern "C"
 t_bunny_response	screen_resize(const t_bunny_window	*win,
 				      const t_bunny_position	*siz,
 				      LoopData			&ld)
+try
 {
   t_bunny_size		size;
 
@@ -23,4 +24,8 @@ t_bunny_response	screen_resize(const t_bunny_window	*win,
   ld.screen.Resize(*win, *siz);
   return (GO_ON);
 }
-
+catch (const std::exception &error)
+{
+  hbs::ReportScreenError(ld, error);
+  return (GO_ON);
+}

@@ -302,6 +302,10 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
   double		x;
   double		y;
 
+  pin_size = std::clamp(pin_size, PINSIZE_DEFAULT / 4, PINSIZE_DEFAULT * 10);
+  if (!std::isfinite(camera.x) || std::abs(camera.x) > 1000000.0) camera.x = 0;
+  if (!std::isfinite(camera.y) || std::abs(camera.y) > 1000000.0) camera.y = 0;
+
   bunny_clear(&pic->buffer, BLACK);
   double left = camera.x - pic->buffer.width / pin_size / 2.0 - 1;
   double right = camera.x + pic->buffer.width / pin_size / 2.0 + 1;

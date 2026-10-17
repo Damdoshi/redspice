@@ -9,6 +9,7 @@
 
 extern "C"
 t_bunny_response	screen_loop(LoopData			&ld)
+try
 {
   const bool *keyboard = bunny_get_keyboard();
   double speed = 0.65;
@@ -44,4 +45,8 @@ t_bunny_response	screen_loop(LoopData			&ld)
     hbs::Simulate(ld.CurrentCircuit(), ld.CurrentTimer(), ld.screen.loop_ticks_per_frame);
   return (GO_ON);
 }
-
+catch (const std::exception &error)
+{
+  hbs::ReportScreenError(ld, error);
+  return (GO_ON);
+}

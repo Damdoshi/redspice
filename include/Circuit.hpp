@@ -67,6 +67,7 @@ namespace				hbs
     std::vector<CircuitPin>		external_pins;
     std::vector<PackageLine>		package_lines;
     std::map<size_t, std::list<CircuitConnection> > external_links;
+    std::set<size_t> computing_pins;
 
     std::map<std::string, IComponent*>	circuit;
     std::map<std::string, Input*>	inputs;
@@ -74,6 +75,8 @@ namespace				hbs
     std::map<std::string, Track*>	tracks;
     std::vector<std::string>		creatable_types;
     size_t				implicit_track_count;
+    void Serialize(std::ostream &os) const;
+    bool LoadContents(const std::string &content);
 
     bool				ReadChipsetsInside(const std::string	&code,
 							   int			&i);
@@ -153,6 +156,7 @@ namespace				hbs
     bool				Load(const std::string			&file,
 				     bool				create_if_missing = false);
     bool				Save(const std::string			&file) const;
+    bool Save(const std::string &file, const hbs::Position &camera, int pin_size) const;
     void				SetValue(const std::string		&input,
 						 hbs::Tristate			value);
 
