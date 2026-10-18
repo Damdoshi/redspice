@@ -15,6 +15,17 @@ namespace		hbs
 
   typedef t_bunny_accurate_position Position;
   typedef t_bunny_accurate_size	Size;
+  // Positive quarter turns are clockwise in screen coordinates (Y points down).
+  inline Position QuarterTurn(Position p, int turns)
+  {
+    switch ((turns % 4 + 4) % 4)
+      {
+      case 1: return {-p.y, p.x};
+      case 2: return {-p.x, -p.y};
+      case 3: return {p.y, -p.x};
+      default: return p;
+      }
+  }
   typedef std::list<
     std::pair<hbs::Position, hbs::ILink::Layer>
     >			Positions;

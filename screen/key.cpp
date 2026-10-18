@@ -242,6 +242,29 @@ try
       return (GO_ON);
     }
 
+  if (sym == BKS_PAGEUP || sym == BKS_PAGEDOWN)
+    {
+      int turns = sym == BKS_PAGEUP ? -1 : 1;
+      bool changed = false;
+      if (ld.screen.placing_component && ld.screen.component_to_place)
+        {
+          ld.screen.component_to_place->Rotate(turns);
+          changed = true;
+        }
+      else
+        for (hbs::IComponent *component : ld.screen.selected_components)
+          {
+            component->Rotate(turns);
+            changed = true;
+          }
+      if (changed)
+        {
+          ld.screen.context_menu = false;
+          ld.MarkDirty();
+        }
+      return GO_ON;
+    }
+
   if (sym == BKS_T)
     ld.screen.loopsim = false;
   if (sym == BKS_N)

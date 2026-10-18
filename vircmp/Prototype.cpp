@@ -106,9 +106,9 @@ void hbs::Prototype::CheckPin(size_t pin) const
 const std::string &hbs::Prototype::GetType() const { return PrototypeName(kind); }
 size_t hbs::Prototype::GetPinCount() const { return PrototypePinCount(kind); }
 hbs::Position hbs::Prototype::GetPinPosition(size_t pin) const
-{ CheckPin(pin); return position + PrototypePinPosition(kind,pin); }
+{ CheckPin(pin); return LocalToWorld(PrototypePinPosition(kind,pin)); }
 bool hbs::Prototype::IsUnder(const Screen &, const t_bunny_position &point) const
-{ return PrototypeIsUnder(kind, Position{double(point.x)-position.x,double(point.y)-position.y}); }
+{ return PrototypeIsUnder(kind, WorldToLocal({double(point.x),double(point.y)})); }
 std::string hbs::Prototype::GetDisplayType() const
 {
   if (kind <= PT_XNOR) return GetType()+" - porte logique pedagogique";
@@ -212,7 +212,7 @@ void hbs::Prototype::Draw(Screen &screen) const
         auto found=timeline.rbegin()->second.find(pin);
         if(found!=timeline.rbegin()->second.end()) states[pin-1]=found->second;
       }
-  ScreenSymbolCanvas canvas(screen,position);
+  ScreenSymbolCanvas canvas(screen,position,GetRotation());
   DrawPrototypeSymbol(canvas,kind,name,value,closed,states,lit);
 }
 
@@ -231,9 +231,9 @@ hbs::Probe::Probe(const Timer &timer, const std::string &name, const std::string
 const std::string &hbs::Probe::GetType() const { return PrototypeName(PT_PROBE); }
 std::string hbs::Probe::GetDisplayType() const { return "PROBE - sonde logique cinq couleurs"; }
 hbs::Position hbs::Probe::GetPinPosition(size_t pin) const
-{ return position+PrototypePinPosition(PT_PROBE,pin); }
+{ return LocalToWorld(PrototypePinPosition(PT_PROBE,pin)); }
 bool hbs::Probe::IsUnder(const Screen &, const t_bunny_position &point) const
-{ return PrototypeIsUnder(PT_PROBE,{double(point.x)-position.x,double(point.y)-position.y}); }
+{ return PrototypeIsUnder(PT_PROBE,WorldToLocal({double(point.x),double(point.y)})); }
 void hbs::Probe::Draw(Screen &screen) const
 {
   Tristate states[4]={UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED};
@@ -242,6 +242,6 @@ void hbs::Probe::Draw(Screen &screen) const
       auto value=timeline.rbegin()->second.find(1);
       if(value!=timeline.rbegin()->second.end()) states[0]=value->second;
     }
-  ScreenSymbolCanvas canvas(screen,position);
+  ScreenSymbolCanvas canvas(screen,position,GetRotation());
   DrawPrototypeSymbol(canvas,PT_PROBE,name,"",false,states);
 }

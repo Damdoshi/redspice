@@ -8,6 +8,7 @@
 #include                <csignal>
 #include                <pthread.h>
 #include                <stdexcept>
+#include                <algorithm>
 #include		"Terminal.hpp"
 
 // The library must not change its host process's SIGPIPE disposition.
@@ -71,34 +72,36 @@ hbs::Position		hbs::Terminal::GetPinPosition(size_t		pin) const
 {
   if (pin < 1 || pin > 9)
     throw hbs::BadPin(GetType() + ": Bad pin.");
-  return (hbs::AComponent<9>::position + hbs::Position{0, (double)(pin - 1)});
+  return (LocalToWorld({0, (double)(pin - 1)}));
 }
 
 bool			hbs::Terminal::IsUnder(const hbs::Screen	&screen,
 					       const t_bunny_position	&pos) const
 {
   (void)screen;
-  (void)pos;
-  return (false);
+  Position p = WorldToLocal({double(pos.x), double(pos.y)});
+  return p.x >= -.5 && p.x <= 2 && p.y >= -1 && p.y <= 9;
 }
 
 void			hbs::Terminal::Draw(hbs::Screen			&screen) const
 {
-  screen.Square(hbs::AComponent<9>::position + hbs::Position{1, 0}, {1, 9}, hbs::Screen::White);
+  Position a = LocalToWorld({1, 0}), b = LocalToWorld({2, 9});
+  screen.Square({std::min(a.x, b.x), std::min(a.y, b.y)},
+                {std::abs(b.x-a.x), std::abs(b.y-a.y)}, hbs::Screen::White);
   for (double i = 0; i < 9; ++i)
     {
-      screen.Line(hbs::AComponent<9>::position + hbs::Position{0, i},
-		  hbs::AComponent<9>::position + hbs::Position{1, i},
+      screen.Line(LocalToWorld({0, i}),
+		  LocalToWorld({1, i}),
 		  hbs::Screen::White);
-      screen.Circle(hbs::AComponent<9>::position + hbs::Position{0, i},
+      screen.Circle(LocalToWorld({0, i}),
 		    hbs::Size{0.5, 0.5}, hbs::Screen::Teal, true);
-      screen.Circle(hbs::AComponent<9>::position + hbs::Position{0, i},
+      screen.Circle(LocalToWorld({0, i}),
 		    hbs::Size{0.5, 0.5}, hbs::Screen::White, false);
     }
-  screen.Text(hbs::AComponent<9>::position + hbs::Position{0, -1}, {10, 10}, hbs::Screen::White, GetType());
+  screen.Text(LocalToWorld({0, -1}), {10, 10}, hbs::Screen::White, GetType());
   char			buf[2] = {c, '\0'};
 
-  screen.Text(hbs::AComponent<9>::position + hbs::Position{1, 1}, {10, 10}, hbs::Screen::White, std::string(buf));
+  screen.Text(LocalToWorld({1, 1}), {10, 10}, hbs::Screen::White, std::string(buf));
 }
 
 void			hbs::Terminal::SetLink(size_t		a,

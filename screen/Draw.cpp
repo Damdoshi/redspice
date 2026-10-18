@@ -425,7 +425,7 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
          hbs::Screen::Yellow, "Trace en attente: Ctrl pour continuer, glisse gauche camera, clic droit detache");
   if (placing_component)
     Text({8 - pic->buffer.width / 2.0, hbs::ShortcutBarHeight + 26.0 - pic->buffer.height / 2.0}, {10, 15},
-	 hbs::Screen::Yellow, "Placement: clic pose, Shift+clic pose et continue, clic droit court/Echap annule");
+	 hbs::Screen::Yellow, "Placement: clic pose, PageUp/PageDown tourne, Shift+clic continue, clic droit/Echap annule");
   camera = oldcam;
   pin_size = oldpinsize;
 

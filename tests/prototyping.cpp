@@ -422,6 +422,145 @@ static void routing_gestures()
   CHECK(!s.active_track);
 }
 
+static bool same(Position a,Position b)
+{ return std::hypot(a.x-b.x,a.y-b.y)<1e-9; }
+
+static void rotation_geometry()
+{
+  Timer t;Fixture c(t);Screen s("fixture.rs");
+  // Every built-in package keeps its anchor and pin numbering through four
+  // turns, including the multiple-inheritance terminal and the CPU's 40 pins.
+  auto types=c.GetCreatableTypes();types.push_back("screen");
+  for(const auto &type:types)
+    {
+      if(type=="wire" || type=="2716")continue;
+      auto part=c.CreateUserComponent(type,{7,-5});
+      std::vector<Position> pins;
+      for(size_t pin=1;pin<=part->GetPinCount();++pin)pins.push_back(part->GetPinPosition(pin));
+      for(int turn=1;turn<=4;++turn)
+        {
+          part->Rotate(1);
+          CHECK(same(part->GetPosition(),{7,-5}) && part->GetRotation()==turn%4);
+          double angle=turn*std::acos(-1.0)/2;
+          for(size_t pin=1;pin<=pins.size();++pin)
+            {
+              Position delta=pins[pin-1]-Position{7,-5};
+              Position expected={7+delta.x*std::cos(angle)-delta.y*std::sin(angle),
+                                 -5+delta.x*std::sin(angle)+delta.y*std::cos(angle)};
+              CHECK(same(part->GetPinPosition(pin),expected));
+            }
+          part->Draw(s);
+        }
+    }
+  auto gate=c.CreateUserComponent("AND",{0,0});gate->Rotate(1);
+  CHECK(same(gate->GetPinPosition(1),{1,-3}) && same(gate->GetPinPosition(3),{0,3}));
+  CHECK(gate->IsUnder(s,{0,3}) && !gate->IsUnder(s,{3,0}));
+  auto dip=c.CreateUserComponent("4001",{0,0});dip->Rotate(-1);
+  CHECK(dip->IsUnder(s,{5,-1}) && !dip->IsUnder(s,{1,5}));
+  auto terminal=c.CreateUserComponent("terminal",{0,0});terminal->Rotate(1);
+  CHECK(terminal->IsUnder(s,{-4,1}) && same(terminal->GetPinPosition(9),{-8,0}));
+  auto package=c.CreateUserComponent("rotation_package",{10,-10});package->Rotate(1);
+  CHECK(same(package->GetPinPosition(2),{8,-6}) && package->IsUnder(s,{9,-8}));
+  auto contents=c.CreateUserComponent("rotation_contents",{10,10});contents->Rotate(1);
+  CHECK(same(contents->GetPinPosition(1),{10,10}) && same(contents->GetPinPosition(2),{10,14}));
+  CHECK(contents->IsUnder(s,{10,14}));
+  CHECK(c.Save("rotations.rs"));
+  Fixture copy(t);copy.Load("rotations.rs");
+  for(const auto &name:{gate->GetName(),dip->GetName(),terminal->GetName(),package->GetName(),contents->GetName()})
+    {
+      auto &before=c.At(name),&after=copy.At(name);
+      CHECK(after.GetRotation()==before.GetRotation());
+      for(size_t pin=1;pin<=before.GetPinCount();++pin)CHECK(same(before.GetPinPosition(pin),after.GetPinPosition(pin)));
+    }
+  CHECK(copy.Save("rotations-copy.rs"));
+  CHECK(get("rotations.rs")==get("rotations-copy.rs"));
+  auto saved=get("rotations-copy.rs");
+  for(const std::string angle:{"45","360","nan","90,0","90oops",""})
+    {
+      bool rejected=false;
+      try{copy.LoadText(".chipsets:\nAND bad [0,0,"+angle+"]\n.links:\n");}
+      catch(const std::exception&){rejected=true;}
+      CHECK(rejected && copy.Save("rotation-rejected.rs"));
+      CHECK(get("rotation-rejected.rs")==saved);
+    }
+}
+
+static void rotation_editor()
+{
+  Timer t;Fixture c(t);
+  c.LoadText(".chipsets:\ninput a(1) [-12,0]\nAND gate [0,0]\nPROBE p [12,0]\n.tracks:\nw [b 3,0] {}\n.links:\na:1 gate:1\na:1 gate:2\ngate:3 w:1@1\np:1 w:2@1\n");
+  c.Compute();expect(c,"p",TRUE);
+  Screen s("fixture.rs");LoopData ld(c,t,s);
+  auto &gate=c.At("gate");auto time=t.GetTime();
+  ld.documents[0]->dirty=false;
+  screen_key(GO_DOWN,BKS_PAGEDOWN,ld);
+  CHECK(gate.GetRotation()==0 && !ld.documents[0]->dirty);
+  s.selected_components.insert(&gate);
+  screen_key(GO_UP,BKS_PAGEDOWN,ld);CHECK(gate.GetRotation()==0);
+  screen_key(GO_DOWN,BKS_PAGEDOWN,ld);
+  CHECK(gate.GetRotation()==1 && ld.documents[0]->dirty && t.GetTime()==time);
+  auto pin=c.GetPinAt(s,{1,-3});CHECK(pin.component==&gate && pin.pin==1);
+  CHECK(c.GetComponent(s,{0,3})==&gate);
+  auto track=c.FindTrackAttachedTo(&gate,3);
+  CHECK(track && same(track->GetNodePosition(0),{0,3}));
+  track->AddNodeAfter(0,{6,3});
+  screen_key(GO_DOWN,BKS_PAGEUP,ld);
+  CHECK(gate.GetRotation()==0 && same(track->GetNodePosition(0),{0,3}));
+  CHECK(same(gate.GetPinPosition(3),{3,0}));
+  expect(c,"p",TRUE);
+  s.selected_components.insert(&c.At("p"));
+  screen_key(GO_DOWN,BKS_PAGEUP,ld);
+  CHECK(gate.GetRotation()==3 && c.At("p").GetRotation()==3);
+  CHECK(same(gate.GetPosition(),{0,0}) && same(c.At("p").GetPosition(),{12,0}));
+  CHECK(c.Save("rotation-before-draw.rs"));s.Draw(c);
+  CHECK(c.Save("rotation-after-draw.rs"));
+  CHECK(get("rotation-before-draw.rs")==get("rotation-after-draw.rs") && t.GetTime()==time);
+
+  // Page keys keep their original navigation role while a panel is open.
+  s.search_panel=true;s.search_query="CAPACITOR";
+  screen_key(GO_DOWN,BKS_PAGEDOWN,ld);CHECK(s.search_offset==10 && gate.GetRotation()==3);
+  screen_key(GO_DOWN,BKS_PAGEUP,ld);CHECK(s.search_offset==0);
+  screen_key(GO_DOWN,BKS_RETURN,ld);
+  CHECK(s.placing_component && s.component_to_place->GetType()=="CAPACITOR");
+  auto placed=s.component_to_place;
+  screen_key(GO_DOWN,BKS_PAGEUP,ld);CHECK(placed->GetRotation()==3);
+  bunny_test_mouse={s.pic->buffer.width/2+100,s.pic->buffer.height/2+100};
+  bunny_test_keys[BKS_LSHIFT]=true;
+  screen_click(GO_DOWN,BMB_LEFT,ld);screen_click(GO_UP,BMB_LEFT,ld);
+  bunny_test_keys[BKS_LSHIFT]=false;
+  CHECK(s.placing_component && s.component_to_place!=placed && s.component_to_place->GetRotation()==3);
+  screen_key(GO_DOWN,BKS_PAGEDOWN,ld);CHECK(s.component_to_place->GetRotation()==0);
+  screen_click(GO_DOWN,BMB_RIGHT,ld);screen_click(GO_UP,BMB_RIGHT,ld);
+  CHECK(!s.placing_component && placed->GetRotation()==3);
+  s.selected_components.insert(&gate);
+  ld.BeginSaveAs(true);screen_key(GO_DOWN,BKS_PAGEDOWN,ld);
+  CHECK(gate.GetRotation()==3 && ld.file_browser);
+  screen_key(GO_UP,BKS_ESCAPE,ld);
+  s.rename_mode=true;screen_key(GO_DOWN,BKS_PAGEUP,ld);
+  CHECK(gate.GetRotation()==3);s.rename_mode=false;
+}
+
+static std::map<std::pair<int,int>,unsigned> drawn_pixels;
+static void capture_pixels(const char *kind,t_bunny_position p,t_bunny_position,unsigned color)
+{ if(std::string(kind)=="pixel")drawn_pixels[{p.x,p.y}]=color; }
+static void rotation_video()
+{
+  Timer t;Fixture c(t);
+  c.LoadText(".chipsets:\ninput red(1) [-10,0]\nfalse low [-10,4]\nscreen v(2x2) [0,0]\n.links:\nred:1 v:3\nred:1 v:4\nlow:1 v:1\nlow:1 v:2\nlow:1 v:5\nlow:1 v:6\nlow:1 v:7\nlow:1 v:8\n");
+  step(c,t);auto time=t.GetTime();
+  Screen s("fixture.rs");auto &video=c.At("v");
+  const Position red_center[]={{3,1},{-1,3},{-3,-1},{1,-3}};
+  for(auto center:red_center)
+    {
+      drawn_pixels.clear();bunny_test_draw=capture_pixels;video.Draw(s);bunny_test_draw=nullptr;
+      auto key=std::make_pair(s.pic->buffer.width/2+int(center.x*s.pin_size),
+                              s.pic->buffer.height/2+int(center.y*s.pin_size));
+      CHECK(drawn_pixels.at(key)==Screen::Red && t.GetTime()==time);
+      CHECK(video.IsUnder(s,{int(center.x),int(center.y)}));
+      video.Rotate(1);
+    }
+}
+
 static std::string xml(std::string s)
 {
   std::string out;
@@ -475,7 +614,13 @@ int main(int argc,char **argv)
   try
     {
       fs::current_path(directory);
+      fs::create_directory("components");
+      const std::string nested=".chipsets:\ninput a(1) [0,0]\noutput z [4,0]\n.tracks:\nw [b 0,0 b 4,0] {1-2}\n.links:\na:1 w:1@1\nz:1 w:2@2\n";
+      put("components/rotation_contents.rs",nested);
+      put("components/rotation_package.rs",nested+".package:\nline [0,-1] [4,-1]\nline [4,-1] [4,3]\nline [4,3] [0,3]\nline [0,3] [0,-1]\npin a [0,0]\npin z [4,2]\n");
+      CHECK(setenv("BCAD_PATH",fs::absolute("components").c_str(),1)==0);
       gates();contacts();discrete();buttons_and_roundtrip();ready_pullup();interaction();routing_anchors();routing_gestures();
+      rotation_geometry();rotation_editor();rotation_video();
       if(argc==3 && std::string(argv[1])=="--svg")svg(fs::absolute(argv[2]));
       CHECK(bunny_test_allocations==0);
       fs::current_path(original);fs::remove_all(directory);

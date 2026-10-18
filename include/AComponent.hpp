@@ -11,7 +11,7 @@
 # include				<typeinfo>
 # include				<list>
 # include				<map>
-# include				<math.h>
+# include				<cmath>
 # include				"IComponent.hpp"
 # include				"Exception.hpp"
 # include				"Timer.hpp"
@@ -55,7 +55,6 @@ namespace				hbs
     }
 
     hbs::Position			position;
-    bool				orientation;
 
     void				CleanOld(void)
     {
@@ -182,24 +181,19 @@ namespace				hbs
     bool				IsUnder(const hbs::Screen	&screen,
 						const t_bunny_position	&c) const
     {
+      hbs::Position local = WorldToLocal({double(c.x), double(c.y)});
       if (Pin == 1)
 	{
-	  t_bunny_accurate_position dist = {c.x - position.x, c.y - position.y};
-
-	  return (sqrt(dist.x * dist.x + dist.y * dist.y) * screen.pin_size < screen.pin_size * 2);
+	  return (std::hypot(local.x, local.y) < 2);
 	}
       if (Pin == 2)
-	{
-	  if (orientation)
-	    return (c.x >= position.x && c.x <= position.x + 3 && c.y >= position.y && c.y <= position.y + 1);
-	  else
-	    return (c.x >= position.x && c.x <= position.x + 1 && c.y >= position.y && c.y <= position.y + 3);
-	}
+        return (local.x >= 0 && local.x <= 1 && local.y >= 0 && local.y <= 3);
       if (Pin == 3)
 	{
 	  return (false);
 	}
-      return (c.x >= position.x && c.x < position.x + 3 && c.y >= position.y && c.y < position.y + Pin / 2);
+      (void)screen;
+      return (local.x >= 0 && local.x < 3 && local.y >= 0 && local.y < Pin / 2);
     }
 
     const std::string			&GetName(void) const
@@ -249,23 +243,21 @@ namespace				hbs
       if (Pin == 2)
 	{
 	  if (pin == 1)
-	    return (position + hbs::Position{0, 0});
-	  if (orientation)
-	    return (position + hbs::Position{3, 0});
-	  return (position + hbs::Position{0, 3});
+	    return (position);
+	  return (LocalToWorld({0, 3}));
 	}
       if (Pin == 3)
 	{
 	  if (pin == 1)
-	    return (position + hbs::Position{-1, 0});
+	    return (LocalToWorld({-1, 0}));
 	  if (pin == 2)
-	    return (position + hbs::Position{0, -1});
-	  return (position + hbs::Position{0, 1});
+	    return (LocalToWorld({0, -1}));
+	  return (LocalToWorld({0, 1}));
 	}
       pin -= 1;
       if (pin < Pin / 2)
-	return (position + hbs::Position{0, (double)pin});
-      return (position + hbs::Position{3, Pin - (double)pin - 1});
+	return (LocalToWorld({0, (double)pin}));
+      return (LocalToWorld({3, Pin - (double)pin - 1}));
     }
 
     virtual void			Draw(hbs::Screen		&screen) const
@@ -279,10 +271,7 @@ namespace				hbs
 	}
       else if (Pin == 2)
 	{
-	  if (orientation)
-	    screen.Circle(position + hbs::Position{1, 0}, {2, 0.5}, hbs::Screen::Green);
-	  else
-	    screen.Circle(position + hbs::Position{0, 1}, {0.5, 2}, hbs::Screen::Green);
+          screen.Circle(LocalToWorld({0, 1}), RotatedSize({0.5, 2}), hbs::Screen::Green);
 
 	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::Teal, true);
 	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::White, false);
@@ -301,8 +290,8 @@ namespace				hbs
 	{
 	  for (int i = 0; i <= 2; ++i)
 	    {
-	      hbs::Position xx = {0, (i - 1) / (double)screen.PinSize()};
-	      hbs::Position yy = {(i - 1) / (double)screen.PinSize(), 0};
+	      hbs::Position xx = QuarterTurn({0, (i - 1) / (double)screen.PinSize()}, GetRotation());
+	      hbs::Position yy = QuarterTurn({(i - 1) / (double)screen.PinSize(), 0}, GetRotation());
 
 	      // Horizontal
 	      screen.Line(GetPinPosition(1) + xx, GetPinPosition(Pin) + xx, hbs::Screen::Teal);
@@ -321,29 +310,13 @@ namespace				hbs
               screen.Circle(GetPinPosition(i), {0.4, 0.4}, hbs::Screen::White, false);
             }
 
-	  hbs::Size sz = screen.TextSize({10, 10}, GetType());
-
-	  sz.x = (-sz.x / 2.0) / screen.PinSize() + 1.5;
-	  sz.y = Pin / 2 - 0.5;
-	  screen.Text(position + sz, {10, 10}, hbs::Screen::Teal, GetType());
-
-	  sz = screen.TextSize({10, 10}, name);
-	  sz.x = (-sz.x / 2.0) / screen.PinSize() + 1.5;
-	  sz.y = -1.5;
-	  screen.Text(position + sz, {10, 10}, hbs::Screen::White, name);
+          DrawLabel(screen, {1.5, Pin / 2 - 0.5}, {10, 10}, hbs::Screen::Teal, GetType());
+          DrawLabel(screen, {1.5, -1.5}, {10, 10}, hbs::Screen::White, name);
 	  return ;
 	}
 
-      hbs::Size sz = screen.TextSize({10, 10}, GetType());
-
-      sz.x = (-sz.x / 2.0) / screen.PinSize();
-      sz.y = 0.75;
-      screen.Text(position + sz, {10, 10}, hbs::Screen::Teal, GetType());
-
-      sz = screen.TextSize({10, 10}, name);
-      sz.x = (-sz.x / 2.0) / screen.PinSize();
-      sz.y = -1.5;
-      screen.Text(position + sz, {10, 10}, hbs::Screen::White, name);
+      DrawLabel(screen, {0, 0.75}, {10, 10}, hbs::Screen::Teal, GetType());
+      DrawLabel(screen, {0, -1.5}, {10, 10}, hbs::Screen::White, name);
     }
 
     void				Dump(void) const
@@ -364,8 +337,7 @@ namespace				hbs
 	       const std::string	&nam,
 	       const std::string	&pos)
       : timer(tim),
-	name(nam),
-	orientation(false)
+        name(nam)
     {
       int				idy = 0;
       if (!ReadNumber(pos, idy, position.x))

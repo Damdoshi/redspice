@@ -100,7 +100,7 @@ void                            hbs::VideoScreen::Capture(void)
 
 hbs::Position                   hbs::VideoScreen::PreviewOrigin(void) const
 {
-  return (hbs::AComponent<8>::position + hbs::Position{2.0, 0.0});
+  return (LocalToWorld({2.0, 0.0}));
 }
 
 hbs::Size                       hbs::VideoScreen::PreviewSize(const hbs::Screen &screen) const
@@ -140,21 +140,17 @@ hbs::Position                   hbs::VideoScreen::GetPinPosition(size_t pin) con
 {
   if (pin < 1 || pin > 8)
     throw hbs::BadPin(GetType() + ": Bad pin.");
-  return (hbs::AComponent<8>::position + hbs::Position{0.0, (double)(pin - 1)});
+  return (LocalToWorld({0.0, (double)(pin - 1)}));
 }
 
 bool                            hbs::VideoScreen::IsUnder(const hbs::Screen &screen,
                                                           const t_bunny_position &pos) const
 {
-  hbs::Position                 p = {(double)pos.x, (double)pos.y};
-  hbs::Position                 origin = PreviewOrigin();
+  hbs::Position                 p = WorldToLocal({(double)pos.x, (double)pos.y});
   hbs::Size                     size = PreviewSize(screen);
   double                        bottom = std::max(7.0, size.y);
 
-  return (p.x >= hbs::AComponent<8>::position.x &&
-          p.x <= origin.x + size.x &&
-          p.y >= hbs::AComponent<8>::position.y - 1.0 &&
-          p.y <= hbs::AComponent<8>::position.y + bottom + 1.0);
+  return (p.x >= 0 && p.x <= 2 + size.x && p.y >= -1 && p.y <= bottom + 1);
 }
 
 static void                     draw_scaled_pixels(hbs::Screen &screen,
@@ -162,7 +158,8 @@ static void                     draw_scaled_pixels(hbs::Screen &screen,
                                                    const hbs::Size &size,
                                                    size_t source_width,
                                                    size_t source_height,
-                                                   const std::vector<unsigned int> &pixels)
+                                                   const std::vector<unsigned int> &pixels,
+                                                   int rotation)
 {
   int                           dst_x;
   int                           dst_y;
@@ -184,11 +181,29 @@ static void                     draw_scaled_pixels(hbs::Screen &screen,
   max_y = std::min((int)screen.pic->buffer.height, dst_y + dst_h);
   for (int y = min_y; y < max_y; ++y)
     {
-      size_t sy = (size_t)((long long)(y - dst_y) * (long long)source_height / dst_h);
       pos.y = y;
       for (int x = min_x; x < max_x; ++x)
         {
-          size_t sx = (size_t)((long long)(x - dst_x) * (long long)source_width / dst_w);
+          long long u = x - dst_x, v = y - dst_y;
+          size_t sx, sy;
+          switch (rotation)
+            {
+            case 1:
+              sx = v * source_width / dst_h;
+              sy = (dst_w - 1 - u) * source_height / dst_w;
+              break;
+            case 2:
+              sx = (dst_w - 1 - u) * source_width / dst_w;
+              sy = (dst_h - 1 - v) * source_height / dst_h;
+              break;
+            case 3:
+              sx = (dst_h - 1 - v) * source_width / dst_h;
+              sy = u * source_height / dst_w;
+              break;
+            default:
+              sx = u * source_width / dst_w;
+              sy = v * source_height / dst_h;
+            }
           pos.x = x;
           bunny_set_pixel(&screen.pic->buffer, pos, pixels[sy * source_width + sx]);
         }
@@ -199,22 +214,25 @@ void                            hbs::VideoScreen::Draw(hbs::Screen &screen) cons
 {
   hbs::Position                 origin = PreviewOrigin();
   hbs::Size                     size = PreviewSize(screen);
+  Position opposite = LocalToWorld({2 + size.x, size.y});
+  origin = {std::min(origin.x, opposite.x), std::min(origin.y, opposite.y)};
+  Size display_size = RotatedSize(size);
 
-  screen.Text(hbs::AComponent<8>::position + hbs::Position{0, -1.5}, {10, 10}, hbs::Screen::White, GetName());
-  screen.Text(hbs::AComponent<8>::position + hbs::Position{2, -1.5}, {10, 10}, hbs::Screen::Teal, GetType());
-  screen.Text(hbs::AComponent<8>::position + hbs::Position{0.5, -0.5}, {8, 8}, hbs::Screen::Teal, definition);
+  screen.Text(LocalToWorld({0, -1.5}), {10, 10}, hbs::Screen::White, GetName());
+  screen.Text(LocalToWorld({2, -1.5}), {10, 10}, hbs::Screen::Teal, GetType());
+  screen.Text(LocalToWorld({0.5, -0.5}), {8, 8}, hbs::Screen::Teal, definition);
 
   static const char             *labels[8] = {"VS", "HS", "R0", "R1", "G0", "G1", "B0", "B1"};
   for (size_t i = 1; i <= 8; ++i)
     {
-      screen.Line(GetPinPosition(i), hbs::AComponent<8>::position + hbs::Position{1.5, (double)(i - 1)}, hbs::Screen::White);
+      screen.Line(GetPinPosition(i), LocalToWorld({1.5, (double)(i - 1)}), hbs::Screen::White);
       screen.Circle(GetPinPosition(i), {0.4, 0.4}, hbs::Screen::Teal, true);
       screen.Circle(GetPinPosition(i), {0.4, 0.4}, hbs::Screen::White, false);
-      screen.Text(GetPinPosition(i) + hbs::Position{0.25, -0.25}, {6, 6}, hbs::Screen::White, labels[i - 1]);
+      screen.Text(LocalToWorld({0.25, double(i - 1) - 0.25}), {6, 6}, hbs::Screen::White, labels[i - 1]);
     }
 
-  draw_scaled_pixels(screen, origin, size, window_width, window_height, pixels);
-  screen.Square(origin, size, hbs::Screen::White, false);
+  draw_scaled_pixels(screen, origin, display_size, window_width, window_height, pixels, GetRotation());
+  screen.Square(origin, display_size, hbs::Screen::White, false);
 }
 
 void                            hbs::VideoScreen::SetLink(size_t a,

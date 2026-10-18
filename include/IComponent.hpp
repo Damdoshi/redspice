@@ -35,7 +35,20 @@ namespace			hbs
 
   class				IComponent
   {
+    int rotation = 0;
   public:
+    int GetRotation(void) const { return rotation; }
+    virtual void Rotate(int quarter_turns)
+    { rotation = (rotation + quarter_turns % 4 + 4) % 4; }
+    Position LocalToWorld(Position p) const
+    { return GetPosition() + QuarterTurn(p, rotation); }
+    Position WorldToLocal(Position p) const
+    { return QuarterTurn(p - GetPosition(), -rotation); }
+    Size RotatedSize(Size size) const
+    { return rotation % 2 ? Size{size.y, size.x} : size; }
+    void DrawLabel(Screen &screen, Position local_center, Size font,
+                   unsigned color, const std::string &text) const;
+
     /// Return the canonical type name of the component.
     virtual const std::string	&GetType(void) const = 0;
 

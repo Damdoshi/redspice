@@ -377,6 +377,26 @@ void			hbs::Circuit::Move(const hbs::Position			&pos)
   component_position.y += pos.y;
 }
 
+void hbs::Circuit::Rotate(int quarter_turns)
+{
+  // A circuit without a package exposes its actual contents. Rotate those
+  // contents around the instance anchor, including its internal copper.
+  if (!package_defined)
+    {
+      for (auto &entry : circuit)
+        if (!is_track(entry.second))
+          {
+            Position old = entry.second->GetPosition();
+            Position next = component_position + QuarterTurn(old - component_position, quarter_turns);
+            entry.second->Rotate(quarter_turns);
+            entry.second->Move(next - old);
+          }
+      for (auto &entry : tracks)
+        entry.second->RotateAround(component_position, quarter_turns);
+    }
+  IComponent::Rotate(quarter_turns);
+}
+
 bool			hbs::Circuit::IsUnder(const hbs::Screen			&screen,
 					      const t_bunny_position		&pos) const
 {
@@ -416,10 +436,11 @@ bool			hbs::Circuit::IsUnder(const hbs::Screen			&screen,
     }
   for (size_t i = 0; i < package_lines.size(); ++i)
     {
-      left = std::min(left, component_position.x + std::min(package_lines[i].from.x, package_lines[i].to.x));
-      right = std::max(right, component_position.x + std::max(package_lines[i].from.x, package_lines[i].to.x));
-      top = std::min(top, component_position.y + std::min(package_lines[i].from.y, package_lines[i].to.y));
-      bottom = std::max(bottom, component_position.y + std::max(package_lines[i].from.y, package_lines[i].to.y));
+      Position a = LocalToWorld(package_lines[i].from), b = LocalToWorld(package_lines[i].to);
+      left = std::min(left, std::min(a.x, b.x));
+      right = std::max(right, std::max(a.x, b.x));
+      top = std::min(top, std::min(a.y, b.y));
+      bottom = std::max(bottom, std::max(a.y, b.y));
     }
   return (p.x >= left && p.x <= right && p.y >= top && p.y <= bottom);
 }
@@ -434,7 +455,7 @@ hbs::Position		hbs::Circuit::GetPinPosition(size_t		pin) const
   if (pin == 0 || pin > external_pins.size())
     throw hbs::BadPin(GetType() + ": Bad pin.");
   if (package_defined)
-    return (component_position + external_pins[pin - 1].position);
+    return (LocalToWorld(external_pins[pin - 1].position));
   return (external_pins[pin - 1].component->GetPinPosition(external_pins[pin - 1].component_pin));
 }
 
@@ -558,26 +579,18 @@ void			hbs::Circuit::Draw(hbs::Screen			&screen) const
   if (component_instance && package_defined)
     {
       for (size_t i = 0; i < package_lines.size(); ++i)
-	screen.Line(component_position + package_lines[i].from,
-		    component_position + package_lines[i].to,
+        screen.Line(LocalToWorld(package_lines[i].from),
+		    LocalToWorld(package_lines[i].to),
 		    hbs::Screen::Teal);
       for (size_t i = 1; i <= external_pins.size(); ++i)
 	{
 	  hbs::Position pp = GetPinPosition(i);
-	  hbs::Size sz;
-
 	  screen.Circle(pp, {0.4, 0.4}, hbs::Screen::Purple, true);
 	  screen.Circle(pp, {0.4, 0.4}, hbs::Screen::White, false);
-	  sz = screen.TextSize({10, 10}, external_pins[i - 1].name);
-	  sz.x = (-sz.x / 2.0) / screen.PinSize();
-	  sz.y = -1.0;
-	  screen.Text(pp + sz, {10, 10}, hbs::Screen::White, external_pins[i - 1].name);
+          DrawLabel(screen, external_pins[i - 1].position + Position{0, -1},
+                    {10, 10}, hbs::Screen::White, external_pins[i - 1].name);
 	}
-      hbs::Size sz = screen.TextSize({10, 10}, GetName());
-
-      sz.x = (-sz.x / 2.0) / screen.PinSize();
-      sz.y = -1.5;
-      screen.Text(component_position + sz, {10, 10}, hbs::Screen::White, GetName());
+      DrawLabel(screen, {0, -1.5}, {10, 10}, hbs::Screen::White, GetName());
       return ;
     }
   ValidateRouting();
@@ -627,6 +640,24 @@ static std::string	read_between(const std::string &code, int &i, char open, char
   return (ret);
 }
 
+static int read_component_rotation(std::string &position)
+{
+  size_t comma = position.find(',');
+  if (comma == std::string::npos) return 0;
+  comma = position.find(',', comma + 1);
+  if (comma == std::string::npos) return 0;
+  std::string text = position.substr(comma + 1);
+  int i = 0;
+  double angle;
+  if (!ReadNumber(text, i, angle) ||
+      (angle != 0 && angle != 90 && angle != 180 && angle != 270))
+    throw hbs::SyntaxError("Component rotation must be 0, 90, 180 or 270 degrees.");
+  ReadWhitespace(text, i);
+  if (size_t(i) != text.size()) throw hbs::SyntaxError("Invalid component rotation.");
+  position.erase(comma);
+  return int(angle) / 90;
+}
+
 bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
 							 int		&i)
 {
@@ -648,7 +679,9 @@ bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
       position = read_between(code, i, '[', ']', "component position");
       if (circuit.find(name) != circuit.end())
 	throw hbs::BadComponent(std::string("Duplicated component ") + name);
+      int rotation = (type == "wire" || type == "track") ? 0 : read_component_rotation(position);
       circuit[name] = Create(type, name, value, position);
+      circuit[name]->Rotate(rotation);
       if (type == "input" || type == "clock")
 	inputs[name] = dynamic_cast<hbs::Input*>(circuit[name]);
       else if (type == "output" || type == "terminal" || type == "screen" ||
@@ -1275,7 +1308,9 @@ void hbs::Circuit::Serialize(std::ostream &os) const
 	os << file_type(*it->second) << " " << it->first;
 	if (value != "")
 	  os << "(" << value << ")";
-	os << " [" << pos.x << "," << pos.y << "]\n";
+	os << " [" << pos.x << "," << pos.y;
+        if (it->second->GetRotation()) os << "," << it->second->GetRotation() * 90;
+        os << "]\n";
       }
   os << "\n.tracks:\n";
   for (auto it = tracks.begin(); it != tracks.end(); ++it)

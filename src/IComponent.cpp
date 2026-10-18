@@ -6,6 +6,14 @@
 #include		<iostream>
 #include		"IComponent.hpp"
 
+void hbs::IComponent::DrawLabel(Screen &screen, Position local_center, Size font,
+                              unsigned color, const std::string &text) const
+{
+  Position anchor = LocalToWorld(local_center);
+  anchor.x -= screen.TextSize(font, text).x / (2.0 * screen.PinSize());
+  screen.Text(anchor, font, color, text);
+}
+
 std::ostream		&operator<<(std::ostream	&os,
 				    hbs::Tristate	t)
 {

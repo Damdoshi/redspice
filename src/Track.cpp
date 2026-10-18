@@ -15,6 +15,12 @@
 
 const size_t		hbs::Track::NoNode = std::numeric_limits<size_t>::max();
 
+void hbs::Track::RotateAround(Position pivot, int quarter_turns)
+{
+  for (auto &node : path)
+    node.first = pivot + QuarterTurn(node.first - pivot, quarter_turns);
+}
+
 void			hbs::Track::CleanOld(void)
 {
   if (timer.GetTime() > 4)

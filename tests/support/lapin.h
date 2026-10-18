@@ -51,7 +51,8 @@ inline void bunny_set_circle(t_bunny_buffer*,t_bunny_position p,t_bunny_position
 { if(bunny_test_draw)bunny_test_draw("circle",p,r,c); }
 inline void bunny_set_disk(t_bunny_buffer*,t_bunny_position p,t_bunny_position r,unsigned c,unsigned,int)
 { if(bunny_test_draw)bunny_test_draw("disk",p,r,c); }
-inline void bunny_set_pixel(t_bunny_buffer*,t_bunny_position,unsigned) {}
+inline void bunny_set_pixel(t_bunny_buffer*,t_bunny_position p,unsigned c)
+{ if(bunny_test_draw)bunny_test_draw("pixel",p,{0,0},c); }
 inline void bunny_blit(t_bunny_buffer*,t_bunny_picture*,const t_bunny_position*) {}
 inline void bunny_display(t_bunny_window*) {}
 struct LoopData;

@@ -54,6 +54,7 @@ Six circuits prêts à ouvrir se trouvent dans `res/00_prototypage/`.
 - Clic gauche sur un segment de piste + déplacement : sélectionner et déplacer toute la piste.
 - Clic gauche sur un point de piste + déplacement : déplacer uniquement ce point de piste.
 - Bouton `SEL` / `DRAW` ou touche `P` : basculer entre le mode sélection et le mode dessin.
+- `Page Up` : tourner les composants sélectionnés de 90° dans le sens antihoraire ; `Page Down` : tourner de 90° dans le sens horaire. Chaque composant tourne autour de son point d'ancrage, avec ses broches. Les pistes déjà dessinées restent en place et le chevelu indique les raccordements à refaire.
 - Clic gauche maintenu depuis une zone vide + déplacement : dessiner un rectangle de sélection multiple.
 - Après une sélection, un cadre reste visible autour des éléments sélectionnés.
 - Clic gauche + déplacement n’importe où à l’intérieur du cadre de sélection : déplacer toute la sélection, même si elle ne contient qu’un seul élément.
@@ -74,10 +75,13 @@ Six circuits prêts à ouvrir se trouvent dans `res/00_prototypage/`.
 - Après choix, le panneau se ferme et le composant apparaît sous le curseur, aligné sur la grille.
 - Clic gauche : poser le composant avec un nom généré automatiquement.
 - `Shift` + clic gauche : poser un exemplaire et garder un nouvel exemplaire du même type sous le curseur.
+- Pendant le placement, `Page Up` / `Page Down` tournent aussi le composant sous le curseur ; les exemplaires successifs posés avec `Shift` gardent cette orientation.
 - Clic droit ou `Échap` pendant le placement : annuler le composant en cours de placement.
 
 
 ### Pistes, couches et routage
+
+L'orientation est conservée dans les sauvegardes : une position peut s'écrire `[x,y,90]`, `[x,y,180]` ou `[x,y,270]` (degrés horaires). La forme habituelle `[x,y]` reste valable et correspond à 0°.
 
 - Une liaison non routée est affichée en gris pointillé : c'est le chevelu logique. Le vert des bornes est réservé à l'état vrai.
 - Un départ de routage sans segment physique reste solidaire de la borne du composant : déplacer une entrée ne laisse plus de pastille derrière elle.

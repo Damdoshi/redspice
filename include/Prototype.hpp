@@ -33,8 +33,9 @@ namespace hbs
   {
     Screen &screen;
     Position origin;
+    int rotation;
   public:
-    ScreenSymbolCanvas(Screen &screen, Position origin);
+    ScreenSymbolCanvas(Screen &screen, Position origin, int rotation = 0);
     void Line(Position a, Position b, unsigned color) override;
     void Circle(Position center, Size radius, unsigned color, bool fill) override;
     void Text(Position top_center, double height, unsigned color,

@@ -98,6 +98,7 @@ namespace			hbs
     void			SetLink(size_t pin_num_this, hbs::IComponent &component, size_t pin_num_target, const std::string &pos = "");
     bool			IsUnder(const hbs::Screen &screen, const t_bunny_position &pos) const;
     void			Move(const hbs::Position &pos);
+    void                        RotateAround(Position pivot, int quarter_turns);
     hbs::Position		GetPosition(void) const;
     hbs::Position		GetPinPosition(size_t pin) const;
     void			Draw(hbs::Screen &screen) const;

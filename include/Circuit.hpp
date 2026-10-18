@@ -150,6 +150,7 @@ namespace				hbs
 
     void				Move(const hbs::Position		&pos);
     hbs::Position			GetPosition(void) const;
+    void                                Rotate(int quarter_turns) override;
     hbs::Position			GetPinPosition(size_t			pin) const;
     bool				IsUnder(const hbs::Screen		&screen,
 						const t_bunny_position		&pos) const;

@@ -159,6 +159,7 @@ static void		cancel_component_placement(LoopData &ld)
 static void		finish_component_placement(LoopData &ld)
 {
   std::string type = ld.screen.placing_type;
+  int rotation = ld.screen.component_to_place->GetRotation();
 
   move_placing_component_to_mouse(ld);
   if (!shift_pressed())
@@ -172,6 +173,8 @@ static void		finish_component_placement(LoopData &ld)
   ld.screen.component_to_place = NULL;
   ld.screen.placing_type = "";
   begin_component_placement(ld, type);
+  if (ld.screen.component_to_place)
+    ld.screen.component_to_place->Rotate(rotation);
 }
 
 static bool		place_via(LoopData &ld)

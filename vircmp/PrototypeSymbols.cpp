@@ -18,18 +18,22 @@ unsigned hbs::PrototypeColor(Tristate value)
     }
 }
 
-hbs::ScreenSymbolCanvas::ScreenSymbolCanvas(Screen &screen, Position origin)
-  : screen(screen), origin(origin) {}
+hbs::ScreenSymbolCanvas::ScreenSymbolCanvas(Screen &screen, Position origin, int rotation)
+  : screen(screen), origin(origin), rotation(rotation) {}
 void hbs::ScreenSymbolCanvas::Line(Position a, Position b, unsigned color)
-{ screen.Line(origin+a,origin+b,color); }
+{ screen.Line(origin+QuarterTurn(a,rotation),origin+QuarterTurn(b,rotation),color); }
 void hbs::ScreenSymbolCanvas::Circle(Position center, Size radius, unsigned color, bool fill)
-{ screen.Circle(origin+center,radius,color,fill); }
+{
+  if(rotation%2)std::swap(radius.x,radius.y);
+  screen.Circle(origin+QuarterTurn(center,rotation),radius,color,fill);
+}
 void hbs::ScreenSymbolCanvas::Text(Position center, double height, unsigned color,
                                  const std::string &text)
 {
   double pixels=height*std::max(1,screen.pin_size);
   Size font{pixels*0.6,pixels};
   double width=screen.TextSize(font,text).x/std::max(1,screen.pin_size);
+  center=QuarterTurn(center,rotation);
   screen.Text(origin+Position{center.x-width/2,center.y},font,color,text);
 }
 
