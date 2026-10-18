@@ -49,6 +49,12 @@ namespace			hbs
     /// querying a net would recursively poison the cache of sink pins.
     virtual bool		DrivesPin(size_t pin) const { (void)pin; return (false); }
 
+    /// Advance autonomous clocked devices before evaluating observable outputs.
+    /// Default gates remain lazy. Implementations must be idempotent per tick.
+    virtual void                BeginTick(void) {}
+    /// Commit bus writes after clocked drivers and combinational nets settle.
+    virtual void                EndTick(void) {}
+
     /// Compute value of the precised pin
     virtual hbs::Tristate	Compute(size_t			pin_num_this = 1) = 0;
 

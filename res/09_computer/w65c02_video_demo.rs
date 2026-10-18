@@ -2,7 +2,7 @@
 clock phi(0) [-90,0]
 true vcc [-90,-20]
 false gnd [-90,20]
-6502 cpu [0,0]
+W65C02S cpu [0,0]
 28C256 rom(res/09_computer/w65c02_video_demo.rom) [55,-35]
 62256 vram [55,35]
 4069 inv [-40,35]
@@ -96,6 +96,7 @@ cpu:4 VCC:2
 cpu:6 VCC:3
 cpu:38 VCC:4
 cpu:40 VCC:5
+cpu:36 VCC:20
 vcc:1 VCC:6
 gnd:1 GND:1
 vidctr:11 GND:2

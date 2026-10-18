@@ -1084,6 +1084,7 @@ void			hbs::Circuit::UpdateExternalInputs(void)
 
 hbs::Tristate		hbs::Circuit::Compute(size_t			output)
 {
+  BeginTick();
   std::map<std::string, Output*>::iterator it;
 
   if (component_instance)
@@ -1096,6 +1097,7 @@ hbs::Tristate		hbs::Circuit::Compute(size_t			output)
         {
           UpdateExternalInputs();
           hbs::Tristate value = external_pins[output - 1].component->Compute(external_pins[output - 1].component_pin);
+          EndTick();
           computing_pins.erase(output);
           return (value);
         }
@@ -1105,23 +1107,49 @@ hbs::Tristate		hbs::Circuit::Compute(size_t			output)
   if (output == 0 || output > outputs.size())
     throw hbs::BadPin("Circuit: Bad output pin.");
   for (it = outputs.begin(); output > 1; ++it, --output);
-  return (it->second->Compute());
+  auto result = it->second->Compute();
+  EndTick();
+  return result;
 }
 
 hbs::Tristate		hbs::Circuit::Compute(void)
 {
   std::map<std::string, Output*>::iterator it;
 
+  BeginTick();
+
   if (component_instance)
     {
       for (size_t i = 1; i <= external_pins.size(); ++i)
 	if (external_pins[i - 1].kind == CIRCUIT_OUTPUT_PIN)
 	  Compute(i);
+      EndTick();
       return (hbs::UNDEFINED);
     }
   for (it = outputs.begin(); it != outputs.end(); ++it)
     it->second->Compute();
+  EndTick();
   return (hbs::UNDEFINED);
+}
+
+void hbs::Circuit::BeginTick(void)
+{
+  if (begun_tick == timer.GetTime())
+    return;
+  begun_tick = timer.GetTime();
+  if (component_instance)
+    UpdateExternalInputs();
+  for (auto &entry : circuit)
+    entry.second->BeginTick();
+}
+
+void hbs::Circuit::EndTick(void)
+{
+  if (ended_tick == timer.GetTime())
+    return;
+  ended_tick = timer.GetTime();
+  for (auto &entry : circuit)
+    entry.second->EndTick();
 }
 
 void			hbs::Circuit::SetLink(size_t			pnthis,
@@ -1369,6 +1397,8 @@ bool			hbs::Circuit::Load(const std::string		&file,
   circuit.swap(next.circuit);
   inputs.swap(next.inputs);
   outputs.swap(next.outputs);
+  begun_tick = static_cast<size_t>(-1);
+  ended_tick = static_cast<size_t>(-1);
   tracks.swap(next.tracks);
   external_pins.swap(next.external_pins);
   package_lines.swap(next.package_lines);
@@ -1464,11 +1494,14 @@ bool			hbs::Circuit::HasComponentType(const std::string	&type) const
 
 hbs::Tristate		hbs::Circuit::GetOutputValue(const std::string	&output)
 {
+  BeginTick();
   std::map<std::string, Output*>::iterator it;
 
   if ((it = outputs.find(output)) == outputs.end())
     throw hbs::MissingOutputs("Cannot found output " + output + ".");
-  return (it->second->Compute());
+  auto result = it->second->Compute();
+  EndTick();
+  return result;
 }
 
 std::vector<std::string>	hbs::Circuit::GetInputNames(void) const
@@ -1566,7 +1599,7 @@ hbs::Circuit::Circuit(hbs::Timer		&tim)
     "74164", "74165", "74166", "74194", "74195", "74299", "74595", "74597",
     "7473", "7474", "7475", "7476", "7490", "7493", "74107", "74109", "74112",
     "74174", "74175", "74273", "74373", "74374", "74377", "74573", "74574",
-    "2716", "6502", "wire"
+    "2716", "W65C02S", "6502", "wire"
   };
 
   creatable_types.assign(types, types + sizeof(types) / sizeof(types[0]));

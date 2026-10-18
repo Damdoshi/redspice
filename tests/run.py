@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Compile and run sanitised tests using a test-only LibLapin surface."""
 import concurrent.futures
+import gzip
 import os
 from pathlib import Path
 import subprocess
@@ -17,7 +18,8 @@ flags = ['-std=gnu++23', '-O1', '-g', '-Wall', '-Wextra',
          '-Itests/support', '-Iinclude', '-Iinclude/stdcmp', '-Iinclude/vircmp', '-pthread']
 sources = sorted(p for folder in ('src', 'screen', 'stdcmp', 'vircmp')
                  for p in Path(folder).glob('*.cpp'))
-sources += [Path('main.cpp'), Path('tests/reliability.cpp')]
+entries = [Path('main.cpp'), Path('tests/reliability.cpp'), Path('tests/w65c02.cpp')]
+sources += entries
 headers = [p for folder in ('include', 'tests/support') for p in Path(folder).rglob('*') if p.is_file()]
 flag_file = build / 'flags.txt'
 flag_text = '\n'.join([cxx, *flags])
@@ -48,7 +50,7 @@ try:
             if index % 25 == 0:
                 print(f'Compiled {index}/{len(sources)} translation units', flush=True)
     common = [str(obj) for source, obj in zip(sources, objects)
-              if source not in (Path('main.cpp'), Path('tests/reliability.cpp'))]
+              if source not in entries]
     for name, entry, extra in [
             ('bcad', 'main.cpp', []),
             ('reliability', 'tests/reliability.cpp',
@@ -61,6 +63,15 @@ try:
     leaks = os.environ.get('BCAD_DETECT_LEAKS', '1')
     environment = dict(os.environ, ASAN_OPTIONS=f'detect_leaks={leaks}:halt_on_error=1',
                        UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1')
+    subprocess.run([cxx, *flags, '-no-pie',
+                    str(objects[sources.index(Path('src/W65C02.cpp'))]),
+                    str(objects[sources.index(Path('tests/w65c02.cpp'))]),
+                    '-o', str(build / 'w65c02')], check=True)
+    vectors = build / 'w65c02-vectors.bin'
+    vectors.write_bytes(gzip.decompress((root / 'tests/data/w65c02-vectors.bin.gz').read_bytes()))
+    subprocess.run([str(build / 'w65c02')], check=True, env=environment, timeout=120)
+    subprocess.run([str(build / 'w65c02'), '--corpus', str(vectors)],
+                   check=True, env=environment, timeout=120)
     subprocess.run([str(build / 'reliability'), str(root), str(build / 'bcad')],
                    check=True, env=environment, timeout=120)
 except (RuntimeError, subprocess.SubprocessError) as error:

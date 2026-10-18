@@ -22,6 +22,7 @@
 #include "4522.hpp"
 #include "4089.hpp"
 #include "74190.hpp"
+#include "6502.hpp"
 
 extern "C" { bunny_declare_context(screen); }
 namespace fs = std::filesystem;
@@ -450,6 +451,130 @@ static void catalogue()
   std::cout<<"PASS "<<count<<" catalogue components, every pin, 0/1/U/Z/B\n";
 }
 
+struct CpuCircuit : hbs::Circuit
+{
+  using Circuit::Circuit;
+  hbs::CMP_6502 &Cpu() { return dynamic_cast<hbs::CMP_6502 &>(*circuit.at("cpu")); }
+};
+
+static void memory_bus_writes()
+{
+  const unsigned address_pins[]={10,9,8,7,6,5,4,3,25,24,21,23,2,26,1};
+  const unsigned data_pins[]={11,12,13,15,16,17,18,19};
+  for(const std::string type:{"62256","28C256"})
+    for(bool reverse:{false,true})
+      {
+        hbs::Timer timer;
+        hbs::Circuit c(timer);
+        auto memory=c.CreateUserComponent(type,{0,0});
+        hbs::Input low(timer,"low","0","0,0"), we(timer,"we","0","0,0");
+        for(auto pin:address_pins) memory->SetLink(pin,low,1,"");
+        memory->SetLink(20,low,1,""); memory->SetLink(22,low,1,""); memory->SetLink(27,we,1,"");
+        std::vector<std::unique_ptr<hbs::Input>> data;
+        std::vector<std::unique_ptr<hbs::Track>> tracks;
+        for(unsigned bit=0;bit<8;++bit)
+          {
+            data.emplace_back(new hbs::Input(timer,"data","0","0,0"));
+            tracks.emplace_back(new hbs::Track(timer,"data"));
+            if(!reverse) tracks.back()->SetLink(1,*memory,data_pins[bit],"");
+            tracks.back()->SetLink(2,*data.back(),1,"");
+            if(reverse) tracks.back()->SetLink(1,*memory,data_pins[bit],"");
+          }
+        for(unsigned value=0;value<256;++value)
+          {
+            we.SetValue(hbs::FALSE);
+            for(unsigned bit=0;bit<8;++bit) data[bit]->SetValue(value&(1u<<bit)?hbs::TRUE:hbs::FALSE);
+            // Start evaluation inside a data net: this used to corrupt its bit.
+            tracks[value%8]->Compute(1);
+            c.Compute();
+            timer.Tick(); we.SetValue(hbs::TRUE);
+            for(auto &d:data) d->SetValue(hbs::HIGH_IMPEDANCE);
+            c.Compute();
+            for(unsigned bit=0;bit<8;++bit)
+              CHECK(tracks[bit]->Compute(1)==(value&(1u<<bit)?hbs::TRUE:hbs::FALSE));
+            timer.Tick();
+          }
+        memory->DisconnectFrom(&low); memory->DisconnectFrom(&we);
+        for(auto &track:tracks) memory->DisconnectFrom(track.get());
+      }
+  std::cout<<"PASS all byte values on SRAM/EEPROM, both data-driver orders\n";
+}
+
+static void cpu_circuit()
+{
+  // A real 28C256 + 62256 circuit, with PHI2-qualified /OE and /WE. There
+  // deliberately are no output probes: the CPU must run autonomously.
+  std::string rom(32768, char(0xea));
+  const unsigned char code[] = {
+    0xd8,0xa2,0xff,0x9a,0x64,0x10,0x87,0x10,0x07,0x10,
+    0x0f,0x10,0x02,0x00,0xea,0xf8,0x18,0xa9,0x45,0x69,0x55,
+    0xd8,0x8d,0x00,0x02,0x20,0x30,0xc0,0x8d,0x01,0x02,
+    0xad,0x00,0x02,0xd0,0xfe,0xad,0x01,0x02,0xc9,0xa5,0xd0,0xfe,0xdb
+  };
+  std::copy(std::begin(code),std::end(code),rom.begin()+0x4000);
+  rom[0x4030]=char(0xa9); rom[0x4031]=char(0xa5); rom[0x4032]=char(0x60);
+  rom[0x7ffc]=0; rom[0x7ffd]=char(0xc0);
+  put("cpu.rom",rom);
+  const unsigned address_pins[]={10,9,8,7,6,5,4,3,25,24,21,23,2,26,1};
+  const unsigned data_pins[]={11,12,13,15,16,17,18,19};
+  for(bool reverse : {false,true})
+    {
+      std::ostringstream rs;
+      rs<<".chipsets:\nW65C02S cpu [0,0]\nclock phi(0) [0,30]\n"
+        "true vcc [0,35]\nfalse gnd [0,40]\ninput be(1) [0,45]\n28C256 rom(cpu.rom) [10,0]\n"
+        "62256 ram [20,0]\n4069 inv [30,0]\n4011 nand [40,0]\n.tracks:\n";
+      for(unsigned i=0;i<16;++i) rs<<"A"<<i<<" []\n";
+      for(unsigned i=0;i<8;++i) rs<<"D"<<i<<" []\n";
+      rs<<"RW []\nPHI []\nNRW []\nNA15 []\nOE []\nWE []\n.links:\n"
+        "cpu:2 vcc:1\ncpu:4 vcc:1\ncpu:6 vcc:1\ncpu:36 be:1\n"
+        "cpu:38 vcc:1\ncpu:40 vcc:1\nrom:27 vcc:1\nram:22 gnd:1\n"
+        "cpu:37 PHI:1\nphi:1 PHI:2\nnand:1 PHI:3\nnand:5 PHI:4\n"
+        "cpu:34 RW:1\ninv:1 RW:2\nnand:2 RW:3\ninv:2 NRW:1\nnand:6 NRW:2\n"
+        "nand:3 OE:1\nrom:22 OE:2\nnand:4 WE:1\nram:27 WE:2\n"
+        "inv:3 A15:2\nram:20 A15:3\ninv:4 NA15:1\nrom:20 NA15:2\n";
+      for(unsigned i=0;i<16;++i)
+        {
+          rs<<"cpu:"<<(i<12?9+i:10+i)<<" A"<<i<<":1\n";
+          if(i<15) rs<<"rom:"<<address_pins[i]<<" A"<<i<<":2\nram:"<<address_pins[i]<<" A"<<i<<":3\n";
+        }
+      for(unsigned i=0;i<8;++i)
+        {
+          if(!reverse) rs<<"cpu:"<<33-i<<" D"<<i<<":1\n";
+          rs<<"rom:"<<data_pins[i]<<" D"<<i<<":2\nram:"<<data_pins[i]<<" D"<<i<<":3\n";
+          if(reverse) rs<<"cpu:"<<33-i<<" D"<<i<<":1\n";
+        }
+      hbs::Timer timer;
+      CpuCircuit c(timer);
+      load(c,rs.str());
+      std::ostringstream trace;
+      for(unsigned i=0;i<1000 && !c.Cpu().GetCore().IsStopped();++i)
+        {
+          timer.Tick(); c.Compute();
+          if(i<100)
+            trace<<std::hex<<c.Cpu().GetCore().GetBus().address<<":"
+                 <<c.Cpu().GetCore().GetBus().read<<":"
+                 <<unsigned(c.Cpu().GetCore().GetRegisters().a)<<" ";
+          // Probing all CPU pins, in opposite orders, must not advance it.
+          auto before=c.Cpu().GetCore().GetBus().address;
+          for(unsigned p=1;p<=40;++p) c.Cpu().Compute(reverse?41-p:p);
+          CHECK(c.Cpu().GetCore().GetBus().address==before);
+        }
+      if(!c.Cpu().GetCore().IsStopped())
+        std::cerr<<"CPU trace: "<<trace.str()<<" final PC="<<std::hex<<c.Cpu().GetCore().GetRegisters().pc<<std::dec<<'\n';
+      CHECK(c.Cpu().GetCore().IsStopped());
+      CHECK(c.Cpu().GetCore().GetRegisters().a==0xa5);
+      CHECK(c.Cpu().GetCore().GetRegisters().s==0xff);
+      CHECK(c.Cpu().GetCore().GetRegisters().pc==0xc02c);
+      c.SetValue("be",hbs::FALSE); timer.Tick(); c.Compute();
+      for(unsigned pin:{9,10,20,22,25,26,33,34}) CHECK(c.Cpu().Compute(pin)==hbs::HIGH_IMPEDANCE);
+      CHECK(c.Cpu().Compute(1)==hbs::TRUE && c.Cpu().Compute(5)==hbs::TRUE);
+      CHECK(c.Cpu().Compute(2)==hbs::FALSE); // STP, like WAI, holds RDY low
+      c.SetValue("be",hbs::TRUE); timer.Tick(); c.Compute();
+      CHECK(c.Cpu().Compute(34)==hbs::TRUE && c.Cpu().Compute(7)==hbs::FALSE);
+    }
+  std::cout<<"PASS W65C02S with PHI2-gated ROM/RAM, both bus attachment orders\n";
+}
+
 int main(int argc,char **argv)
 {
   std::cout.setf(std::ios::unitbuf);
@@ -474,6 +599,8 @@ int main(int argc,char **argv)
       CHECK(bunny_test_allocations==0);
       pipe_and_cli(binary); std::cout<<"PASS closed pipe and closed stdin, embedded and CLI\n";
       catalogue();
+      memory_bus_writes();
+      cpu_circuit();
       corpus(root);
       fs::current_path(original); fs::remove_all(directory);
     }

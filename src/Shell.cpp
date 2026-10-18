@@ -88,8 +88,7 @@ static bool		parse_tristate(const std::string	&str,
 
 static void		compute_outputs(hbs::Circuit	&circuit)
 {
-  for (size_t i = 1; i <= circuit.GetOutputNum(); ++i)
-    circuit.Compute(i);
+  circuit.Compute();
 }
 
 static void		display_outputs(hbs::Circuit	&circuit,

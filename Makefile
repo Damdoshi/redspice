@@ -61,9 +61,11 @@ $(BINNAME):	$(NAME) main.cpp
 
 -include $(OBJ:.o=.d)
 
-.PHONY: all erase clean fclean re test
+.PHONY: all erase clean fclean re test test-w65c02
 test:
 		@python3 tests/run.py
+test-w65c02:
+		@python3 tests/run_w65c02.py
 
 ## Package ---------------------------------------------------------------------
 PACKAGE_NAME	?=	$(BINNAME)

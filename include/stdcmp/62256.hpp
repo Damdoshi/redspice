@@ -36,6 +36,7 @@ namespace                       hbs
                                         const std::string &position);
     virtual std::string         GetDisplayType(void) const;
     virtual bool                DrivesPin(size_t          n) const;
+    void                        EndTick(void) override { TickWrite(); }
 
   public:
     hbs::Tristate               Compute(size_t            n);

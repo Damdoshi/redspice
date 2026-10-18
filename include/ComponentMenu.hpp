@@ -100,7 +100,8 @@ namespace               hbs
         {"28C256", 28, "EEPROM 32K x 8", "Memoire EEPROM 28C256: 32768 octets de ROM programmable parallele."},
         {"6264", 28, "SRAM 8K x 8", "Memoire SRAM 6264: 8192 octets de RAM statique parallele."},
         {"62256", 28, "SRAM 32K x 8", "Memoire SRAM 62256: 32768 octets de RAM statique parallele."},
-        {"6502", 40, "CPU 6502", "Microprocesseur 6502: bus d'adresse 16 bits, bus de donnees 8 bits, horloge, reset et signaux de controle."},
+        {"W65C02S", 40, "CPU CMOS WDC", "WDC W65C02S: instructions CMOS, decimal, IRQ/NMI, WAI/STP, bus cycle par cycle. Brochage PDIP-40: BE=36, VPB=1, MLB=5, RDY=2."},
+        {"6502", 40, "alias W65C02S", "Alias historique du modele WDC W65C02S CMOS. Relier BE (36) au niveau haut pour activer le bus."},
         {"6522", 40, "VIA 6522", "Interface VIA 6522: deux ports paralleles 8 bits, timers, shift register et lignes de controle."},
         {"screen", 1, "ecran RGB 6 bits", "Composant virtuel d'ecran: consomme des signaux video et affiche une image dans BCAD."},
 

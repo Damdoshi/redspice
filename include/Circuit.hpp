@@ -75,6 +75,8 @@ namespace				hbs
     std::map<std::string, Track*>	tracks;
     std::vector<std::string>		creatable_types;
     size_t				implicit_track_count;
+    size_t                              begun_tick = static_cast<size_t>(-1);
+    size_t                              ended_tick = static_cast<size_t>(-1);
     void Serialize(std::ostream &os) const;
     bool LoadContents(const std::string &content);
 
@@ -135,6 +137,8 @@ namespace				hbs
 
     hbs::Tristate			Compute(size_t				output);
     hbs::Tristate			Compute(void);
+    void                                BeginTick(void) override;
+    void                                EndTick(void) override;
 
     void				SetLink(size_t				pnthis,
 						hbs::IComponent			&component,

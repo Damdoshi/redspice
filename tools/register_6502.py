@@ -33,18 +33,14 @@ def register_create():
 def register_circuit():
     path = ROOT / "src" / "Circuit.cpp"
     text = path.read_text()
-    if '"6502"' in text:
-        path.write_text(text)
-        return
-    if '"2716", "wire"' in text:
-        text = text.replace('"2716", "wire"', '"2716", "6502", "wire"', 1)
-    elif '"2716"' in text:
-        text = text.replace('"2716"', '"2716", "6502"', 1)
-    else:
-        raise SystemExit('Could not find a safe place to insert "6502" in creatable_types.')
+    for model in ('W65C02S', '6502'):
+        if f'"{model}"' not in text:
+            if '"2716"' not in text:
+                raise SystemExit('Could not find a safe place to register the CPU.')
+            text = text.replace('"2716"', f'"2716", "{model}"', 1)
     path.write_text(text)
 
 
 register_create()
 register_circuit()
-print('6502 registered in src/Create.cpp and src/Circuit.cpp')
+print('W65C02S and legacy 6502 alias registered in src/Create.cpp and src/Circuit.cpp')

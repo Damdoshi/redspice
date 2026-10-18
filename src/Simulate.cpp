@@ -11,13 +11,10 @@ namespace		hbs
 				 hbs::Timer		&timer,
 				 size_t			ticks)
   {
-    size_t		i;
-
     while (ticks--)
       {
 	timer.Tick();
-	for (i = 1; i <= circuit.GetOutputNum(); ++i)
-	  circuit.Compute(i);
+	circuit.Compute();
       }
   }
 }

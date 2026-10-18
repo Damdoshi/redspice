@@ -69,7 +69,6 @@ hbs::Tristate           hbs::CMP_28C256::DataBit(size_t n)
 {
   uint8_t               v;
 
-  TickWrite();
   if (!OutputEnabled())
     return (hbs::HIGH_IMPEDANCE);
   v = memory[Address()];
@@ -108,7 +107,7 @@ hbs::CMP_28C256::CMP_28C256(const hbs::Timer &time,
                             const std::string &position)
   : AComponent(time, name, position),
     memory(32768),
-    last_write_tick(0)
+    last_write_tick(static_cast<size_t>(-1))
 {
   LoadFile(file, memory, 0xFF);
 }
