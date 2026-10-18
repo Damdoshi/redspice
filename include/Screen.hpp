@@ -97,6 +97,10 @@ namespace				hbs
     void				Resize(const t_bunny_window	&win,
 					       t_bunny_position		pos);
     bool				Draw(hbs::Circuit		&c);
+    bool                                IsRoutingMode(void) const;
+    bool                                GetRoutePreview(const Circuit &c, Position &from,
+                                                        Position &to, unsigned int &color) const;
+    void                                DrawRoutePreview(const Circuit &c);
 
     void				Circle(Position			pos,
 					       Size			siz,
@@ -105,6 +109,8 @@ namespace				hbs
     void				Line(Position			a,
 					     Position			b,
 					     unsigned int		col);
+    void                                DashedLine(Position a, Position b, unsigned int col);
+    void                                Via(Position pos, double radius);
     void				Square(Position			pos,
 					       Size			siz,
 					       unsigned int		col,

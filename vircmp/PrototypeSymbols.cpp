@@ -208,8 +208,8 @@ void hbs::DrawPrototypeSymbol(SymbolCanvas &c, PrototypeKind kind,
   for(size_t pin=1;pin<=PrototypePinCount(kind);++pin)
     {
       Position point=PrototypePinPosition(kind,pin);
-      // Cover the track's .35-radius pad with the signal colour, leaving one
-      // thin outline at the existing visible diameter of a connected pin.
+      // Keep the familiar pin diameter with one thin outline and a full
+      // signal-coloured centre. Tracks do not draw an extra pad over it.
       c.Circle(point,{.35,.35},PrototypeColor(states[pin-1]),true);
       c.Circle(point,{.35,.35},white,false);
     }

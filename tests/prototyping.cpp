@@ -1,7 +1,9 @@
 #include "Prototype.hpp"
 #include "Circuit.hpp"
 #include "ComponentMenu.hpp"
+#include "Shortcuts.hpp"
 #include "6502.hpp"
+#include "Track.hpp"
 #include <array>
 #include <filesystem>
 #include <fstream>
@@ -204,6 +206,222 @@ static void interaction()
   screen_click(GO_UP,BMB_MIDDLE,ld); // no stale pointer after deletion
 }
 
+static void routing_anchors()
+{
+  Timer t;Fixture c(t);
+  // Reproduce a saved file with a routing start left behind its input.
+  c.LoadText(".chipsets:\ninput a(1) [0,0]\nPROBE p [15,0]\n.tracks:\nw [b -8,4] {}\n.links:\na:1 w:1@1\np:1 w:2@1\n");
+  Screen s("fixture.rs");LoopData ld(c,t,s);
+  auto &input=c.At("a");
+  size_t node=Track::NoNode;
+  auto track=c.FindTrackAttachedTo(&input,1,&node);
+  CHECK(track && node==0);
+  CHECK(track->GetNodePosition(node).x==0 && track->GetNodePosition(node).y==0);
+  CHECK(track->FindNode(s,{-8,4})==Track::NoNode);
+  auto mouse=[&](double x,double y){bunny_test_mouse={int(s.pic->buffer.width/2+x*s.pin_size),int(s.pic->buffer.height/2+y*s.pin_size)};};
+  mouse(0,0);screen_click(GO_DOWN,BMB_LEFT,ld);
+  mouse(5,3);
+  CHECK(c.Save("before-preview.rs"));
+  s.Draw(c);
+  CHECK(input.GetPosition().x==0 && input.GetPosition().y==0);
+  CHECK(track->GetNodePosition(node).x==0 && track->GetNodePosition(node).y==0);
+  CHECK(c.Save("after-preview.rs"));
+  CHECK(get("before-preview.rs")==get("after-preview.rs"));
+  screen_click(GO_UP,BMB_LEFT,ld);
+  CHECK(input.GetPosition().x==5 && input.GetPosition().y==3);
+  CHECK(track->GetNodePosition(node).x==5 && track->GetNodePosition(node).y==3);
+  CHECK(track->FindNode(s,{0,0})==Track::NoNode && track->FindNode(s,{5,3})==node);
+  track->MoveNode(node,{20,20});
+  CHECK(track->GetNodePosition(node).x==5 && track->GetNodePosition(node).y==3);
+  // Moving a selection containing both the input and its track applies the
+  // displacement only once, including the temporary drag preview and undo.
+  track->Move({2,-1});input.Move({2,-1});
+  CHECK(track->GetNodePosition(node).x==7 && track->GetNodePosition(node).y==2);
+  track->Move({-2,1});input.Move({-2,1});
+  CHECK(track->GetNodePosition(node).x==5 && track->GetNodePosition(node).y==3);
+  step(c,t);expect(c,"p",TRUE);
+  CHECK(c.Save("bare-anchor.rs"));
+  CHECK(get("bare-anchor.rs").find("b 5,3] {}")!=std::string::npos);
+  Fixture copy(t);copy.Load("bare-anchor.rs");
+  auto copied=copy.FindTrackAttachedTo(&copy.At("a"),1);
+  CHECK(copied && copied->GetNodePosition(0).x==5 && copied->GetNodePosition(0).y==3);
+  // Laying the first segment freezes the pin's current position, even if no
+  // draw or save refreshed the old stored coordinates after the last move.
+  input.Move({2,-1});
+  CHECK(track->GetStep(node)==std::make_pair(7,2));
+  track->AddNodeAfter(node,{12,2});
+  CHECK(track->GetNodePosition(node).x==7 && track->GetNodePosition(node).y==2);
+  input.Move({0,5});
+  CHECK(track->GetNodePosition(node).x==7 && track->GetNodePosition(node).y==2);
+  track->InsertNodeOnSegment(0,{9,2});
+  CHECK(track->GetNodePosition(node).x==7 && track->GetNodePosition(node).y==2);
+  CHECK(c.Save("routed-anchor.rs"));
+  Fixture routed(t);routed.Load("routed-anchor.rs");
+  auto fixed=routed.FindTrackAttachedTo(&routed.At("a"),1);
+  CHECK(fixed && fixed->GetNodePosition(0).x==7 && fixed->GetNodePosition(0).y==2);
+  CHECK(routed.At("a").GetPosition().y==7);
+  step(routed,t);expect(routed,"p",TRUE);
+  while(!track->GetSegments().empty())CHECK(track->DeleteBranchFromSegment(0));
+  CHECK(track->GetNodePosition(0).x==7 && track->GetNodePosition(0).y==7);
+  s.selected_components.clear();s.selected_tracks.clear();
+  size_t before=t.GetTime();c.Draw(s);
+  CHECK(t.GetTime()==before);expect(c,"p",TRUE);
+  // Dashed airwires spanning far outside the viewport stay bounded and do not
+  // change simulation state. The suite timeout catches unbounded subdivision.
+  s.DashedLine({-1000000,0},{1000000,0},GRAY(160));
+  s.DashedLine({0,-1000000},{0,1000000},GRAY(160));
+}
+
+static size_t preview_lines;
+static unsigned preview_color;
+static void capture_preview(const char *kind,t_bunny_position,t_bunny_position,unsigned color)
+{ if(std::string(kind)=="line") {++preview_lines;preview_color=color;} }
+
+static void routing_gestures()
+{
+  Timer t;Fixture c(t);
+  c.LoadText(".chipsets:\ninput a(1) [0,0]\nPROBE p [16,0]\n.links:\n");
+  Screen s("fixture.rs");LoopData ld(c,t,s);
+  auto mouse=[&](double x,double y){bunny_test_mouse={
+    int(s.pic->buffer.width/2+(x-s.camera.x)*s.pin_size),
+    int(s.pic->buffer.height/2+(y-s.camera.y)*s.pin_size)};};
+  auto click=[&](t_bunny_mouse_button button){
+    CHECK(screen_click(GO_DOWN,button,ld)==GO_ON);
+    CHECK(screen_click(GO_UP,button,ld)==GO_ON);
+  };
+  Position from,to;unsigned color;
+  CHECK(!s.drawing_mode && !s.GetRoutePreview(c,from,to,color));
+
+  // Ctrl routes from a pin without moving its component or changing SEL/DRAW.
+  bunny_test_keys[BKS_LCONTROL]=true;
+  mouse(0,0);click(BMB_LEFT);
+  auto track=s.active_track;
+  CHECK(track && s.active_node==0 && !s.drawing_mode);
+  CHECK(track->GetNbrSteps()==1 && track->GetSegments().empty());
+  CHECK(c.At("a").GetPosition().x==0 && c.At("a").GetPosition().y==0);
+  mouse(4,-2);
+  CHECK(s.GetRoutePreview(c,from,to,color));
+  CHECK(from.x==0 && from.y==0 && to.x==4 && to.y==-2 && color==Screen::Blue);
+  auto pin=c.At("p").GetPinPosition(1);
+  mouse(pin.x+.2,pin.y+.2);
+  CHECK(s.GetRoutePreview(c,from,to,color));
+  CHECK(to.x==pin.x && to.y==pin.y);
+  c.CreateUserTrackAt({-5.25,-3.25});
+  mouse(-5,-3);
+  CHECK(s.GetRoutePreview(c,from,to,color));
+  CHECK(to.x==-5.25 && to.y==-3.25);
+
+  // Drawing the rubber band neither places copper nor changes a saved file.
+  mouse(4,-2);
+  CHECK(c.Save("route-before-preview.rs"));
+  auto time=t.GetTime();ld.documents[0]->dirty=false;
+  preview_lines=0;bunny_test_draw=capture_preview;
+  s.DrawRoutePreview(c);
+  bunny_test_draw=nullptr;
+  CHECK(preview_lines>0 && preview_color==Screen::Blue);
+  CHECK(t.GetTime()==time && !ld.documents[0]->dirty);
+  CHECK(track->GetNbrSteps()==1 && track->GetSegments().empty());
+  CHECK(c.Save("route-after-preview.rs"));
+  CHECK(get("route-before-preview.rs")==get("route-after-preview.rs"));
+  click(BMB_LEFT);
+  CHECK(s.active_track==track && track->GetNbrSteps()==2 && track->GetSegments().size()==1);
+  auto endpoint=s.active_node;
+
+  // Ctrl still selects its alternate toolbar, including while a route is active.
+  CHECK(CurrentShortcutMode()==SHORTCUT_CONTROL);
+  bunny_test_mouse={s.pic->buffer.width*5/(2*ShortcutBarCellCount),20};
+  click(BMB_LEFT); // This Ctrl slot is unassigned; it must not route or save.
+  CHECK(!ld.file_browser && !s.panning && ld.documents[0]->dirty);
+  CHECK(s.active_track==track && s.active_node==endpoint && track->GetNbrSteps()==2);
+  bunny_test_keys[BKS_LSHIFT]=true;
+  CHECK(CurrentShortcutMode()==SHORTCUT_CONTROL_SHIFT);
+  bunny_test_keys[BKS_LCONTROL]=false;
+  CHECK(CurrentShortcutMode()==SHORTCUT_SHIFT);
+  click(BMB_LEFT); // Shift toolbar's F2: SAVE AS, with the route paused.
+  CHECK(ld.file_browser && ld.file_browser_mode==FILE_BROWSER_SAVE_COPY);
+  CHECK(s.active_track==track && s.active_node==endpoint && track->GetNbrSteps()==2);
+  screen_key(GO_UP,BKS_ESCAPE,ld);
+  CHECK(!ld.file_browser && !ld.quit_requested);
+  bunny_test_keys[BKS_LSHIFT]=false;
+  bunny_test_keys[BKS_LCONTROL]=true;
+  screen_key(GO_DOWN,BKS_S,ld);
+  CHECK(!ld.documents[0]->dirty && s.active_track==track && s.active_node==endpoint);
+
+  // Releasing Ctrl keeps the pending route. Left drag pans even on an input.
+  bunny_test_keys[BKS_LCONTROL]=false;screen_key(GO_UP,BKS_LCONTROL,ld);
+  CHECK(s.active_track==track && s.active_node==endpoint && !s.IsRoutingMode());
+  CHECK(s.GetRoutePreview(c,from,to,color));
+  mouse(0,0);screen_click(GO_DOWN,BMB_LEFT,ld);
+  CHECK(s.panning && !s.dragging_selection && !s.selecting);
+  CHECK(!s.GetRoutePreview(c,from,to,color));
+  auto camera=s.camera;
+  bunny_test_mouse.x+=70;bunny_test_mouse.y+=20;
+  t_bunny_position delta{70,20};screen_move(&delta,ld);
+  CHECK(s.camera.x!=camera.x && s.camera.y!=camera.y);
+  // Pressing Ctrl during a pan must not reinterpret the mouse release.
+  bunny_test_keys[BKS_LCONTROL]=true;
+  screen_click(GO_UP,BMB_LEFT,ld);
+  CHECK(!s.panning && s.active_track==track && s.active_node==endpoint);
+  CHECK(track->GetNbrSteps()==2 && c.At("a").GetPosition().x==0 && c.At("a").GetPosition().y==0);
+  mouse(9,-5);click(BMB_LEFT);
+  CHECK(track->GetNbrSteps()==3 && track->GetSegments().size()==2);
+  CHECK(track->GetNodePosition(s.active_node).x==9 && track->GetNodePosition(s.active_node).y==-5);
+  s.ZoomAt(bunny_test_mouse,4);mouse(12,-6);
+  CHECK(s.GetRoutePreview(c,from,to,color));
+  CHECK(from.x==9 && from.y==-5 && to.x==12 && to.y==-6);
+  screen_key(GO_DOWN,BKS_V,ld);
+  CHECK(s.GetRoutePreview(c,from,to,color) && color==Screen::Red);
+
+  // A right drag keeps the route; a short right click detaches it while paused.
+  bunny_test_keys[BKS_LCONTROL]=false;
+  screen_click(GO_DOWN,BMB_RIGHT,ld);
+  bunny_test_mouse.x+=20;delta={20,0};screen_move(&delta,ld);
+  screen_click(GO_UP,BMB_RIGHT,ld);
+  CHECK(!s.panning && s.active_track==track && !s.context_menu);
+  auto nodes=track->GetNbrSteps(),segments=track->GetSegments().size();
+  click(BMB_RIGHT);
+  CHECK(!s.active_track && s.active_node==Track::NoNode && !s.context_menu);
+  CHECK(track->GetNbrSteps()==nodes && track->GetSegments().size()==segments);
+  CHECK(!s.GetRoutePreview(c,from,to,color));
+
+  // An existing component drag still finishes if Ctrl is pressed mid-gesture.
+  mouse(0,0);screen_click(GO_DOWN,BMB_LEFT,ld);
+  CHECK(s.dragging_selection);
+  mouse(2,2);bunny_test_keys[BKS_RCONTROL]=true;
+  screen_click(GO_UP,BMB_LEFT,ld);
+  CHECK(!s.dragging_selection && !s.active_track);
+  CHECK(c.At("a").GetPosition().x==2 && c.At("a").GetPosition().y==2);
+  mouse(-8,4);click(BMB_LEFT);
+  CHECK(s.active_track && !s.drawing_mode && s.IsRoutingMode());
+  // Releasing Ctrl between mouse down/up must not turn that click into a drag.
+  mouse(-4,6);screen_click(GO_DOWN,BMB_LEFT,ld);
+  auto temporary=s.active_track;
+  bunny_test_keys[BKS_RCONTROL]=false;screen_key(GO_UP,BKS_RCONTROL,ld);
+  screen_click(GO_UP,BMB_LEFT,ld);
+  CHECK(s.active_track==temporary && temporary->GetNbrSteps()==2);
+  CHECK(c.At("a").GetPosition().x==2 && c.At("a").GetPosition().y==2);
+  click(BMB_RIGHT);
+
+  // Permanent DRAW still works without Ctrl. Releasing a camera drag over the
+  // shortcut bar stops panning and does not trigger NEW or another toolbar action.
+  s.drawing_mode=true;
+  mouse(-10,-6);click(BMB_LEFT);
+  CHECK(s.active_track && s.GetRoutePreview(c,from,to,color));
+  track=s.active_track;nodes=track->GetNbrSteps();
+  bunny_test_keys[BKS_SPACE]=true;
+  mouse(-5,-5);screen_click(GO_DOWN,BMB_LEFT,ld);
+  CHECK(s.panning);
+  bunny_test_mouse={5,10};delta={0,0};screen_move(&delta,ld);
+  bunny_test_keys[BKS_SPACE]=false;
+  screen_click(GO_UP,BMB_LEFT,ld);
+  CHECK(!s.panning && ld.documents.size()==1 && !ld.file_browser);
+  CHECK(s.active_track==track && track->GetNbrSteps()==nodes && s.drawing_mode);
+  mouse(-5,-3);click(BMB_LEFT);
+  CHECK(track->GetNbrSteps()==nodes+1);
+  click(BMB_RIGHT);
+  CHECK(!s.active_track);
+}
+
 static std::string xml(std::string s)
 {
   std::string out;
@@ -257,11 +475,11 @@ int main(int argc,char **argv)
   try
     {
       fs::current_path(directory);
-      gates();contacts();discrete();buttons_and_roundtrip();ready_pullup();interaction();
+      gates();contacts();discrete();buttons_and_roundtrip();ready_pullup();interaction();routing_anchors();routing_gestures();
       if(argc==3 && std::string(argv[1])=="--svg")svg(fs::absolute(argv[2]));
       CHECK(bunny_test_allocations==0);
       fs::current_path(original);fs::remove_all(directory);
-      std::cout<<"PASS prototyping: "<<checks<<" checks (logic, passive networks, buttons, colours, saves, editor)\n";
+      std::cout<<"PASS prototyping: "<<checks<<" checks (logic, passive networks, buttons, colours, anchors, routing, saves, editor)\n";
       return 0;
     }
   catch(const std::exception &e)

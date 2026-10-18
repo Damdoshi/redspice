@@ -14,6 +14,41 @@
 #include		"Track.hpp"
 #include                "Prototype.hpp"
 
+// Apply the drag preview before drawing any tracks, so airwires use the same
+// pin positions as the symbols. Restore the document even if drawing throws.
+class PreviewMoves
+{
+  struct Move
+  {
+    hbs::IComponent *component;
+    hbs::Track *track;
+    size_t node;
+    hbs::Position delta;
+  };
+  std::vector<Move> moves;
+public:
+  explicit PreviewMoves(size_t count) { moves.reserve(count); }
+  void Component(hbs::IComponent *component, hbs::Position delta)
+  {
+    component->Move(delta);
+    moves.push_back({component, NULL, 0, delta});
+  }
+  void Node(hbs::Track *track, size_t node, hbs::Position delta)
+  {
+    track->MoveNode(node, delta);
+    moves.push_back({NULL, track, node, delta});
+  }
+  ~PreviewMoves()
+  {
+    for (auto move = moves.rbegin(); move != moves.rend(); ++move)
+      {
+        hbs::Position undo{-move->delta.x, -move->delta.y};
+        if (move->track) move->track->MoveNode(move->node, undo);
+        else move->component->Move(undo);
+      }
+  }
+};
+
 
 static void		draw_fixed_text(hbs::Screen &screen,
 					double x,
@@ -324,8 +359,6 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
 	  };
 	Line(pos[0], pos[1], GRAY(128));
       }
-  c.Draw(*this);
-
   t_bunny_accurate_position npos =
     {
       (double)bunny_get_mouse_position()->x,
@@ -339,62 +372,31 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
   npos.x = round(npos.x);
   npos.y = round(npos.y);
 
-  if (selecting)
-    {
-      hbs::Position from = ScreenToWorld(grab_pos);
-      hbs::Position to = ScreenToWorld(*bunny_get_mouse_position());
-      hbs::Position corner = {std::min(from.x, to.x), std::min(from.y, to.y)};
-      hbs::Size size = {fabs(to.x - from.x), fabs(to.y - from.y)};
+  {
+    size_t count = dragging_selection ? selected_tracks.size() + selected_components.size() : 0;
+    PreviewMoves preview(count + (grabbed ? 1 : 0) + (grabbed_step != c.EndLinkStep() ? 1 : 0));
+    if (dragging_selection)
+      {
+        for (auto track : selected_tracks) preview.Component(track, npos);
+        for (auto component : selected_components) preview.Component(component, npos);
+      }
+    if (grabbed) preview.Component(grabbed, npos);
+    if (grabbed_step != c.EndLinkStep())
+      preview.Node(grabbed_step.track, grabbed_step.node, npos);
+    c.Draw(*this);
 
-      Square(corner, size, ALPHA(128, WHITE), true);
-      Square(corner, size, WHITE, false);
-    }
+    if (selecting)
+      {
+        hbs::Position from = ScreenToWorld(grab_pos);
+        hbs::Position to = ScreenToWorld(*bunny_get_mouse_position());
+        hbs::Position corner = {std::min(from.x, to.x), std::min(from.y, to.y)};
+        hbs::Size size = {fabs(to.x - from.x), fabs(to.y - from.y)};
 
-  if (dragging_selection)
-    {
-      for (auto it = selected_tracks.begin(); it != selected_tracks.end(); ++it)
-	(*it)->Move(npos);
-      for (auto it = selected_components.begin(); it != selected_components.end(); ++it)
-	(*it)->Move(npos);
-      for (auto it = selected_tracks.begin(); it != selected_tracks.end(); ++it)
-	(*it)->Draw(*this);
-      for (auto it = selected_components.begin(); it != selected_components.end(); ++it)
-	(*it)->Draw(*this);
-      DrawSelectionBox();
-      npos.x *= -1;
-      npos.y *= -1;
-      for (auto it = selected_tracks.begin(); it != selected_tracks.end(); ++it)
-	(*it)->Move(npos);
-      for (auto it = selected_components.begin(); it != selected_components.end(); ++it)
-	(*it)->Move(npos);
-      npos.x *= -1;
-      npos.y *= -1;
-    }
-  else if (!selecting)
-    DrawSelectionBox();
-
-  if (grabbed)
-    {
-      grabbed->Move(npos);
-      grabbed->Draw(*this);
-      npos.x *= -1;
-      npos.y *= -1;
-      grabbed->Move(npos);
-      npos.x *= -1;
-      npos.y *= -1;
-    }
-  if (grabbed_step != c.EndLinkStep())
-    {
-      grabbed_step.track->MoveNode(grabbed_step.node, npos);
-      grabbed_step.track->Draw(*this);
-      npos.x *= -1;
-      npos.y *= -1;
-      grabbed_step.track->MoveNode(grabbed_step.node, npos);
-      npos.x *= -1;
-      npos.y *= -1;
-    }
-  if (active_track != NULL && active_node != hbs::Track::NoNode)
-    active_track->Draw(*this);
+        Square(corner, size, ALPHA(128, WHITE), true);
+        Square(corner, size, WHITE, false);
+      }
+    else DrawSelectionBox();
+  }
 
   char			buffer[32];
 
@@ -415,9 +417,12 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
   Text({5.0 - pic->buffer.width / 2.0, pic->buffer.height - 2.0 * 15 - pic->buffer.height / 2.0}, {10, 10}, hbs::Screen::Red, "Pentacle Technologie 2008-2023");
   Text({5.0 - pic->buffer.width / 2.0, pic->buffer.height - 1.0 * 15 - pic->buffer.height / 2.0}, {10, 10}, hbs::Screen::Red, "Under GNU GPL V3");
 
-  if (drawing_mode)
+  if (IsRoutingMode())
     Text({8 - pic->buffer.width / 2.0, hbs::ShortcutBarHeight + 6.0 - pic->buffer.height / 2.0}, {10, 15},
-	 hbs::Screen::Yellow, "Mode dessin: clic gauche route, double-clic/V via, clic droit court detache/supprime, glisse camera");
+	 hbs::Screen::Yellow, "Dessin: clic pose, V/double-clic via, clic droit detache, Espace+glisse gauche camera");
+  else if (active_track)
+    Text({8 - pic->buffer.width / 2.0, hbs::ShortcutBarHeight + 6.0 - pic->buffer.height / 2.0}, {10, 15},
+         hbs::Screen::Yellow, "Trace en attente: Ctrl pour continuer, glisse gauche camera, clic droit detache");
   if (placing_component)
     Text({8 - pic->buffer.width / 2.0, hbs::ShortcutBarHeight + 26.0 - pic->buffer.height / 2.0}, {10, 15},
 	 hbs::Screen::Yellow, "Placement: clic pose, Shift+clic pose et continue, clic droit court/Echap annule");

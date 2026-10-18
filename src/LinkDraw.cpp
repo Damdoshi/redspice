@@ -14,7 +14,6 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 					size_t			ori_pin) const
 {
   auto			prev = third.begin();
-  auto now = (int)std::fmod(50.0 * clock() / CLOCKS_PER_SEC, 2.0);
   if (first == NULL)
     return;
 
@@ -25,22 +24,13 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
       auto a = origin.GetPinPosition(ori_pin);
       auto b = first->GetPinPosition(second);
 
-      for (double i = -1; i < 2; ++i)
-	for (double j = -1; j < 2; ++j)
-	  screen.Line(a + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
-		      b + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
-		      now ? hbs::Screen::Yellow : hbs::Screen::White
-		      );
+      screen.DashedLine(a, b, GRAY(160));
       return ;
     }
   auto a = origin.GetPinPosition(ori_pin);
   auto b = third.begin()->first;
 
-  for (double i = -1; i < 2; ++i)
-    for (double j = -1; j < 2; ++j)
-      screen.Line(a + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
-		  b + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
-		  hbs::Screen::Blue);
+  screen.DashedLine(a, b, GRAY(160));
 
   // Des positions déterminées
   for (auto it = third.begin(); it != third.end(); ++it)
@@ -53,9 +43,7 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 		      );
       if (prev->second != it->second) // Il y a un VIA
 	{
-          unsigned int core = it->second == TOP ? hbs::Screen::Red : hbs::Screen::Blue;
-          screen.Circle(it->first, {1, 1}, core, true);
-	  screen.Circle(it->first, {1, 1}, hbs::Screen::White, false);
+          screen.Via(it->first, 1);
 	}
       prev = it;
     }
@@ -63,9 +51,5 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
   auto c = third.rbegin()->first;
   auto d = first->GetPinPosition(second);
 
-  for (double i = -1; i < 2; ++i)
-    for (double j = -1; j < 2; ++j)
-      screen.Line(c + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
-		  d + hbs::Position{i / screen.PinSize(), j / screen.PinSize()},
-		  hbs::Screen::Blue);
+  screen.DashedLine(c, d, GRAY(160));
 }

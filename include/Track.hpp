@@ -42,7 +42,7 @@ namespace			hbs
     const hbs::Timer		&timer;
     std::string		name;
     mutable std::string		type;
-    hbs::Positions		path;
+    mutable hbs::Positions	path;
     std::vector<Segment>		segments;
     std::vector<Attachment>	attachments;
     bool				routing_error;
@@ -54,6 +54,8 @@ namespace			hbs
     Preset			PresetOutput(size_t n);
     void			SetAllPins(hbs::Tristate value);
     void			SetNetPins(size_t pin_num_this, hbs::Tristate value);
+    const Attachment           *UnroutedAnchor(size_t node) const;
+    void                       RefreshUnroutedAnchors(void) const;
     size_t			DefaultNodeForPin(size_t pin, const hbs::IComponent &component, size_t component_pin) const;
     hbs::Positions::iterator	NodeIterator(size_t node);
     hbs::Positions::const_iterator NodeIterator(size_t node) const;

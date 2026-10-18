@@ -582,12 +582,10 @@ void			hbs::Circuit::Draw(hbs::Screen			&screen) const
     }
   ValidateRouting();
   for (auto it = tracks.begin(); it != tracks.end(); ++it)
-    if (!screen.dragging_selection || screen.selected_tracks.find(it->second) == screen.selected_tracks.end())
-      it->second->Draw(screen);
+    it->second->Draw(screen);
+  screen.DrawRoutePreview(*this);
   for (auto it = circuit.begin(); it != circuit.end(); ++it)
-    if (!is_track(it->second) &&
-	(!screen.dragging_selection || screen.selected_components.find(it->second) == screen.selected_components.end()) &&
-	it->second != screen.grabbed)
+    if (!is_track(it->second))
       it->second->Draw(screen);
 }
 

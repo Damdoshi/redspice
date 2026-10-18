@@ -24,3 +24,9 @@ void		hbs::Screen::Circle(Position		pos,
     bunny_set_circle(&pic->buffer, _pos, _siz, color);
 }
 
+void hbs::Screen::Via(Position pos, double radius)
+{
+  Circle(pos, {radius, radius}, GRAY(100), true);
+  Circle(pos, {radius, radius}, White, false);
+  Circle(pos, {radius * .24, radius * .24}, Black, true);
+}

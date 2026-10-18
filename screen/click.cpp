@@ -423,6 +423,25 @@ try
       if (released) return GO_ON;
     }
 
+  // Finish a camera gesture before menus or modifier changes can reinterpret
+  // its release. Releasing over the shortcut bar must not activate a button.
+  if (sym == BMB_LEFT && state == GO_UP && ld.screen.panning && !ld.screen.right_panning)
+    {
+      ld.screen.panning = false;
+      return GO_ON;
+    }
+  if (sym == BMB_RIGHT && state == GO_UP && ld.screen.right_panning)
+    {
+      const t_bunny_position *mouse = bunny_get_mouse_position();
+      bool moved = ld.screen.right_panning_moved ||
+        (std::abs(mouse->x - ld.screen.pan_origin.x) > 3 ||
+         std::abs(mouse->y - ld.screen.pan_origin.y) > 3);
+      ld.screen.panning = false;
+      ld.screen.right_panning = false;
+      ld.screen.right_panning_moved = false;
+      if (moved) return GO_ON;
+    }
+
   if (hbs::HandleShortcutBarClick(state, sym, pos, ld))
     return (ld.quit_requested ? EXIT_ON_SUCCESS : GO_ON);
 
@@ -447,20 +466,6 @@ try
       ld.screen.pan_origin = ld.screen.pan_last;
       ld.screen.context_menu = false;
       return (GO_ON);
-    }
-
-  if (sym == BMB_RIGHT && state == GO_UP && ld.screen.right_panning)
-    {
-      const t_bunny_position *mouse = bunny_get_mouse_position();
-      bool moved = ld.screen.right_panning_moved ||
-	(std::abs(mouse->x - ld.screen.pan_origin.x) > 3 ||
-	 std::abs(mouse->y - ld.screen.pan_origin.y) > 3);
-
-      ld.screen.panning = false;
-      ld.screen.right_panning = false;
-      ld.screen.right_panning_moved = false;
-      if (moved)
-	return (GO_ON);
     }
 
   if (ld.screen.search_panel && sym == BMB_LEFT && state == GO_DOWN)
@@ -527,23 +532,30 @@ try
         }
     }
 
-  if (ld.screen.drawing_mode)
+  bool routing = ld.screen.IsRoutingMode();
+  bool paused_route = !routing && ld.screen.active_track != NULL;
+  bool finish_drag = sym == BMB_LEFT && state == GO_UP &&
+    (ld.screen.selecting || ld.screen.dragging_selection || ld.screen.grabbed ||
+     ld.screen.grabbed_step != ld.CurrentCircuit().EndLinkStep());
+  if (!finish_drag && (routing || paused_route))
     {
       clear_selection(ld.screen);
       ld.screen.grabbed = NULL;
       ld.screen.grabbed_step = hbs::Packet();
       ld.screen.selecting = ld.screen.dragging_selection = false;
-      if (sym == BMB_LEFT && state == GO_DOWN && bunny_get_keyboard()[BKS_SPACE])
+      if (sym == BMB_LEFT && state == GO_DOWN &&
+          (bunny_get_keyboard()[BKS_SPACE] || paused_route))
 	{
 	  ld.screen.panning = true;
+	  ld.screen.right_panning = false;
 	  ld.screen.pan_last = *bunny_get_mouse_position();
 	  return (GO_ON);
 	}
-      if (sym == BMB_LEFT && state == GO_UP && ld.screen.panning)
-	{
-	  ld.screen.panning = false;
-	  return (GO_ON);
-	}
+      if (paused_route)
+        {
+          if (sym == BMB_RIGHT && state == GO_UP) detach_draw_cursor(ld.screen);
+          return GO_ON;
+        }
       if (sym == BMB_LEFT && state == GO_DOWN)
 	{
 	  static std::chrono::steady_clock::time_point last_click;
@@ -646,12 +658,6 @@ try
 	}
       clear_selection(ld.screen);
       ld.screen.selecting = true;
-      return (GO_ON);
-    }
-
-  if (sym == BMB_LEFT && state == GO_UP && ld.screen.panning)
-    {
-      ld.screen.panning = false;
       return (GO_ON);
     }
 

@@ -79,9 +79,16 @@ Six circuits prêts à ouvrir se trouvent dans `res/00_prototypage/`.
 
 ### Pistes, couches et routage
 
-- Une piste sans géométrie physique est affichée en vert fin : c'est le chevelu logique, utile pour montrer une liaison non routée.
+- Une liaison non routée est affichée en gris pointillé : c'est le chevelu logique. Le vert des bornes est réservé à l'état vrai.
+- Un départ de routage sans segment physique reste solidaire de la borne du composant : déplacer une entrée ne laisse plus de pastille derrière elle.
+- Une fois une piste physique dessinée, ses points restent en place quand le composant bouge. Un chevelu gris indique le raccordement à refaire entre sa borne et le cuivre.
+- Les points de piste sont de petits points rouges ou bleus selon la couche ; les pastilles des composants gardent leurs couleurs d'état.
 - Une piste physique est affichée en rouge épais sur la couche composants et en bleu épais sur la couche pistes.
 - Le routage se fait maintenant en **mode dessin** (`P` ou bouton `SEL`/`DRAW`).
+- En mode sélection, maintenir `Ctrl` permet de router avec les mêmes commandes, sans changer de mode.
+- Le menu alternatif `Ctrl`, le menu `Ctrl` + `Shift` et leurs raccourcis restent accessibles : cliquer dans la barre déclenche sa commande, cliquer dans le circuit permet de router.
+- Relâcher `Ctrl` conserve la piste active et son aperçu. Le glisser gauche déplace alors la caméra, même depuis un composant ; maintenir de nouveau `Ctrl` permet de continuer le tracé. Un clic droit détache la piste.
+- Dès qu'une piste est active, un aperçu suit le curseur depuis le dernier point posé, dans la couleur de la couche et avec le même alignement que le prochain clic. Cet aperçu ne modifie pas le circuit et se masque pendant le déplacement de la caméra.
 - En mode dessin, clic gauche dans le vide : créer une piste physique ou ajouter un nœud à la piste active.
 - En mode dessin, clic gauche sur un nœud de piste sans piste active : s’attacher à ce nœud pour démarrer une branche.
 - En mode dessin, clic gauche sur un nœud de piste avec une piste active : créer la jonction puis se détacher automatiquement. Si le nœud appartient à une autre piste, les deux pistes sont fusionnées physiquement ; s’il appartient à la piste active, un segment interne est ajouté.
@@ -92,7 +99,7 @@ Six circuits prêts à ouvrir se trouvent dans `res/00_prototypage/`.
 - En mode dessin, clic droit sans piste active sur une piste hors segment : supprimer toute cette piste.
 - En mode dessin, `Espace` + clic gauche + déplacement souris continue à déplacer la vue.
 - `V` ou double-clic sur le nœud actif en mode dessin : placer un via et continuer le routage sur l'autre couche. Cela fonctionne aussi si le nœud actif est sous une patte de composant : clique une première fois sur la patte pour t’y attacher, puis double-clique au même endroit ou appuie sur `V` pour partir de cette patte sur l’autre face.
-- Un via est représenté automatiquement par deux nœuds superposés reliés par un segment entre couches différentes ; le changement de couche est marqué par une pastille jaune/blanche.
+- Un via est représenté automatiquement par deux nœuds superposés reliés par un segment entre couches différentes ; le changement de couche est marqué par une pastille grise à fin contour blanc avec un trou central.
 - Deux pistes physiques distinctes qui se touchent ou se croisent sur la même couche clignotent pour signaler une erreur de routage.
 
 ## Mode shell / simulation sans écran

@@ -158,12 +158,49 @@ void			hbs::Track::SetPath(const std::string &geometry)
 
 const hbs::Positions	&hbs::Track::GetPath(void) const
 {
+  RefreshUnroutedAnchors();
   return (path);
 }
 
 hbs::Positions		&hbs::Track::GetPath(void)
 {
+  RefreshUnroutedAnchors();
   return (path);
+}
+
+const hbs::Track::Attachment *hbs::Track::UnroutedAnchor(size_t node) const
+{
+  for (const Segment &segment : segments)
+    if (segment.from == node || segment.to == node)
+      return NULL;
+  for (const Attachment &attachment : attachments)
+    if (attachment.node == node && attachment.component)
+      return &attachment;
+  return NULL;
+}
+
+void hbs::Track::RefreshUnroutedAnchors(void) const
+{
+  // A bare routing start is part of its component pin. Only copper segments
+  // give a node an independent physical position. Derive these cached
+  // coordinates when displaying, selecting, merging or saving a track.
+  if (path.empty() || attachments.empty()) return;
+  std::vector<bool> fixed(path.size(), false);
+  std::vector<hbs::Positions::iterator> points;
+  points.reserve(path.size());
+  for (auto point = path.begin(); point != path.end(); ++point)
+    points.push_back(point);
+  for (const Segment &segment : segments)
+    {
+      if (segment.from < fixed.size()) fixed[segment.from] = true;
+      if (segment.to < fixed.size()) fixed[segment.to] = true;
+    }
+  for (const Attachment &attachment : attachments)
+    if (attachment.component && attachment.node < path.size() && !fixed[attachment.node])
+      {
+        points[attachment.node]->first = attachment.component->GetPinPosition(attachment.pin);
+        fixed[attachment.node] = true;
+      }
 }
 
 const std::vector<hbs::Track::Segment> &hbs::Track::GetSegments(void) const
@@ -232,6 +269,10 @@ void			hbs::Track::AddSegment(size_t from, size_t to)
     if ((segments[i].from == from && segments[i].to == to) ||
 	(segments[i].from == to && segments[i].to == from))
       return ;
+  // Freeze the pin's current location when its first copper segment is laid.
+  hbs::Position a = GetNodePosition(from), b = GetNodePosition(to);
+  NodeIterator(from)->first = a;
+  NodeIterator(to)->first = b;
   segments.push_back({from, to});
 }
 
@@ -348,10 +389,12 @@ size_t			hbs::Track::InsertNodeOnSegment(size_t segment, const hbs::Position &po
 
   if (GetNodeLayer(old.to) != layer)
     layer = hbs::ILink::BOTTOM;
-  segments.erase(segments.begin() + segment);
   node = AddFreeNode(pos, layer);
+  // Keep the original segment until both replacement segments exist: its
+  // attached endpoints must not temporarily become movable bare anchors.
   AddSegment(old.from, node);
   AddSegment(node, old.to);
+  segments.erase(segments.begin() + segment);
   return (node);
 }
 
@@ -361,6 +404,7 @@ void			hbs::Track::MoveNode(size_t node, const hbs::Position &delta)
 
   if (it == path.end())
     throw hbs::BadPin(GetType() + ": Bad path node.");
+  if (UnroutedAnchor(node)) return;
   it->first.x += delta.x;
   it->first.y += delta.y;
 }
@@ -371,6 +415,8 @@ hbs::Position		hbs::Track::GetNodePosition(size_t node) const
 
   if (it == path.end())
     throw hbs::BadPin(GetType() + ": Bad path node.");
+  if (const Attachment *anchor = UnroutedAnchor(node))
+    return anchor->component->GetPinPosition(anchor->pin);
   return (it->first);
 }
 
@@ -423,6 +469,7 @@ double			hbs::Track::DistanceToSegment(const hbs::Position &p, const hbs::Positi
 
 size_t			hbs::Track::FindNode(const hbs::Screen &screen, t_bunny_position pos) const
 {
+  RefreshUnroutedAnchors();
   size_t		i = 0;
 
   for (hbs::Positions::const_iterator it = path.begin(); it != path.end(); ++it, ++i)
@@ -638,7 +685,7 @@ void			hbs::Track::Move(const hbs::Position &pos)
 hbs::Position		hbs::Track::GetPosition(void) const
 {
   if (!path.empty())
-    return (path.begin()->first);
+    return GetNodePosition(0);
   if (!attachments.empty() && attachments[0].component)
     return (attachments[0].component->GetPinPosition(attachments[0].pin));
   return (hbs::Position{0, 0});
@@ -683,16 +730,19 @@ void			hbs::Track::Draw(hbs::Screen &screen) const
 {
   unsigned int		error_color;
   double		pulse;
-  const bool		physical = (!segments.empty());
-
-  if (path.empty())
+  RefreshUnroutedAnchors();
+  // The logical attachments without a physical node form their own net.
+  // Show every branch, without adding a second pad over the component's pin.
+  const Attachment *logical_root = NULL;
+  for (const Attachment &attachment : attachments)
+    if (attachment.component && attachment.node == NoNode)
     {
-      if (attachments.size() >= 2 && attachments[0].component && attachments[1].component)
-	screen.Line(attachments[0].component->GetPinPosition(attachments[0].pin),
-		    attachments[1].component->GetPinPosition(attachments[1].pin),
-		    hbs::Screen::Green);
-      return ;
+      if (logical_root)
+        screen.DashedLine(logical_root->component->GetPinPosition(logical_root->pin),
+                          attachment.component->GetPinPosition(attachment.pin), GRAY(160));
+      else logical_root = &attachment;
     }
+  if (path.empty()) return;
   pulse = (sin(clock() / (double)CLOCKS_PER_SEC * 3.0) + 1.0) / 2.0;
   error_color = pulse > 0.45 ? hbs::Screen::Yellow : hbs::Screen::Red;
   for (size_t i = 0; i < segments.size(); ++i)
@@ -705,30 +755,34 @@ void			hbs::Track::Draw(hbs::Screen &screen) const
 	col = error_color;
       draw_thick_line(screen, a->first, b->first, col, 4.0);
     }
-  for (hbs::Positions::const_iterator node = path.begin(); node != path.end(); ++node)
-    screen.Circle(node->first, {0.22, 0.22}, node->second == hbs::ILink::TOP ? hbs::Screen::Red : hbs::Screen::Blue, true);
+  size_t index = 0;
+  for (auto node = path.begin(); node != path.end(); ++node, ++index)
+    {
+      bool on_pin = false;
+      for (const Attachment &attachment : attachments)
+        if (attachment.component && attachment.node == index)
+          {
+            auto pin = attachment.component->GetPinPosition(attachment.pin);
+            on_pin = on_pin || (pin.x == node->first.x && pin.y == node->first.y);
+          }
+      if (!on_pin)
+        screen.Circle(node->first, {.16, .16},
+                      routing_error ? error_color :
+                      node->second == hbs::ILink::TOP ? hbs::Screen::Red : hbs::Screen::Blue, true);
+    }
   for (size_t i = 0; i < attachments.size(); ++i)
-    if (attachments[i].component)
+    if (attachments[i].component && attachments[i].node != NoNode)
       {
 	hbs::Position a = attachments[i].component->GetPinPosition(attachments[i].pin);
 	hbs::Position b = GetPinPosition(i + 1);
-	unsigned int col = routing_error ? error_color : (physical ? hbs::Screen::Yellow : hbs::Screen::Green);
-
-	screen.Line(a, b, col);
-	unsigned int core = physical && attachments[i].node < path.size() ?
-	  (GetNodeLayer(attachments[i].node) == hbs::ILink::TOP ? hbs::Screen::Red : hbs::Screen::Blue) :
-	  hbs::Screen::Green;
-	screen.Circle(b, {0.35, 0.35}, routing_error ? error_color : core, true);
-	screen.Circle(b, {0.35, 0.35}, hbs::Screen::White, false);
+	screen.DashedLine(a, b, GRAY(160));
       }
-  // Draw vias last so their enlarged core covers ordinary node/attachment pads.
+  // Neutral rings with a central hole identify a layer change, not a logic level.
   for (const Segment &segment : segments)
     {
       auto a = NodeIterator(segment.from), b = NodeIterator(segment.to);
       if (a->second == b->second) continue;
-      unsigned int core = b->second == hbs::ILink::TOP ? hbs::Screen::Red : hbs::Screen::Blue;
-      screen.Circle(b->first, {0.42, 0.42}, routing_error ? error_color : core, true);
-      screen.Circle(b->first, {0.42, 0.42}, hbs::Screen::White, false);
+      screen.Via(b->first, .42);
     }
 }
 
@@ -758,11 +812,10 @@ size_t			hbs::Track::GetNbrSteps(void) const
 
 std::pair<int, int>	hbs::Track::GetStep(size_t i) const
 {
-  hbs::Positions::const_iterator it = NodeIterator(i);
-
-  if (it == path.end())
+  if (i >= path.size())
     throw hbs::BadPin("Bad track step.");
-  return (std::pair<int, int>(round(it->first.x), round(it->first.y)));
+  hbs::Position pos = GetNodePosition(i);
+  return (std::pair<int, int>(round(pos.x), round(pos.y)));
 }
 
 hbs::Track::Track(const hbs::Timer &tim, const std::string &nam, const std::string &geometry)
