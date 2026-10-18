@@ -65,6 +65,7 @@ namespace			hbs
     hbs::Positions		&GetPath(void);
     const std::vector<Segment> &GetSegments(void) const;
     const std::vector<Attachment> &GetAttachments(void) const;
+    void GetConnections(size_t pin, std::vector<SignalConnection> &out) const override;
     void			SetAttachmentNode(size_t pin, size_t node);
     size_t			GetAttachmentNode(size_t pin) const;
     size_t			AddNode(const hbs::Position &pos, hbs::ILink::Layer layer = hbs::ILink::BOTTOM);

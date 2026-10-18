@@ -9,6 +9,7 @@
 # define			__ICOMPONENT_HPP__
 # include			<iosfwd>
 # include			<string>
+# include                       <vector>
 # include			<sys/types.h>
 # include			"Screen.hpp"
 
@@ -22,6 +23,15 @@ namespace			hbs
       TRUE			= +1,
       HIGH_IMPEDANCE		= +2
     };
+
+  class IComponent;
+  struct SignalConnection
+  {
+    IComponent *component;
+    size_t pin;
+    bool weak = false;
+    unsigned levels = 3; // bit 0: low can pass; bit 1: high can pass
+  };
 
   class				IComponent
   {
@@ -54,6 +64,13 @@ namespace			hbs
     virtual void                BeginTick(void) {}
     /// Commit bus writes after clocked drivers and combinational nets settle.
     virtual void                EndTick(void) {}
+
+    /// Physical neighbours of a terminal. Used to resolve passive networks
+    /// without turning a switch/resistor into two recursively coupled drivers.
+    virtual void GetConnections(size_t, std::vector<SignalConnection> &) const {}
+    virtual bool IsPassivePin(size_t) const { return false; }
+    virtual Tristate GetPassiveConnections(size_t, std::vector<SignalConnection> &)
+    { return HIGH_IMPEDANCE; }
 
     /// Compute value of the precised pin
     virtual hbs::Tristate	Compute(size_t			pin_num_this = 1) = 0;

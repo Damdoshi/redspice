@@ -13,6 +13,8 @@ namespace			hbs
   {
   private:
     const std::string		&GetType(void) const;
+    hbs::Tristate GetPinDisplayState(size_t pin) const override
+    { return timeline.empty() ? value : hbs::AComponent<1>::GetPinDisplayState(pin); }
 
   public:
     virtual hbs::Tristate	Compute(size_t		pin_num_this = 1);

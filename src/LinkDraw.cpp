@@ -53,7 +53,8 @@ void			hbs::Link::Draw(hbs::Screen		&screen,
 		      );
       if (prev->second != it->second) // Il y a un VIA
 	{
-	  screen.Circle(it->first, {1, 1}, hbs::Screen::Yellow, true);
+          unsigned int core = it->second == TOP ? hbs::Screen::Red : hbs::Screen::Blue;
+          screen.Circle(it->first, {1, 1}, core, true);
 	  screen.Circle(it->first, {1, 1}, hbs::Screen::White, false);
 	}
       prev = it;

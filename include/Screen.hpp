@@ -74,10 +74,10 @@ namespace				hbs
     static constexpr unsigned int	TristateColor[5] =
       {
 	YELLOW,
-	0,
-	((unsigned int)GRAY(64)),
+	((unsigned int)GRAY(128)),
 	RED,
-	BLUE
+	GREEN,
+	PURPLE
       };
     
     int					PinSize(int			p = 0);

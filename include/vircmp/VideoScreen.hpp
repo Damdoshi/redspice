@@ -31,6 +31,8 @@ namespace                       hbs
     hbs::Position               PreviewOrigin(void) const;
 
   public:
+    void GetConnections(size_t pin, std::vector<SignalConnection> &out) const override
+    { AComponent<8>::GetConnections(pin,out); }
     void                        SetLink(size_t              pnthis,
                                         hbs::IComponent     &component,
                                         size_t              pntarg,

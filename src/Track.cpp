@@ -11,6 +11,7 @@
 #include		<set>
 #include		"Track.hpp"
 #include		"Screen.hpp"
+#include                "Signal.hpp"
 
 const size_t		hbs::Track::NoNode = std::numeric_limits<size_t>::max();
 
@@ -560,10 +561,19 @@ void			hbs::Track::SetNetPins(size_t pin_num_this, hbs::Tristate value)
       timeline[timer.GetTime()][i + 1] = value;
 }
 
+void hbs::Track::GetConnections(size_t pin, std::vector<SignalConnection> &out) const
+{
+  if (pin < 1 || pin > attachments.size())
+    throw hbs::BadPin("Track: Bad pin.");
+  for (size_t i = 0; i < attachments.size(); ++i)
+    if (attachments[i].component &&
+        attachment_is_on_same_net(attachments, segments, pin, i))
+      out.push_back({attachments[i].component, attachments[i].pin});
+}
+
 hbs::Tristate		hbs::Track::Compute(size_t pin_num_this)
 {
   hbs::Tristate		out;
-  hbs::Tristate		tmp;
 
   if (AlreadyComputed(pin_num_this, out) && !computing)
     return (out);
@@ -576,30 +586,7 @@ hbs::Tristate		hbs::Track::Compute(size_t pin_num_this)
     ~ResetComputing() { flag = false; }
   } reset{computing};
   PresetOutput(pin_num_this);
-  out = hbs::UNDEFINED;
-  for (size_t i = 0; i < attachments.size(); ++i)
-    if (attachments[i].component &&
-	attachments[i].component->DrivesPin(attachments[i].pin) &&
-	attachment_is_on_same_net(attachments, segments, pin_num_this, i))
-      {
-	tmp = attachments[i].component->Compute(attachments[i].pin);
-	if (tmp == hbs::HIGH_IMPEDANCE)
-	  {
-	    if (out == hbs::UNDEFINED)
-	      out = hbs::HIGH_IMPEDANCE;
-	    continue ;
-	  }
-	if (tmp != hbs::UNDEFINED)
-	  {
-	    if (out != hbs::UNDEFINED && out != hbs::HIGH_IMPEDANCE && out != tmp)
-	      {
-		SetNetPins(pin_num_this, hbs::BROKEN);
-		computing = false;
-		return (hbs::BROKEN);
-	      }
-	    out = tmp;
-	  }
-      }
+  out = hbs::ResolveSignal(*this, pin_num_this);
   SetNetPins(pin_num_this, out);
   computing = false;
   return (out);
@@ -717,11 +704,6 @@ void			hbs::Track::Draw(hbs::Screen &screen) const
       if (routing_error)
 	col = error_color;
       draw_thick_line(screen, a->first, b->first, col, 4.0);
-      if (a->second != b->second)
-	{
-	  screen.Circle(b->first, {0.42, 0.42}, hbs::Screen::Yellow, true);
-	  screen.Circle(b->first, {0.30, 0.30}, hbs::Screen::White, false);
-	}
     }
   for (hbs::Positions::const_iterator node = path.begin(); node != path.end(); ++node)
     screen.Circle(node->first, {0.22, 0.22}, node->second == hbs::ILink::TOP ? hbs::Screen::Red : hbs::Screen::Blue, true);
@@ -733,8 +715,21 @@ void			hbs::Track::Draw(hbs::Screen &screen) const
 	unsigned int col = routing_error ? error_color : (physical ? hbs::Screen::Yellow : hbs::Screen::Green);
 
 	screen.Line(a, b, col);
-	screen.Circle(b, {0.35, 0.35}, col, true);
+	unsigned int core = physical && attachments[i].node < path.size() ?
+	  (GetNodeLayer(attachments[i].node) == hbs::ILink::TOP ? hbs::Screen::Red : hbs::Screen::Blue) :
+	  hbs::Screen::Green;
+	screen.Circle(b, {0.35, 0.35}, routing_error ? error_color : core, true);
+	screen.Circle(b, {0.35, 0.35}, hbs::Screen::White, false);
       }
+  // Draw vias last so their enlarged core covers ordinary node/attachment pads.
+  for (const Segment &segment : segments)
+    {
+      auto a = NodeIterator(segment.from), b = NodeIterator(segment.to);
+      if (a->second == b->second) continue;
+      unsigned int core = b->second == hbs::ILink::TOP ? hbs::Screen::Red : hbs::Screen::Blue;
+      screen.Circle(b->first, {0.42, 0.42}, routing_error ? error_color : core, true);
+      screen.Circle(b->first, {0.42, 0.42}, hbs::Screen::White, false);
+    }
 }
 
 void			hbs::Track::Dump(void) const

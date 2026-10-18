@@ -8,6 +8,11 @@ Par défaut, le programme ouvre maintenant l'interface graphique. Le mode simula
 LibLapin. Les garanties de sauvegarde et les limites de ces tests sont décrites
 dans [RELIABILITY.md](RELIABILITY.md).
 
+Les nouvelles [primitives de prototypage](docs/PROTOTYPAGE.md) comprennent huit
+portes pédagogiques, une sonde à cinq couleurs, diode, interrupteur, NPN/PNP,
+résistance, DEL, deux poussoirs à quatre pattes et condensateur chimique.
+Six circuits prêts à ouvrir se trouvent dans `res/00_prototypage/`.
+
 ## Lancement
 
 ```sh
@@ -39,6 +44,9 @@ dans [RELIABILITY.md](RELIABILITY.md).
 - Bouton `RUN` ou `R` : lancer la simulation continue.
 - Bouton `STOP!` ou `T` : arrêter la simulation continue.
 - Clic molette sur une entrée : basculer sa valeur entre 0 et 1.
+- Clic molette sur un interrupteur : ouvrir / fermer le contact.
+- Clic molette maintenu sur un poussoir : appuyer ; relâcher pour rouvrir le contact.
+- Ces commandes recalculent immédiatement le circuit, même en pause.
 
 ### Édition
 

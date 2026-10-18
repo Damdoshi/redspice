@@ -12,6 +12,7 @@
 #include		"Shortcuts.hpp"
 #include		"ComponentMenu.hpp"
 #include		"Track.hpp"
+#include                "Prototype.hpp"
 
 
 static void		draw_fixed_text(hbs::Screen &screen,
@@ -150,7 +151,8 @@ static void                             draw_component_detail(hbs::Screen &scree
   draw_fixed_text(screen, x + 12, y + 8, {16, 22}, hbs::Screen::Yellow, type);
   draw_fixed_text(screen, x + 12, y + 34, {10, 15}, hbs::Screen::White,
                   truncate_to_width(screen, {10, 15}, w - 24, short_desc));
-  draw_dip_preview(screen, x + 12, y + 60, w - 24, std::min(230, h / 2), type);
+  if (!hbs::DrawPrototypePreview(screen, type, x + 12, y + 60, w - 24, std::min(230, h / 2)))
+    draw_dip_preview(screen, x + 12, y + 60, w - 24, std::min(230, h / 2), type);
   draw_wrapped_text(screen, x + 12, y + std::min(310, h / 2 + 88), w - 24,
                     {9, 14}, hbs::Screen::White, long_desc);
 }

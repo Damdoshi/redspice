@@ -18,6 +18,8 @@ namespace			hbs
     char			c;
 
   public:
+    void GetConnections(size_t pin, std::vector<SignalConnection> &out) const override
+    { AComponent<9>::GetConnections(pin,out); }
     void			SetLink(size_t				pnthis,
 					hbs::IComponent			&component,
 					size_t				pntarg,

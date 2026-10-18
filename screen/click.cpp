@@ -9,6 +9,7 @@
 #include		<algorithm>
 #include		"Circuit.hpp"
 #include		"Screen.hpp"
+#include                "Prototype.hpp"
 #include		"Shortcuts.hpp"
 #include		"ComponentMenu.hpp"
 #include		"Track.hpp"
@@ -408,6 +409,20 @@ try
 {
   t_bunny_position	pos = *bunny_get_mouse_position();
 
+  // Release even outside the button, over a menu, or after changing documents.
+  // Look up the live documents instead of retaining a possibly deleted pointer.
+  if (sym == BMB_MIDDLE && state == GO_UP)
+    {
+      bool released = false;
+      for (LoopDocument *document : ld.documents)
+        if (document->circuit->ReleaseMomentaryButtons())
+          {
+            hbs::Simulate(*document->circuit, *document->timer, 1);
+            released = true;
+          }
+      if (released) return GO_ON;
+    }
+
   if (hbs::HandleShortcutBarClick(state, sym, pos, ld))
     return (ld.quit_requested ? EXIT_ON_SUCCESS : GO_ON);
 
@@ -476,15 +491,6 @@ try
     return (GO_ON);
 
   pos = world_mouse(ld.screen);
-  hbs::Input *in = ld.CurrentCircuit().GetInput(ld.screen, pos);
-
-  if (in && sym == BMB_MIDDLE && state == GO_UP)
-    {
-      if (in->GetPin(1) != hbs::TRUE)
-	in->SetValue(hbs::TRUE);
-      else
-	in->SetValue(hbs::FALSE);
-    }
 
   if (ld.screen.placing_component)
     {
@@ -494,6 +500,31 @@ try
       else if (sym == BMB_RIGHT && state == GO_UP)
 	cancel_component_placement(ld);
       return (GO_ON);
+    }
+
+  if (sym == BMB_MIDDLE)
+    {
+      auto component = ld.CurrentCircuit().GetComponent(ld.screen, pos);
+      auto primitive = dynamic_cast<hbs::Prototype *>(component);
+      if (primitive && primitive->IsMomentary())
+        {
+          if (state == GO_DOWN && primitive->SetPressed(true))
+            hbs::Simulate(ld.CurrentCircuit(), ld.CurrentTimer(), 1);
+          return GO_ON;
+        }
+      if (state == GO_UP)
+        {
+          auto input = ld.CurrentCircuit().GetInput(ld.screen, pos);
+          bool changed = primitive && primitive->Toggle();
+          if (input)
+            { input->SetValue(input->GetPin(1) == hbs::TRUE ? hbs::FALSE : hbs::TRUE); changed = true; }
+          if (changed)
+            {
+              ld.MarkDirty();
+              hbs::Simulate(ld.CurrentCircuit(), ld.CurrentTimer(), 1);
+              return GO_ON;
+            }
+        }
     }
 
   if (ld.screen.drawing_mode)

@@ -16,6 +16,7 @@ namespace			hbs
 
   protected:
     hbs::Tristate		value;
+    hbs::Tristate GetPinDisplayState(size_t) const override { return value; }
 
   public:
     hbs::Tristate		GetPin(size_t n)

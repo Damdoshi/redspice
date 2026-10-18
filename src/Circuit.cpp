@@ -17,6 +17,7 @@
 #include                <cerrno>
 #include                "SafeFile.hpp"
 #include		"Circuit.hpp"
+#include                "Prototype.hpp"
 
 static bool		is_track(const hbs::IComponent *cmp)
 {
@@ -243,7 +244,8 @@ hbs::IComponent		*hbs::Circuit::CreateUserComponent(const std::string &type,
   circuit[name] = Create(type, name, "", ss.str());
   if (type == "input" || type == "clock")
     inputs[name] = dynamic_cast<hbs::Input*>(circuit[name]);
-  else if (type == "output" || type == "terminal" || type == "screen")
+  else if (type == "output" || type == "terminal" || type == "screen" ||
+           hbs::PrototypeType(type) == hbs::PT_PROBE)
     outputs[name] = dynamic_cast<hbs::Output*>(circuit[name]);
   else if (type == "wire" || type == "track")
     tracks[name] = dynamic_cast<hbs::Track*>(circuit[name]);
@@ -565,7 +567,7 @@ void			hbs::Circuit::Draw(hbs::Screen			&screen) const
 	  hbs::Size sz;
 
 	  screen.Circle(pp, {0.4, 0.4}, hbs::Screen::Purple, true);
-	  screen.Circle(pp, {0.25, 0.25}, hbs::Screen::White, false);
+	  screen.Circle(pp, {0.4, 0.4}, hbs::Screen::White, false);
 	  sz = screen.TextSize({10, 10}, external_pins[i - 1].name);
 	  sz.x = (-sz.x / 2.0) / screen.PinSize();
 	  sz.y = -1.0;
@@ -651,7 +653,8 @@ bool			hbs::Circuit::ReadChipsetsInside(const std::string &code,
       circuit[name] = Create(type, name, value, position);
       if (type == "input" || type == "clock")
 	inputs[name] = dynamic_cast<hbs::Input*>(circuit[name]);
-      else if (type == "output" || type == "terminal" || type == "screen")
+      else if (type == "output" || type == "terminal" || type == "screen" ||
+               hbs::PrototypeType(type) == hbs::PT_PROBE)
 	outputs[name] = dynamic_cast<hbs::Output*>(circuit[name]);
       else if (type == "wire" || type == "track")
         tracks[name] = dynamic_cast<hbs::Track*>(circuit[name]);
@@ -1152,6 +1155,19 @@ void hbs::Circuit::EndTick(void)
     entry.second->EndTick();
 }
 
+bool hbs::Circuit::ReleaseMomentaryButtons(void)
+{
+  bool changed = false;
+  for (auto &entry : circuit)
+    {
+      if (auto button = dynamic_cast<hbs::Prototype *>(entry.second))
+        changed = button->SetPressed(false) || changed;
+      else if (auto child = dynamic_cast<hbs::Circuit *>(entry.second))
+        changed = child->ReleaseMomentaryButtons() || changed;
+    }
+  return changed;
+}
+
 void			hbs::Circuit::SetLink(size_t			pnthis,
 					      hbs::IComponent		&com,
 					      size_t			pntarg,
@@ -1583,6 +1599,9 @@ hbs::Circuit::Circuit(hbs::Timer		&tim)
     implicit_track_count(0)
 {
   const char *types[] = {
+    "AND", "NAND", "OR", "NOR", "BUF", "NOT", "XOR", "XNOR", "PROBE",
+    "DIODE", "SWITCH", "NPN", "PNP", "RESISTOR", "LED", "PUSHBUTTON",
+    "PUSHBUTTON_COMPACT", "CAPACITOR",
     "input", "output", "clock", "true", "false", "terminal",
     "4000", "4001", "4002", "4006", "4008", "4009", "4010", "4011",
     "4012", "4013", "4014", "4015", "4017", "4018", "4020", "4021", "4022", "4023", "4024", "4025",

@@ -17,6 +17,7 @@
 # include				"Timer.hpp"
 # include				"Screen.hpp"
 # include				"Parsing.hpp"
+# include                               "Signal.hpp"
 
 namespace				hbs
 {
@@ -43,6 +44,15 @@ namespace				hbs
     //float				y;
 
     mutable std::string			type;
+
+    // Drawing reads the last observed state without advancing the simulation.
+    virtual hbs::Tristate GetPinDisplayState(size_t pin) const
+    {
+      auto last = timeline.rbegin();
+      if (last == timeline.rend()) return hbs::UNDEFINED;
+      auto state = last->second.find(pin);
+      return state == last->second.end() ? hbs::UNDEFINED : state->second;
+    }
 
     hbs::Position			position;
     bool				orientation;
@@ -131,35 +141,15 @@ namespace				hbs
       if (n < 1 || n > Pin)
         throw hbs::BadPin(GetType() + ": Bad pin.");
       CleanOld();
-      typename std::map<size_t, std::list<Connection> >::iterator	lnk;
-      typename std::list<Connection>::iterator			it;
-      hbs::Tristate							out;
-      hbs::Tristate							tmp;
+      return (timeline[timer.GetTime()][n] = hbs::ResolveSignal(*this, n));
+    }
 
-      /// If not linked
-      if ((lnk = links.find(n)) == links.end())
-	return (timeline[timer.GetTime()][n] = hbs::UNDEFINED);
-
-      /// Linked
-      it = lnk->second.begin();
-      out = hbs::UNDEFINED;
-      for (; it != lnk->second.end(); ++it)
-	{
-	  tmp = it->component->Compute(it->pin);
-	  if (tmp == hbs::HIGH_IMPEDANCE)
-	    {
-	      if (out == hbs::UNDEFINED)
-		out = hbs::HIGH_IMPEDANCE;
-	      continue ;
-	    }
-	  if (tmp != hbs::UNDEFINED)
-	    {
-	      if (out != hbs::UNDEFINED && out != hbs::HIGH_IMPEDANCE && out != tmp)
-		return (timeline[timer.GetTime()][n] = hbs::BROKEN);
-	      out = tmp;
-	    }
-	}
-      return (timeline[timer.GetTime()][n] = out);
+    void GetConnections(size_t n, std::vector<SignalConnection> &out) const override
+    {
+      auto link = links.find(n);
+      if (link != links.end())
+        for (const Connection &connection : link->second)
+          out.push_back({connection.component, connection.pin});
     }
 
     void				SetLink(size_t			pin_num_this,
@@ -280,18 +270,12 @@ namespace				hbs
 
     virtual void			Draw(hbs::Screen		&screen) const
     {
-      auto last = timeline.rbegin();
-
       if (Pin == 1)
 	{
-	  int col = 0;
-
-	  if (last != timeline.rend() && last->second.find(1) != last->second.end())
-	    col = hbs::Screen::TristateColor[(int)(last->second.at(1) - BROKEN)];
+	  unsigned int col = hbs::Screen::TristateColor[GetPinDisplayState(1) - BROKEN];
 
 	  screen.Circle(GetPinPosition(1), {0.7, 0.7}, col, true);
-	  screen.Circle(GetPinPosition(1), {0.5, 0.5}, hbs::Screen::Blue, true);
-	  screen.Circle(GetPinPosition(1), {0.3, 0.3}, hbs::Screen::Black, true);
+	  screen.Circle(GetPinPosition(1), {0.7, 0.7}, hbs::Screen::White, false);
 	}
       else if (Pin == 2)
 	{
@@ -315,17 +299,6 @@ namespace				hbs
 	}
       else
 	{
-	  for (size_t i = 1; i <= Pin; ++i)
-	    {
-	      int col = 0;
-
-	      if (last != timeline.rend() && last->second.find(i) != last->second.end())
-		col = hbs::Screen::TristateColor[(int)(last->second.at(i) - BROKEN)];
-
-	      screen.Circle(GetPinPosition(i), {0.4, 0.4}, col, true);
-	      screen.Circle(GetPinPosition(i), {0.25, 0.25}, hbs::Screen::Purple, true);
-	      screen.Circle(GetPinPosition(i), {0.25, 0.25}, hbs::Screen::White, false);
-	    }
 	  for (int i = 0; i <= 2; ++i)
 	    {
 	      hbs::Position xx = {0, (i - 1) / (double)screen.PinSize()};
@@ -339,6 +312,14 @@ namespace				hbs
 	      screen.Line(GetPinPosition(1) + yy, GetPinPosition(Pin / 2) + yy, hbs::Screen::Teal);
 	      screen.Line(GetPinPosition(Pin / 2 + 1) + yy, GetPinPosition(Pin) + yy, hbs::Screen::Teal);
 	    }
+
+          for (size_t i = 1; i <= Pin; ++i)
+            {
+              unsigned int col = hbs::Screen::TristateColor[GetPinDisplayState(i) - BROKEN];
+
+              screen.Circle(GetPinPosition(i), {0.4, 0.4}, col, true);
+              screen.Circle(GetPinPosition(i), {0.4, 0.4}, hbs::Screen::White, false);
+            }
 
 	  hbs::Size sz = screen.TextSize({10, 10}, GetType());
 

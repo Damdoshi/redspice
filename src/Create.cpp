@@ -16,6 +16,7 @@
 #include		<vector>
 #include                <memory>
 #include                <filesystem>
+#include                "Prototype.hpp"
 #include		"Exception.hpp"
 #include		"Circuit.hpp"
 #include		"ResourcePath.hpp"
@@ -418,6 +419,9 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
     }
   else
     position = pos;
+
+  if (hbs::PrototypeType(type) != hbs::PT_INVALID)
+    return hbs::Prototype::Create(timer, type, name, value, position);
 
   if (type == "input")
     return (new hbs::Input(timer, name, value, position));

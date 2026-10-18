@@ -139,6 +139,7 @@ namespace				hbs
     hbs::Tristate			Compute(void);
     void                                BeginTick(void) override;
     void                                EndTick(void) override;
+    bool                                ReleaseMomentaryButtons(void);
 
     void				SetLink(size_t				pnthis,
 						hbs::IComponent			&component,
