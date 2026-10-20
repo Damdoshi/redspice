@@ -19,7 +19,7 @@ flags = ['-std=gnu++23', '-O1', '-g', '-Wall', '-Wextra',
 sources = sorted(p for folder in ('src', 'screen', 'stdcmp', 'vircmp')
                  for p in Path(folder).glob('*.cpp'))
 entries = [Path('main.cpp'), Path('tests/reliability.cpp'), Path('tests/w65c02.cpp'),
-           Path('tests/prototyping.cpp')]
+           Path('tests/prototyping.cpp'), Path('tests/routing.cpp')]
 sources += entries
 headers = [p for folder in ('include', 'tests/support') for p in Path(folder).rglob('*') if p.is_file()]
 flag_file = build / 'flags.txt'
@@ -56,7 +56,8 @@ try:
             ('bcad', 'main.cpp', []),
             ('reliability', 'tests/reliability.cpp',
              ['-Wl,--wrap=write,--wrap=fsync,--wrap=close,--wrap=rename,--wrap=link']),
-            ('prototyping', 'tests/prototyping.cpp', [])]:
+            ('prototyping', 'tests/prototyping.cpp', []),
+            ('routing', 'tests/routing.cpp', [])]:
         obj = objects[sources.index(Path(entry))]
         subprocess.run([cxx, *flags, '-no-pie', *common, str(obj), '-ldl', *extra,
                         '-o', str(build / name)], check=True)
@@ -75,6 +76,7 @@ try:
     subprocess.run([str(build / 'w65c02'), '--corpus', str(vectors)],
                    check=True, env=environment, timeout=120)
     subprocess.run([str(build / 'prototyping')], check=True, env=environment, timeout=120)
+    subprocess.run([str(build / 'routing')], check=True, env=environment, timeout=120)
     subprocess.run([str(build / 'reliability'), str(root), str(build / 'bcad')],
                    check=True, env=environment, timeout=120)
 except (RuntimeError, subprocess.SubprocessError) as error:

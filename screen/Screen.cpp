@@ -35,6 +35,7 @@ hbs::Screen::Screen(std::string const &filename)
   context_menu = false;
   rename_mode = false;
   drawing_mode = false;
+  auto_routing = true;
   placing_component = false;
   component_to_place = NULL;
   placing_type = "";

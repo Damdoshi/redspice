@@ -678,17 +678,31 @@ try
 	}
       else if (ld.screen.dragging_selection)
 	{
+          hbs::RoutingSnapshot routing;
+          if (ld.screen.auto_routing && std::max(std::abs(npos.x), std::abs(npos.y)) <= 5 &&
+              (npos.x != 0 || npos.y != 0))
+            {
+              auto excluded = ld.screen.selected_tracks;
+              if (ld.screen.active_track) excluded.insert(ld.screen.active_track);
+              routing = ld.CurrentCircuit().CaptureRouting(ld.screen.selected_components, excluded);
+            }
 	  for (auto it = ld.screen.selected_tracks.begin(); it != ld.screen.selected_tracks.end(); ++it)
 	    (*it)->Move(npos);
 	  for (auto it = ld.screen.selected_components.begin(); it != ld.screen.selected_components.end(); ++it)
 	    (*it)->Move(npos);
 	  ld.screen.dragging_selection = false;
 	  ld.MarkDirty();
+          ld.CurrentCircuit().Reroute(routing);
 	}
       else if (ld.screen.grabbed)
 	{
+          hbs::RoutingSnapshot routing;
+          if (ld.screen.auto_routing && std::max(std::abs(npos.x), std::abs(npos.y)) <= 5 &&
+              (npos.x != 0 || npos.y != 0))
+            routing = ld.CurrentCircuit().CaptureRouting({ld.screen.grabbed}, {ld.screen.active_track});
 	  ld.screen.grabbed->Move(npos);
 	  ld.MarkDirty();
+          ld.CurrentCircuit().Reroute(routing);
 	}
       ld.screen.grabbed = NULL;
 

@@ -54,7 +54,7 @@ Six circuits prêts à ouvrir se trouvent dans `res/00_prototypage/`.
 - Clic gauche sur un segment de piste + déplacement : sélectionner et déplacer toute la piste.
 - Clic gauche sur un point de piste + déplacement : déplacer uniquement ce point de piste.
 - Bouton `SEL` / `DRAW` ou touche `P` : basculer entre le mode sélection et le mode dessin.
-- `Page Up` : tourner les composants sélectionnés de 90° dans le sens antihoraire ; `Page Down` : tourner de 90° dans le sens horaire. Chaque composant tourne autour de son point d'ancrage, avec ses broches. Les pistes déjà dessinées restent en place et le chevelu indique les raccordements à refaire.
+- `Page Up` : tourner les composants sélectionnés de 90° dans le sens antihoraire ; `Page Down` : tourner de 90° dans le sens horaire. Chaque composant tourne autour de son point d'ancrage, avec ses broches. Le reroutage local tente de raccorder les broches restées proches du cuivre ; le chevelu indique les raccordements à reprendre.
 - Clic gauche maintenu depuis une zone vide + déplacement : dessiner un rectangle de sélection multiple.
 - Après une sélection, un cadre reste visible autour des éléments sélectionnés.
 - Clic gauche + déplacement n’importe où à l’intérieur du cadre de sélection : déplacer toute la sélection, même si elle ne contient qu’un seul élément.
@@ -85,7 +85,9 @@ L'orientation est conservée dans les sauvegardes : une position peut s'écrire 
 
 - Une liaison non routée est affichée en gris pointillé : c'est le chevelu logique. Le vert des bornes est réservé à l'état vrai.
 - Un départ de routage sans segment physique reste solidaire de la borne du composant : déplacer une entrée ne laisse plus de pastille derrière elle.
-- Une fois une piste physique dessinée, ses points restent en place quand le composant bouge. Un chevelu gris indique le raccordement à refaire entre sa borne et le cuivre.
+- Au relâchement d'un petit déplacement, le reroutage local tente de réparer les pistes déjà dessinées. Il traite les broches déplacées de cinq pas de grille maximum par axe, conserve le cuivre éloigné et les vias, et cherche un passage horizontal, vertical ou à 45° autour des pistes et pastilles des autres réseaux.
+- Le reroutage local est actif au lancement. `Ctrl+F10`, ou le bouton `AUTO ON` / `AUTO OFF` dans le menu `Ctrl`, permet de le désactiver ou de le réactiver pour la session.
+- Le calcul a lieu après le déplacement ou la rotation, avec un budget limité pour garder l'interface fluide. Les grands déplacements, les passages bloqués ou les recherches interrompues laissent un chevelu gris entre les bornes et le cuivre à reprendre. Les pistes sélectionnées ou attachées au curseur gardent leur géométrie manuelle.
 - Les points de piste sont de petits points rouges ou bleus selon la couche ; les pastilles des composants gardent leurs couleurs d'état.
 - Une piste physique est affichée en rouge épais sur la couche composants et en bleu épais sur la couche pistes.
 - Le routage se fait maintenant en **mode dessin** (`P` ou bouton `SEL`/`DRAW`).

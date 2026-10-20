@@ -130,6 +130,11 @@ static void		shortcut_step(LoopData &ld)
   hbs::Command("simulate", ld.CurrentCircuit(), ld.CurrentTimer());
 }
 
+static void shortcut_auto_route(LoopData &ld)
+{
+  ld.screen.auto_routing = !ld.screen.auto_routing;
+}
+
 static void		shortcut_run_stop(LoopData &ld)
 {
   if (!ld.HasDocument())
@@ -158,7 +163,7 @@ static const hbs::ShortcutBinding g_shortcuts[hbs::SHORTCUT_MODE_COUNT][hbs::Sho
     {
       {NULL, NULL}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL},
       {NULL, NULL}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL},
-      {NULL, NULL}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL}
+      {NULL, NULL}, {"AUTO", shortcut_auto_route}, {NULL, NULL}, {NULL, NULL}
     },
     {
       {"CLOSE", shortcut_close},
@@ -358,7 +363,9 @@ void			hbs::DrawShortcutBar(Screen &screen, const LoopData *ld)
   draw_one_shortcut(screen, 0, cell, escape, "ECHAP", hbs::Screen::Yellow);
   for (int i = 0; i < hbs::ShortcutFunctionKeyCount; ++i)
     {
-      const hbs::ShortcutBinding &binding = hbs::GetShortcutBinding(mode, i);
+      hbs::ShortcutBinding binding = hbs::GetShortcutBinding(mode, i);
+      if (binding.action == shortcut_auto_route)
+        binding.label = screen.auto_routing ? "AUTO ON" : "AUTO OFF";
       char		keyname[8];
 
       snprintf(keyname, sizeof(keyname), "F%d", i + 1);

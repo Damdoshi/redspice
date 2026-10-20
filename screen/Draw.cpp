@@ -423,6 +423,11 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
   else if (active_track)
     Text({8 - pic->buffer.width / 2.0, hbs::ShortcutBarHeight + 6.0 - pic->buffer.height / 2.0}, {10, 15},
          hbs::Screen::Yellow, "Trace en attente: Ctrl pour continuer, glisse gauche camera, clic droit detache");
+  else if (HasSelection())
+    Text({8 - pic->buffer.width / 2.0, hbs::ShortcutBarHeight + 6.0 - pic->buffer.height / 2.0}, {10, 15},
+         hbs::Screen::Yellow, auto_routing ?
+         "PageUp/PageDown: rotation  Auto-routage local actif (Ctrl+F10)" :
+         "PageUp/PageDown: rotation  Auto-routage local inactif (Ctrl+F10)");
   if (placing_component)
     Text({8 - pic->buffer.width / 2.0, hbs::ShortcutBarHeight + 26.0 - pic->buffer.height / 2.0}, {10, 15},
 	 hbs::Screen::Yellow, "Placement: clic pose, PageUp/PageDown tourne, Shift+clic continue, clic droit/Echap annule");

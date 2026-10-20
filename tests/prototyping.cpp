@@ -491,6 +491,7 @@ static void rotation_editor()
   c.LoadText(".chipsets:\ninput a(1) [-12,0]\nAND gate [0,0]\nPROBE p [12,0]\n.tracks:\nw [b 3,0] {}\n.links:\na:1 gate:1\na:1 gate:2\ngate:3 w:1@1\np:1 w:2@1\n");
   c.Compute();expect(c,"p",TRUE);
   Screen s("fixture.rs");LoopData ld(c,t,s);
+  s.auto_routing=false; // Exercise the manual-copper mode as well.
   auto &gate=c.At("gate");auto time=t.GetTime();
   ld.documents[0]->dirty=false;
   screen_key(GO_DOWN,BKS_PAGEDOWN,ld);

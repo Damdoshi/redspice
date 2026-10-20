@@ -35,6 +35,13 @@ namespace			hbs
       size_t			to;
     };
 
+    struct Layout
+    {
+      std::vector<std::pair<Position, ILink::Layer> > nodes;
+      std::vector<Segment> segments;
+      std::vector<size_t> attachment_nodes;
+    };
+
   protected:
     typedef std::map<size_t, Tristate> PinState;
     typedef PinState::iterator	Preset;
@@ -63,6 +70,8 @@ namespace			hbs
 
   public:
     void			SetPath(const std::string &geometry);
+    Layout                      GetLayout(void) const;
+    void                        SetLayout(const Layout &layout);
     const hbs::Positions	&GetPath(void) const;
     hbs::Positions		&GetPath(void);
     const std::vector<Segment> &GetSegments(void) const;

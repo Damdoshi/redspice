@@ -15,6 +15,42 @@
 
 const size_t		hbs::Track::NoNode = std::numeric_limits<size_t>::max();
 
+hbs::Track::Layout hbs::Track::GetLayout(void) const
+{
+  RefreshUnroutedAnchors();
+  Layout layout;
+  layout.nodes.assign(path.begin(), path.end());
+  layout.segments = segments;
+  for (const auto &attachment : attachments)
+    layout.attachment_nodes.push_back(attachment.node);
+  return layout;
+}
+
+void hbs::Track::SetLayout(const Layout &layout)
+{
+  if (layout.attachment_nodes.size() != attachments.size())
+    throw BadPin("Track layout: attachment count changed.");
+  for (const auto &node : layout.nodes)
+    if (!std::isfinite(node.first.x) || !std::isfinite(node.first.y) ||
+        std::abs(node.first.x) > 1000000 || std::abs(node.first.y) > 1000000 ||
+        (node.second != ILink::TOP && node.second != ILink::BOTTOM))
+      throw BadPin("Track layout: invalid node.");
+  for (const auto &segment : layout.segments)
+    if (segment.from >= layout.nodes.size() || segment.to >= layout.nodes.size() || segment.from == segment.to)
+      throw BadPin("Track layout: invalid segment.");
+  for (size_t node : layout.attachment_nodes)
+    if (node != NoNode && node >= layout.nodes.size())
+      throw BadPin("Track layout: invalid attachment.");
+  // All allocations precede the first mutation. Pin identities and timeline
+  // caches stay untouched; only their physical attachment nodes may change.
+  Positions next_path(layout.nodes.begin(), layout.nodes.end());
+  std::vector<Segment> next_segments = layout.segments;
+  path.swap(next_path);
+  segments.swap(next_segments);
+  for (size_t i = 0; i < attachments.size(); ++i)
+    attachments[i].node = layout.attachment_nodes[i];
+}
+
 void hbs::Track::RotateAround(Position pivot, int quarter_turns)
 {
   for (auto &node : path)

@@ -36,6 +36,7 @@ namespace				hbs
     bool				context_menu;
     bool				rename_mode;
     bool				drawing_mode;
+    bool                                auto_routing;
     bool				placing_component;
     hbs::IComponent			*component_to_place;
     std::string				placing_type;

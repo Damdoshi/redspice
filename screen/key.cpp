@@ -246,6 +246,13 @@ try
     {
       int turns = sym == BKS_PAGEUP ? -1 : 1;
       bool changed = false;
+      hbs::RoutingSnapshot routing;
+      if (ld.screen.auto_routing && !ld.screen.placing_component)
+        {
+          auto excluded = ld.screen.selected_tracks;
+          if (ld.screen.active_track) excluded.insert(ld.screen.active_track);
+          routing = ld.CurrentCircuit().CaptureRouting(ld.screen.selected_components, excluded);
+        }
       if (ld.screen.placing_component && ld.screen.component_to_place)
         {
           ld.screen.component_to_place->Rotate(turns);
@@ -261,6 +268,7 @@ try
         {
           ld.screen.context_menu = false;
           ld.MarkDirty();
+          ld.CurrentCircuit().Reroute(routing);
         }
       return GO_ON;
     }

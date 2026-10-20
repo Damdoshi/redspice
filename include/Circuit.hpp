@@ -9,6 +9,7 @@
 # include				"Input.hpp"
 # include				"Output.hpp"
 # include				"Track.hpp"
+# include                               "Router.hpp"
 # include				<list>
 # include				<set>
 # include				<string>
@@ -209,6 +210,9 @@ namespace				hbs
 						    t_bunny_position		pos) const;
     hbs::Packet				EndLinkStep(void) const;
     void				ValidateRouting(void) const;
+    RoutingSnapshot CaptureRouting(const std::set<IComponent*> &components,
+                                   const std::set<Track*> &excluded = {}) const;
+    RoutingResult Reroute(const RoutingSnapshot &snapshot, const RoutingBudget &budget = {});
     Circuit(hbs::Timer	&timer);
     virtual ~Circuit(void);
   };
