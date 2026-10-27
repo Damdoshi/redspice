@@ -11,6 +11,7 @@
 #include		<sstream>
 #include		"Screen.hpp"
 #include		"Shortcuts.hpp"
+#include                "Integrated.hpp"
 
 static std::string	basename(const std::string &path)
 {
@@ -47,6 +48,7 @@ static const char	*mode_title(FileBrowserMode mode)
     return ("SAVE BEFORE CLOSE");
   if (mode == FILE_BROWSER_SAVE_THEN_QUIT)
     return ("SAVE BEFORE QUIT");
+  if(mode==FILE_BROWSER_INSERT)return "INSERT CELL / IC";
   return ("OPEN");
 }
 
@@ -155,9 +157,11 @@ static void		draw_right_panel(LoopData &ld, int x, int y, int w, int h)
       if (idx >= (int)ld.documents.size())
 	break ;
       std::string name = basename(ld.documents[idx]->file_name);
+      if(ld.documents[idx]->integrated && ld.documents[idx]->integrated->read_only)name="[OBS "+ld.documents[idx]->integrated->instance_path+"] "+name;
+      else name=(ld.documents[idx]->type==BufferType::IntegratedCircuit?"[IC] ":"[PCB] ")+name;
       if (ld.documents[idx]->temporary)
 	name = "*" + name;
-      else if (ld.documents[idx]->dirty)
+      else if (ld.documents[idx]->Modified())
 	name = name + " *";
       draw_entry(screen, x + 10, y + 84 + row * 24, w - 20,
 		 name, idx == (int)ld.active_document, false);
@@ -201,7 +205,7 @@ void			hbs::DrawFileBrowser(LoopData &ld)
   fixed_text(screen, margin, top, {18, 28}, hbs::Screen::Red,
 	     std::string("BUNNY CAD FILE SELECTOR - ") + mode_title(ld.file_browser_mode));
   fixed_text(screen, w - 610, top + 6, {9, 14}, hbs::Screen::White,
-	     "F1:new  F3:open  F4:menu  Shift+F1:close  F2:save  Shift+F2:save copy");
+	     "F1:new circuit  F2:new chipset  F3:save  F4:open  Shift+F1:close  Shift+F3:save as");
   draw_save_prompt(ld, margin, top + 38, w - margin * 2);
   draw_left_panel(ld, margin, top + 58 + save_h, panel_w, h - top - 82 - save_h);
   draw_right_panel(ld, margin + panel_w + gap, top + 58 + save_h, panel_w, h - top - 82 - save_h);
@@ -312,8 +316,7 @@ bool			hbs::FileBrowserClick(t_bunny_event_state state,
 	  if (dbl)
 	    ld.CompleteSavePrompt(false);
 	}
-      else if (dbl)
-	ld.OpenFile(ld.browser_entries[idx].path);
+      else if (dbl){if(ld.file_browser_mode==FILE_BROWSER_INSERT)ld.InsertIntegratedCircuit(ld.browser_entries[idx].path);else ld.OpenFile(ld.browser_entries[idx].path);}
       return (true);
     }
   if (pos.x >= right_x && pos.x < right_x + panel_w)
@@ -333,9 +336,8 @@ bool			hbs::FileBrowserClick(t_bunny_event_state state,
 	}
       else
 	{
-	  ld.SelectDocument((size_t)idx);
-	  if (dbl)
-	    ld.file_browser = false;
+          if(ld.file_browser_mode==FILE_BROWSER_INSERT){if(dbl)ld.InsertIntegratedCircuit(ld.documents[idx]->file_name);}
+          else {ld.SelectDocument((size_t)idx);if(dbl)ld.file_browser=false;}
 	}
       return (true);
     }

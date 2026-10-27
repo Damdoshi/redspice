@@ -33,7 +33,7 @@ TEAL		=	"\033[1;36m"
 RED		=	"\033[0;31m"
 
 ## Source
-INC		=	-I./include/ -I./include/stdcmp -I./include/vircmp
+INC		=	-I./include/ -I./include/stdcmp -I./include/vircmp -I./silicon/include
 SRC		=	$(shell find src screen stdcmp vircmp -name "*.cpp" | sort)
 OBJ		=	$(SRC:.cpp=.o)
 
@@ -115,3 +115,9 @@ package: all
 package-clean:
 		@rm -rf .pkg
 		@rm -f $(PACKAGE_NAME)_*.deb
+
+.PHONY: test-ic ic-cli
+test-ic:
+	$(MAKE) -C silicon test
+ic-cli:
+	$(MAKE) -C silicon cli

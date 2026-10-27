@@ -20,7 +20,7 @@ constexpr int TITLEBAR=1, RESIZE_BUTTON=2, CLOSE_BUTTON=4;
 constexpr unsigned WHITE=0xffffffff, BLACK=0xff, RED=0xff0000ff, BLUE=0xffff, YELLOW=0xffff00ff, TEAL=0x00ffffff, GREEN=0x00ff00ff, PURPLE=0xff00ffff, PINK2=0xff80ffff, TRANSPARENT=0;
 #define GRAY(v) ((unsigned)(v)*0x01010100u|0xffu)
 #define ALPHA(a,c) (((unsigned)(c)&0xffffff00u)|(unsigned)(a))
-enum t_bunny_keysym { BKS_A,BKS_ADD,BKS_BACKSPACE,BKS_C,BKS_D,BKS_DASH,BKS_DELETE,BKS_DOWN,BKS_EQUAL,BKS_ESCAPE,BKS_F1,BKS_F10,BKS_F11,BKS_F12,BKS_F2,BKS_F3,BKS_F4,BKS_F5,BKS_F6,BKS_F7,BKS_F8,BKS_F9,BKS_HOME,BKS_LCONTROL,BKS_LEFT,BKS_LSHIFT,BKS_N,BKS_P,BKS_PAGEDOWN,BKS_PAGEUP,BKS_Q,BKS_R,BKS_RCONTROL,BKS_RETURN,BKS_RIGHT,BKS_RSHIFT,BKS_S,BKS_SPACE,BKS_SUBTRACT,BKS_T,BKS_TAB,BKS_UP,BKS_V,BKS_W,BKS_Z,BKS_LALT,BKS_RALT, BKS_COUNT };
+enum t_bunny_keysym { BKS_A,BKS_ADD,BKS_BACKSPACE,BKS_C,BKS_D,BKS_DASH,BKS_DELETE,BKS_DOWN,BKS_EQUAL,BKS_ESCAPE,BKS_F1,BKS_F10,BKS_F11,BKS_F12,BKS_F2,BKS_F3,BKS_F4,BKS_F5,BKS_F6,BKS_F7,BKS_F8,BKS_F9,BKS_HOME,BKS_LCONTROL,BKS_LEFT,BKS_LSHIFT,BKS_N,BKS_P,BKS_PAGEDOWN,BKS_PAGEUP,BKS_Q,BKS_R,BKS_RCONTROL,BKS_RETURN,BKS_RIGHT,BKS_RSHIFT,BKS_S,BKS_SPACE,BKS_SUBTRACT,BKS_T,BKS_TAB,BKS_UP,BKS_V,BKS_W,BKS_Z,BKS_LALT,BKS_RALT,BKS_G,BKS_O,BKS_Y,BKS_I, BKS_COUNT };
 enum t_bunny_mouse_button { BMB_LEFT, BMB_MIDDLE, BMB_RIGHT };
 enum t_bunny_event_state { GO_DOWN, GO_UP };
 enum t_bunny_response { GO_ON, EXIT_ON_SUCCESS };
@@ -56,6 +56,39 @@ inline void bunny_set_pixel(t_bunny_buffer*,t_bunny_position p,unsigned c)
 inline void bunny_blit(t_bunny_buffer*,t_bunny_picture*,const t_bunny_position*) {}
 inline void bunny_display(t_bunny_window*) {}
 struct LoopData;
+#ifdef REDSILICON_TEST_C_API
+// Match the actual LibLapin C callback boundary for the RedSilicon adapter.
+// BCAD's older reference-based fixture remains below for its existing tests.
+#define bunny_declare_context(prefix) \
+t_bunny_response prefix##_key(t_bunny_event_state,t_bunny_keysym,void*); \
+t_bunny_response prefix##_type(uint32_t,void*); \
+t_bunny_response prefix##_click(t_bunny_event_state,t_bunny_mouse_button,void*); \
+t_bunny_response prefix##_move(const t_bunny_position*,void*); \
+t_bunny_response prefix##_wheel(int,int,void*); \
+t_bunny_response prefix##_resize(const t_bunny_window*,const t_bunny_position*,void*); \
+t_bunny_response prefix##_loop(void*); \
+t_bunny_response prefix##_display(void*)
+struct t_bunny_context {
+ t_bunny_response (*key)(t_bunny_event_state,t_bunny_keysym,void*);
+ t_bunny_response (*type)(uint32_t,void*);
+ t_bunny_response (*click)(t_bunny_event_state,t_bunny_mouse_button,void*);
+ t_bunny_response (*move)(const t_bunny_position*,void*);
+ t_bunny_response (*wheel)(int,int,void*);
+ t_bunny_response (*resize)(const t_bunny_window*,const t_bunny_position*,void*);
+ t_bunny_response (*loop)(void*);
+ t_bunny_response (*display)(void*);
+ t_bunny_response (*get_focus)(void*);
+ t_bunny_response (*lost_focus)(void*);
+ t_bunny_response (*close)(void*);
+ t_bunny_response (*entering_context)(void*);
+ t_bunny_response (*leaving_context)(void*);
+ t_bunny_response (*event)(void*);
+};
+inline t_bunny_context *bunny_test_context=nullptr;
+inline void (*bunny_test_loop_hook)(void*)=nullptr;
+inline void bunny_set_context(t_bunny_context *context) {bunny_test_context=context;}
+inline void bunny_loop(t_bunny_window*,int,void *data) {if(bunny_test_loop_hook)bunny_test_loop_hook(data);}
+#else
 #define bunny_declare_context(prefix) \
 t_bunny_response prefix##_key(t_bunny_event_state,t_bunny_keysym,LoopData&); \
 t_bunny_response prefix##_type(uint32_t,LoopData&); \
@@ -66,15 +99,24 @@ t_bunny_response prefix##_resize(const t_bunny_window*,const t_bunny_position*,L
 t_bunny_response prefix##_loop(LoopData&); \
 t_bunny_response prefix##_display(LoopData&)
 struct t_bunny_context {
- t_bunny_response (*key)(t_bunny_event_state,t_bunny_keysym,LoopData&);
- t_bunny_response (*type)(uint32_t,LoopData&);
- t_bunny_response (*click)(t_bunny_event_state,t_bunny_mouse_button,LoopData&);
- t_bunny_response (*move)(const t_bunny_position*,LoopData&);
- t_bunny_response (*wheel)(int,int,LoopData&);
- t_bunny_response (*resize)(const t_bunny_window*,const t_bunny_position*,LoopData&);
- t_bunny_response (*loop)(LoopData&);
- t_bunny_response (*display)(LoopData&);
+ t_bunny_response (*key)(t_bunny_event_state,t_bunny_keysym,void*);
+ t_bunny_response (*type)(uint32_t,void*);
+ t_bunny_response (*click)(t_bunny_event_state,t_bunny_mouse_button,void*);
+ t_bunny_response (*move)(const t_bunny_position*,void*);
+ t_bunny_response (*wheel)(int,int,void*);
+ t_bunny_response (*resize)(const t_bunny_window*,const t_bunny_position*,void*);
+ t_bunny_response (*loop)(void*);
+ t_bunny_response (*display)(void*);
+ t_bunny_response (*get_focus)(void*);
+ t_bunny_response (*lost_focus)(void*);
+ t_bunny_response (*close)(void*);
+ t_bunny_response (*entering_context)(void*);
+ t_bunny_response (*leaving_context)(void*);
+ t_bunny_response (*event)(void*);
 };
-inline void bunny_set_context(t_bunny_context*) {}
-inline void bunny_loop(t_bunny_window*,int,LoopData*) {}
+inline t_bunny_context *bunny_test_context=nullptr;
+inline void (*bunny_test_loop_hook)(void*)=nullptr;
+inline void bunny_set_context(t_bunny_context *context) {bunny_test_context=context;}
+inline void bunny_loop(t_bunny_window*,int,void *data) {if(bunny_test_loop_hook)bunny_test_loop_hook(data);}
+#endif
 #endif

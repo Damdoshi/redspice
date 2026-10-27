@@ -1,0 +1,24 @@
+BCAD_IC 2
+tech nmos
+title "Quatre inverseurs : cellules dans des cellules, boitier DIP8"
+package "DIP" 8 8
+item 1 instance metal1 0 0 1 1 0 0 10000 0 0 0 "left" ""
+item 2 instance metal1 60 0 1 1 0 0 10000 0 0 0 "right" ""
+item 3 shape metal1 30 1 1 6 0 0 10000 0 0 0 "" ""
+item 4 shape metal1 30 6 36 1 0 0 10000 0 0 0 "" ""
+item 5 shape metal1 65 -3 1 10 0 0 10000 0 0 0 "" ""
+item 6 shape metal1 0 -7 61 1 0 0 10000 0 0 0 "" ""
+item 7 shape metal1 10 1 1 12 0 0 10000 0 0 0 "" ""
+item 8 shape metal1 10 12 61 1 0 0 10000 0 0 0 "" ""
+item 9 shape metal1 70 1 1 12 0 0 10000 0 0 0 "" ""
+item 10 input metal1 5 -3 1 1 0 0 10000 0 0 0 "A" ""
+item 11 supply metal1 0 -7 1 1 0 0 10000 0 0 0 "VCC" ""
+item 12 output metal1 90 1 1 1 0 0 10000 0 0 0 "Y" ""
+item 13 ground metal1 10 1 1 1 0 0 10000 0 0 0 "GND" ""
+instance 1 0 "buffer2.rsi"
+instance 2 0 "buffer2.rsi"
+pin 10 1
+pin 11 8
+pin 12 3
+pin 13 4
+end 13

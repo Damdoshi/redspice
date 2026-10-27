@@ -1,0 +1,20 @@
+REDSILICON 1
+tech nmos
+title "Inverseur NMOS extrait du dessin"
+item 1 shape active 0 0 11 3 0 0 10000 0 0 0 "" "M1"
+item 2 shape poly 5 -3 1 9 0 0 10000 0 0 0 "" "M1"
+item 3 shape metal1 0 1 1 1 0 0 10000 0 0 0 "" ""
+item 4 shape contact 0 1 1 1 0 0 10000 0 0 0 "" ""
+item 5 shape metal1 10 1 1 1 0 0 10000 0 0 0 "" ""
+item 6 shape contact 10 1 1 1 0 0 10000 0 0 0 "" ""
+item 7 shape metal1 5 -3 1 1 0 0 10000 0 0 0 "" ""
+item 8 shape contact 5 -3 1 1 0 0 10000 0 0 0 "" ""
+item 9 input metal1 5 -3 1 1 0 0 10000 0 1 0 "A" ""
+item 10 shape metal1 0 1 1 1 0 0 10000 0 0 0 "" ""
+item 11 shape metal1 0 -7 1 1 0 0 10000 0 0 0 "" ""
+item 12 resistor metal1 0 1 1 1 0 -7 10000 0 0 0 "RL" ""
+item 13 supply metal1 0 -7 1 1 0 0 10000 0 0 0 "VCC" ""
+item 14 output metal1 0 1 1 1 0 0 10000 0 1 0 "Y" ""
+item 15 ground metal1 10 1 1 1 0 0 10000 0 0 0 "GND" ""
+item 16 note metal1 -4 -12 1 1 0 0 10000 0 0 0 "Le poly traverse l'actif : une grille NMOS est extraite" ""
+end 16

@@ -15,6 +15,7 @@
 # include               "Circuit.hpp"
 # include               "Screen.hpp"
 # include               "Shortcuts.hpp"
+# include               "ComponentDockUI.hpp"
 
 namespace               hbs
 {
@@ -260,7 +261,7 @@ namespace               hbs
 
     g.y = ShortcutBarHeight + 10;
     g.line = 24;
-    g.w = std::max(360, win_w - 20);
+    g.w = std::max(360, win_w - 2*ComponentDockWidth(screen) - 20);
     g.h = std::max(260, win_h - g.y - 20);
     g.x = (win_w - g.w) / 2;
     if (g.x < 0)

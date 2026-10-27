@@ -13,6 +13,8 @@
 #include		"Shortcuts.hpp"
 #include		"ComponentMenu.hpp"
 #include		"Track.hpp"
+#include                "Integrated.hpp"
+#include "ComponentDockUI.hpp"
 
 static bool		is_inside_context_menu(const hbs::Screen &screen, t_bunny_position pos)
 {
@@ -130,7 +132,7 @@ static void		begin_component_placement(LoopData &ld, const std::string &type)
   ld.screen.placing_component = true;
   ld.screen.component_to_place = cmp;
   ld.screen.placing_type = type;
-  ld.screen.search_panel = false;
+  hbs::CloseComponentMenu(ld);
   ld.screen.context_menu = false;
   move_placing_component_to_mouse(ld);
 }
@@ -410,6 +412,8 @@ t_bunny_response	screen_click(t_bunny_event_state	state,
 			     LoopData			&ld)
 try
 {
+  if(hbs::ComponentInterfaceClick(state,sym,ld))return GO_ON;
+  if(hbs::IntegratedClick(state,sym,ld))return ld.quit_requested?EXIT_ON_SUCCESS:GO_ON;
   t_bunny_position	pos = *bunny_get_mouse_position();
 
   // Release even outside the button, over a menu, or after changing documents.
@@ -418,7 +422,7 @@ try
     {
       bool released = false;
       for (LoopDocument *document : ld.documents)
-        if (document->circuit->ReleaseMomentaryButtons())
+        if (document->circuit && document->circuit->ReleaseMomentaryButtons())
           {
             hbs::Simulate(*document->circuit, *document->timer, 1);
             released = true;
@@ -468,20 +472,6 @@ try
       ld.screen.pan_last = *bunny_get_mouse_position();
       ld.screen.pan_origin = ld.screen.pan_last;
       ld.screen.context_menu = false;
-      return (GO_ON);
-    }
-
-  if (ld.screen.search_panel && sym == BMB_LEFT && state == GO_DOWN)
-    {
-      std::string type;
-
-      if (hbs::ComponentMenuChoiceAt(ld.CurrentCircuit(), ld.screen, pos, type))
-	{
-	  begin_component_placement(ld, type);
-	  ld.MarkDirty();
-	}
-      else if (!hbs::IsInsideComponentMenu(ld.screen, pos))
-	ld.screen.search_panel = false;
       return (GO_ON);
     }
 

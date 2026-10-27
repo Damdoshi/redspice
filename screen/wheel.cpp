@@ -6,6 +6,8 @@
 
 #include		<algorithm>
 #include		"Screen.hpp"
+#include                "Integrated.hpp"
+#include "ComponentDockUI.hpp"
 
 extern "C"
 t_bunny_response	screen_wheel(int			id,
@@ -13,6 +15,8 @@ t_bunny_response	screen_wheel(int			id,
 			     LoopData			&ld)
 try
 {
+  if(!ld.file_browser && ld.screen.search_panel){ld.screen.search_offset=std::max(0,ld.screen.search_offset-delta);return GO_ON;}
+  if(hbs::IntegratedWheel(id,delta,ld))return GO_ON;
   (void)id;
   if (ld.file_browser)
     {

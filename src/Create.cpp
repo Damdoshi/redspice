@@ -17,6 +17,7 @@
 #include                <memory>
 #include                <filesystem>
 #include                "Prototype.hpp"
+#include                "SiliconChip.hpp"
 #include		"Exception.hpp"
 #include		"Circuit.hpp"
 #include		"ResourcePath.hpp"
@@ -425,6 +426,15 @@ hbs::IComponent		*hbs::Circuit::Create(const std::string		&type,
 
   if (type == "input")
     return (new hbs::Input(timer, name, value, position));
+  if (type == "silicon")
+    {
+      std::string file=value;
+      if(!source_file.empty() && !std::filesystem::path(file).is_absolute()){
+        std::string relative=silicon::ResolveDesignPath(file,source_file);
+        if(std::filesystem::exists(relative))file=relative;
+      }
+      return (new hbs::SiliconChip(timer, name, file, position));
+    }
   if (type == "clock")
     return (new hbs::Clock(timer, name, value, position));
   if (type == "output")

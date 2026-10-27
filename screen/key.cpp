@@ -12,61 +12,18 @@
 #include		"Shortcuts.hpp"
 #include		"ComponentMenu.hpp"
 #include		"Track.hpp"
+#include                "Integrated.hpp"
+#include "ComponentDockUI.hpp"
 
 static bool		ctrl_pressed(void)
 {
   return (bunny_get_keyboard()[BKS_LCONTROL] || bunny_get_keyboard()[BKS_RCONTROL]);
 }
 
-static std::string	current_menu_choice(const LoopData &ld)
-{
-  const std::vector<std::string> &types = ld.CurrentCircuit().GetCreatableTypes();
-  int			seen = 0;
-
-  for (size_t i = 0; i < types.size(); ++i)
-    {
-      if (!hbs::ComponentMatchesQuery(types[i], ld.screen.search_query))
-	continue ;
-      if (seen++ < ld.screen.search_offset)
-	continue ;
-      return (types[i]);
-    }
-  return ("");
-}
-
-static hbs::Position	snap_world(const hbs::Position &p)
-{
-  return (hbs::Position{(double)round(p.x), (double)round(p.y)});
-}
-
-static hbs::Position	snapped_mouse(hbs::Screen &screen)
-{
-  return (snap_world(screen.ScreenToWorld(*bunny_get_mouse_position())));
-}
-
 static void		clear_selection(hbs::Screen &screen)
 {
   screen.selected_components.clear();
   screen.selected_tracks.clear();
-}
-
-static void		begin_component_placement(LoopData &ld, const std::string &type)
-{
-  if (type.empty())
-    return ;
-  hbs::Position pos = snapped_mouse(ld.screen);
-  hbs::IComponent *cmp = ld.CurrentCircuit().CreateUserComponent(type, pos);
-
-  clear_selection(ld.screen);
-  if (hbs::Track *track = dynamic_cast<hbs::Track*>(cmp))
-    ld.screen.selected_tracks.insert(track);
-  else
-    ld.screen.selected_components.insert(cmp);
-  ld.screen.placing_component = true;
-  ld.screen.component_to_place = cmp;
-  ld.screen.placing_type = type;
-  ld.screen.search_panel = false;
-  ld.screen.context_menu = false;
 }
 
 static void		cancel_component_placement(LoopData &ld)
@@ -107,6 +64,12 @@ t_bunny_response	screen_key(t_bunny_event_state	state,
 				   LoopData		&ld)
 try
 {
+  if(hbs::ComponentInterfaceKey(state,sym,ld))return GO_ON;
+  if(hbs::IntegratedKey(state,sym,ld))return ld.quit_requested?EXIT_ON_SUCCESS:GO_ON;
+  if(!ld.file_browser && state==GO_DOWN && ctrl_pressed() && sym==BKS_TAB && ld.HasDocument()){
+    bool shift=bunny_get_keyboard()[BKS_LSHIFT] || bunny_get_keyboard()[BKS_RSHIFT];
+    ld.SelectDocument((ld.active_document+(shift?ld.documents.size()-1:1))%ld.documents.size());return GO_ON;
+  }
   if (sym == BKS_ESCAPE && state == GO_UP)
     {
       if (ld.screen.search_panel)
@@ -215,33 +178,6 @@ try
       return (GO_ON);
     }
 
-  if (ld.screen.search_panel)
-    {
-      if (sym == BKS_BACKSPACE && !ld.screen.search_query.empty())
-	{
-	  ld.screen.search_query.erase(ld.screen.search_query.size() - 1);
-	  ld.screen.search_offset = 0;
-	}
-      if (sym == BKS_PAGEUP)
-	ld.screen.search_offset = std::max(0, ld.screen.search_offset - 10);
-      if (sym == BKS_PAGEDOWN)
-	ld.screen.search_offset += 10;
-      if (sym == BKS_UP)
-	ld.screen.search_offset = std::max(0, ld.screen.search_offset - 1);
-      if (sym == BKS_DOWN)
-	ld.screen.search_offset += 1;
-      if (sym == BKS_RETURN)
-	{
-	  std::string type = current_menu_choice(ld);
-	  if (!type.empty())
-	    {
-	      begin_component_placement(ld, type);
-	      ld.MarkDirty();
-	    }
-	}
-      return (GO_ON);
-    }
-
   if (sym == BKS_PAGEUP || sym == BKS_PAGEDOWN)
     {
       int turns = sym == BKS_PAGEUP ? -1 : 1;
@@ -282,8 +218,7 @@ try
 
   if (sym == BKS_TAB || sym == BKS_C)
     {
-      ld.screen.search_panel = !ld.screen.search_panel;
-      ld.screen.search_offset = 0;
+      hbs::ToggleComponentMenu(ld);
       return (GO_ON);
     }
   return (GO_ON);

@@ -1,0 +1,8 @@
+tick
+expect y 1
+set a 1
+tick
+expect y 0
+set a 0
+tick
+expect y 1

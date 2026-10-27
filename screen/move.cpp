@@ -7,12 +7,16 @@
 #include		<cmath>
 #include		"IComponent.hpp"
 #include		"Screen.hpp"
+#include                "Integrated.hpp"
+#include "ComponentDockUI.hpp"
 
 extern "C"
 t_bunny_response	screen_move(const t_bunny_position	*rel,
 				    LoopData			&ld)
 try
 {
+  if(hbs::ComponentInterfaceMove(ld))return GO_ON;
+  if(hbs::IntegratedMove(ld))return GO_ON;
   (void)rel;
   if (!ld.HasDocument())
     return (GO_ON);

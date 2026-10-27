@@ -16,10 +16,12 @@
 #include		"Circuit.hpp"
 #include		"Screen.hpp"
 #include		"Shell.hpp"
+#include                "Integrated.hpp"
 
 static void		usage(const char	*prog)
 {
   std::cerr << prog << " [circuit.rs] [--simulate] [--screen] [input=value]*" << std::endl;
+  std::cerr << prog << " dessin.rsi | --ic dessin.rsi --check [--simulate N] [A=0|1|U|Z|B ...]" << std::endl;
   std::cerr << prog << " --batch circuit.bc [input=value]* < scenario.bcadtest" << std::endl;
   std::cerr << prog << " --test scenario.bcadtest circuit.bc [input=value]*" << std::endl;
 }
@@ -134,6 +136,7 @@ static int              run(int                 argc,
   int			i;
 
   srand(clock());
+  if(argc>=2 && strcmp(argv[1],"--ic")==0)return silicon::CommandLine(argc-1,argv+1);
   if (argc >= 2 && strcmp(argv[1], "--batch") == 0)
     return (Batch(argc, argv));
   if (argc >= 2 && strcmp(argv[1], "--test") == 0)
@@ -142,7 +145,7 @@ static int              run(int                 argc,
     {
       initial_file = argv[1];
       arg_start = 2;
-      if (load_circuit(circuit, initial_file, true) != EXIT_SUCCESS)
+      if (!hbs::IsIntegratedCircuitFile(initial_file) && load_circuit(circuit, initial_file, true) != EXIT_SUCCESS)
 	return (EXIT_FAILURE);
     }
   try

@@ -12,10 +12,14 @@
 # include				<set>
 # include				<string>
 # include				<vector>
+# include                                <memory>
+# include                                <cstdint>
 # include                                <exception>
+# include                                "ComponentDock.hpp"
 # include				"Positions.hpp"
 # include				"Timer.hpp"
 
+struct LoopData;
 namespace				hbs
 {
   class					IComponent;
@@ -97,7 +101,7 @@ namespace				hbs
 
     void				Resize(const t_bunny_window	&win,
 					       t_bunny_position		pos);
-    bool				Draw(hbs::Circuit		&c);
+    bool Draw(hbs::Circuit &c,LoopData *workspace=nullptr);
     bool                                IsRoutingMode(void) const;
     bool                                GetRoutePreview(const Circuit &c, Position &from,
                                                         Position &to, unsigned int &color) const;
@@ -138,17 +142,25 @@ namespace				hbs
   };
 }
 
+namespace silicon {class Editor;struct Image;struct SimulationSession;}
+enum class BufferType { PrintedCircuit, IntegratedCircuit };
 enum					FileBrowserMode
 {
   FILE_BROWSER_OPEN = 0,
   FILE_BROWSER_SAVE_ACTIVE,
   FILE_BROWSER_SAVE_COPY,
   FILE_BROWSER_SAVE_THEN_CLOSE,
-  FILE_BROWSER_SAVE_THEN_QUIT
+  FILE_BROWSER_SAVE_THEN_QUIT,
+  FILE_BROWSER_INSERT
 };
 
 struct					LoopDocument
 {
+  BufferType type=BufferType::PrintedCircuit;
+  std::unique_ptr<silicon::Editor> integrated;
+  uint64_t identity=0,parent_identity=0;
+  bool running=false;
+  std::string published_snapshot;
   std::string				file_name;
   hbs::Timer				*timer;
   hbs::Circuit				*circuit;
@@ -160,6 +172,8 @@ struct					LoopDocument
 
   LoopDocument(hbs::Circuit &c, hbs::Timer &t, const std::string &file);
   LoopDocument(const std::string &file, bool create_if_missing = false, bool temporary = false);
+  LoopDocument(const std::string &file,BufferType type,bool temporary);
+  bool Modified() const;
   ~LoopDocument(void);
 };
 
@@ -189,10 +203,26 @@ struct					LoopData
     std::string,
     hbs::ComponentLib
     >					library;
+  std::unique_ptr<silicon::Image> integrated_image;
+  std::vector<uint32_t> integrated_pixels;
+  struct MenuEntry {
+    bcad::DockEntry component;
+    std::string label,description;
+    bool browse=false;
+  };
+  std::vector<MenuEntry> component_menu;
+  int dock_pressed=-1;
+  t_bunny_position dock_press_position={0,0};
+  bool dock_dragged=false,component_interface_press=false;
+  std::string pending_cell;
+  std::string component_status;
 
   LoopData(hbs::Circuit &c, hbs::Timer &t, hbs::Screen &s);
   ~LoopData(void);
   bool					HasDocument(void) const;
+  bool HasIntegratedCircuit() const;
+  silicon::Editor &CurrentIntegratedCircuit();
+  const silicon::Editor &CurrentIntegratedCircuit() const;
   hbs::Circuit				&CurrentCircuit(void);
   hbs::Timer				&CurrentTimer(void);
   const hbs::Circuit			&CurrentCircuit(void) const;
@@ -201,7 +231,7 @@ struct					LoopData
   void					ApplyActiveView(void);
   bool					SelectDocument(size_t index);
   bool					OpenFile(const std::string &file);
-  bool					NewDocument(void);
+  bool					NewDocument(BufferType type=BufferType::PrintedCircuit);
   bool					CloseCurrentDocument(bool discard = false);
   bool					SaveCurrentDocument(void);
   bool					SaveCurrentDocumentAs(const std::string &file,
@@ -214,6 +244,15 @@ struct					LoopData
   bool					RequestQuit(void);
   void					MarkDirty(void);
   void					RefreshBrowser(void);
+  void PublishIntegratedDocument();
+  void ReloadDefinitions();
+  void AdvanceBackgroundSimulations();
+  bool OpenInspection(const std::shared_ptr<silicon::SimulationSession> &session,const std::string &instance,uint64_t parent=0);
+  bool InspectSelected();
+  bool OpenSelectedDefinition();
+  bool ParentInspection();
+  bool InsertIntegratedCircuit(const std::string &file);
+  void ProcessIntegratedRequests();
 };
 
 namespace					hbs

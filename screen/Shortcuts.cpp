@@ -10,9 +10,12 @@
 #include		"Screen.hpp"
 #include		"Shortcuts.hpp"
 #include		"Track.hpp"
+#include                "Integrated.hpp"
+#include "ComponentDockUI.hpp"
 
 static void		shortcut_escape(LoopData &ld)
 {
+  if(ld.screen.search_panel || !ld.pending_cell.empty() || ld.dock_pressed>=0){hbs::CloseComponentMenu(ld);ld.pending_cell.clear();ld.dock_pressed=-1;ld.dock_dragged=false;return;}
   if (ld.file_browser && ld.HasDocument())
     {
       ld.file_browser = false;
@@ -28,6 +31,10 @@ static void		shortcut_new(LoopData &ld)
 {
   ld.NewDocument();
 }
+static void shortcut_new_ic(LoopData &ld){ld.NewDocument(BufferType::IntegratedCircuit);}
+static void shortcut_insert_ic(LoopData &ld){if(!ld.HasDocument())return;ld.file_browser=true;ld.file_browser_mode=FILE_BROWSER_INSERT;ld.RefreshBrowser();}
+static void shortcut_inspect_ic(LoopData &ld){ld.InspectSelected();}
+static void shortcut_source_ic(LoopData &ld){ld.OpenSelectedDefinition();}
 
 static void		shortcut_close(LoopData &ld)
 {
@@ -41,7 +48,7 @@ static void		shortcut_save(LoopData &ld)
 
 static void		shortcut_save_as(LoopData &ld)
 {
-  ld.BeginSaveAs(true);
+  ld.BeginSaveAs(false);
 }
 
 static void		shortcut_open(LoopData &ld)
@@ -49,10 +56,7 @@ static void		shortcut_open(LoopData &ld)
   ld.BeginOpenFileBrowser();
 }
 
-static void		shortcut_files(LoopData &ld)
-{
-  ld.BeginFileMenu();
-}
+static void shortcut_save_copy(LoopData &ld){ld.BeginSaveAs(true);}
 
 static void		shortcut_center_on_mouse(LoopData &ld)
 {
@@ -64,6 +68,7 @@ static void		shortcut_center_on_mouse(LoopData &ld)
       static_cast<int>(ld.screen.pic->buffer.height / 2)
     };
 
+  if(ld.HasIntegratedCircuit()){auto &editor=ld.CurrentIntegratedCircuit();auto p=editor.World(bunny_get_mouse_position()->x-hbs::ComponentDockWidth(ld.screen),bunny_get_mouse_position()->y);editor.center_x=p.x;editor.center_y=p.y;bunny_set_mouse_position_window(ld.screen.win,hbs::ComponentDockWidth(ld.screen)+(180+editor.width-320)/2,(100+editor.height-190)/2);return;}
   ld.screen.context_menu = false;
   ld.screen.camera = ld.screen.ScreenToWorld(*bunny_get_mouse_position());
   bunny_set_mouse_position_window(ld.screen.win, center.x, center.y);
@@ -75,6 +80,7 @@ static void		shortcut_home(LoopData &ld)
   if (!ld.HasDocument())
     return ;
   ld.screen.context_menu = false;
+  if(ld.HasIntegratedCircuit()){ld.CurrentIntegratedCircuit().Fit();return;}
   ld.screen.ResetZoom(*bunny_get_mouse_position());
   ld.MarkDirty();
 }
@@ -84,6 +90,7 @@ static void		shortcut_zoom_in(LoopData &ld)
   if (!ld.HasDocument())
     return ;
   ld.screen.context_menu = false;
+  if(ld.HasIntegratedCircuit()){ld.CurrentIntegratedCircuit().Wheel(bunny_get_mouse_position()->x-hbs::ComponentDockWidth(ld.screen),bunny_get_mouse_position()->y,+2);return;}
   ld.screen.ZoomAt(*bunny_get_mouse_position(), +2);
   ld.MarkDirty();
 }
@@ -93,6 +100,7 @@ static void		shortcut_zoom_out(LoopData &ld)
   if (!ld.HasDocument())
     return ;
   ld.screen.context_menu = false;
+  if(ld.HasIntegratedCircuit()){ld.CurrentIntegratedCircuit().Wheel(bunny_get_mouse_position()->x-hbs::ComponentDockWidth(ld.screen),bunny_get_mouse_position()->y,-2);return;}
   ld.screen.ZoomAt(*bunny_get_mouse_position(), -2);
   ld.MarkDirty();
 }
@@ -104,8 +112,7 @@ static void		shortcut_add(LoopData &ld)
       ld.BeginFileMenu();
       return ;
     }
-  ld.screen.search_panel = !ld.screen.search_panel;
-  ld.screen.search_offset = 0;
+  hbs::ToggleComponentMenu(ld);
 }
 
 static void		shortcut_select_pin(LoopData &ld)
@@ -147,33 +154,33 @@ static const hbs::ShortcutBinding g_escape = {"QUIT", shortcut_escape};
 static const hbs::ShortcutBinding g_shortcuts[hbs::SHORTCUT_MODE_COUNT][hbs::ShortcutFunctionKeyCount] =
   {
     {
-      {"NEW", shortcut_new},
+      {"NEW CIRCUIT", shortcut_new},
+      {"NEW CHIPSET", shortcut_new_ic},
       {"SAVE", shortcut_save},
       {"OPEN", shortcut_open},
-      {"FILES", shortcut_files},
       {"CENTER", shortcut_center_on_mouse},
       {"HOME", shortcut_home},
-      {"ZOOM+", shortcut_zoom_in},
-      {"ZOOM-", shortcut_zoom_out},
-      {"ADD", shortcut_add},
+      {"ZOOM IN", shortcut_zoom_in},
+      {"ZOOM OUT", shortcut_zoom_out},
+      {"COMPONENT", shortcut_add},
       {"SELECT/PIN", shortcut_select_pin},
       {"STEP", shortcut_step},
       {"RUN/STOP", shortcut_run_stop}
     },
     {
+      {"NEW IC", shortcut_new_ic}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL},
       {NULL, NULL}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL},
-      {NULL, NULL}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL},
-      {NULL, NULL}, {"AUTO", shortcut_auto_route}, {NULL, NULL}, {NULL, NULL}
+      {"INSERT IC", shortcut_insert_ic}, {"AUTO", shortcut_auto_route}, {NULL, NULL}, {NULL, NULL}
     },
     {
       {"CLOSE", shortcut_close},
-      {"SAVE AS", shortcut_save_as},
-      {NULL, NULL}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL},
+      {NULL, NULL},
+      {"SAVE AS", shortcut_save_as}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL},
       {NULL, NULL}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL},
       {NULL, NULL}, {NULL, NULL}
     },
     {
-      {NULL, NULL}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL},
+      {NULL, NULL}, {NULL, NULL}, {"SAVE COPY", shortcut_save_copy}, {NULL, NULL},
       {NULL, NULL}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL},
       {NULL, NULL}, {NULL, NULL}, {NULL, NULL}, {NULL, NULL}
     }
@@ -259,6 +266,10 @@ bool			hbs::TriggerShortcut(t_bunny_keysym sym,
 				     LoopData &ld)
 {
   int			idx = hbs::FunctionKeyIndex(sym);
+  auto mode=hbs::CurrentShortcutMode();
+  if(!ld.file_browser && ld.HasIntegratedCircuit() && (mode==SHORTCUT_NORMAL || mode==SHORTCUT_CONTROL) && hbs::IntegratedShortcut(idx,mode==SHORTCUT_CONTROL,ld))return true;
+  if(!ld.file_browser && !ld.HasIntegratedCircuit() && mode==SHORTCUT_CONTROL_SHIFT && idx==9){shortcut_inspect_ic(ld);return true;}
+  if(!ld.file_browser && !ld.HasIntegratedCircuit() && mode==SHORTCUT_CONTROL_SHIFT && idx==10){shortcut_source_ic(ld);return true;}
   const hbs::ShortcutBinding &binding = hbs::GetShortcutBinding(hbs::CurrentShortcutMode(), idx);
 
   if (idx < 0 || binding.action == NULL)
@@ -282,7 +293,6 @@ bool			hbs::HandleShortcutBarClick(t_bunny_event_state state,
 {
   int			width = ld.screen.pic->buffer.width;
   int			idx;
-  const hbs::ShortcutBinding *binding;
 
   if (pos.y < 0 || pos.y >= hbs::ShortcutBarHeight || pos.x < 0 || pos.x >= width)
     return (false);
@@ -293,9 +303,8 @@ bool			hbs::HandleShortcutBarClick(t_bunny_event_state state,
 	hbs::TriggerEscapeShortcut(ld);
       else
 	{
-	  binding = &hbs::GetShortcutBinding(hbs::CurrentShortcutMode(), idx - 1);
-	  if (binding->action != NULL)
-	    binding->action(ld);
+          const t_bunny_keysym keys[]={BKS_F1,BKS_F2,BKS_F3,BKS_F4,BKS_F5,BKS_F6,BKS_F7,BKS_F8,BKS_F9,BKS_F10,BKS_F11,BKS_F12};
+          hbs::TriggerShortcut(keys[idx-1],ld);
 	}
     }
   return (true);
@@ -341,8 +350,10 @@ static void		draw_one_shortcut(hbs::Screen &screen,
   screen.Square({x - screen.pic->buffer.width / 2.0,
 		 -screen.pic->buffer.height / 2.0},
 		{cell, (double)hbs::ShortcutBarHeight}, text_color, false);
-  draw_centered_text(screen, x, 7, cell, {8, 13}, text_color,
-		     binding.label != NULL ? binding.label : "...");
+  const std::string label=binding.label?binding.label:"...";
+  hbs::Size label_size={8,13};double label_width=screen.TextSize(label_size,label).x;
+  if(label_width>cell-8 && label_width>0)label_size.x=std::max(3.,label_size.x*std::max(1.,cell-8)/label_width);
+  draw_centered_text(screen,x,7,cell,label_size,text_color,label);
   draw_centered_text(screen, x, 29, cell, {6, 10}, text_color, keyname);
 }
 
@@ -354,7 +365,7 @@ void			hbs::DrawShortcutBar(Screen &screen, const LoopData *ld)
   double		cell = width / (double)hbs::ShortcutBarCellCount;
   hbs::ShortcutBinding escape = g_escape;
 
-  if (ld != NULL && ld->file_browser && ld->HasDocument())
+  if (ld != NULL && ld->HasDocument() && (ld->file_browser || ld->screen.search_panel || !ld->pending_cell.empty() || ld->dock_pressed>=0))
     escape.label = "BACK";
 
   screen.Square({-screen.pic->buffer.width / 2.0,
@@ -364,6 +375,11 @@ void			hbs::DrawShortcutBar(Screen &screen, const LoopData *ld)
   for (int i = 0; i < hbs::ShortcutFunctionKeyCount; ++i)
     {
       hbs::ShortcutBinding binding = hbs::GetShortcutBinding(mode, i);
+      if(ld && !ld->file_browser && ld->HasIntegratedCircuit() && (mode==SHORTCUT_NORMAL || mode==SHORTCUT_CONTROL)){
+        const char *label=hbs::IntegratedShortcutLabel(i,mode==SHORTCUT_CONTROL);
+        if(i>=4 && label){binding.label=label;binding.action=shortcut_inspect_ic;}
+      }
+      if(ld && !ld->file_browser && !ld->HasIntegratedCircuit() && mode==SHORTCUT_CONTROL_SHIFT && (i==9 || i==10)){binding.label=i==9?"INSPECT IC":"SOURCE IC";binding.action=shortcut_inspect_ic;}
       if (binding.action == shortcut_auto_route)
         binding.label = screen.auto_routing ? "AUTO ON" : "AUTO OFF";
       char		keyname[8];

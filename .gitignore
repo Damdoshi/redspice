@@ -32,3 +32,11 @@
 *.out
 *.app
 redspice
+
+/redsilicon
+/redsilicon-cli
+/silicon/.test-build/
+/bcad
+/bcad-ic-cli
+/.test-build/
+/.pkg/

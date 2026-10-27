@@ -16,6 +16,11 @@
 #include		"Circuit.hpp"
 #include		"Screen.hpp"
 #include		"Track.hpp"
+#include                "Integrated.hpp"
+#include "ComponentDockUI.hpp"
+#include                "SiliconChip.hpp"
+
+static uint64_t next_buffer_identity(){static uint64_t id=0;return ++id;}
 
 // static const char	*empty_circuit = ".chipsets:\n\n.tracks:\n\n.links:\n";
 
@@ -61,15 +66,9 @@ static std::string	basename(const std::string &path)
 static bool		is_rs_save_file(const std::filesystem::path &path)
 {
   return (path.has_extension() &&
-	  (path.extension() == ".rs" || path.extension() == ".rs~"));
+	  (path.extension() == ".rs" || path.extension() == ".rs~" || path.extension()==".rsi" || path.extension()==".rsi~" || path.extension()==".ic" || path.extension()==".bc"));
 }
 
-static std::string	with_default_rs_extension(std::filesystem::path path)
-{
-  if (!path.has_extension())
-    path += ".rs";
-  return (path.string());
-}
 
 static std::string	trim(const std::string &str)
 {
@@ -174,7 +173,7 @@ static bool		save_circuit_with_view(hbs::Circuit &circuit,
   return (circuit.Save(file, camera, pin_size));
 }
 
-static std::string	make_temporary_filename(void)
+static std::string	make_temporary_filename(BufferType type=BufferType::PrintedCircuit)
 {
   namespace fs = std::filesystem;
   static unsigned int counter = 0;
@@ -183,7 +182,7 @@ static std::string	make_temporary_filename(void)
 
   ss << "untitled-" << (long)getpid() << "-"
      << std::chrono::steady_clock::now().time_since_epoch().count()
-     << "-" << counter++ << ".rs~";
+     << "-" << counter++ << (type==BufferType::IntegratedCircuit?".rsi~":".rs~");
   return ((fs::current_path(ec) / ss.str()).string());
 }
 
@@ -229,7 +228,8 @@ static std::string	build_browser_target_path(const LoopData &ld)
     return ("");
   if (path.is_relative())
     path = fs::path(ld.browser_directory) / path;
-  return (canonical_filename(with_default_rs_extension(path)));
+  if(!path.has_extension())path+=ld.HasIntegratedCircuit()?".rsi":".rs";
+  return (canonical_filename(path.string()));
 }
 
 LoopDocument::LoopDocument(hbs::Circuit &c,
@@ -244,7 +244,11 @@ LoopDocument::LoopDocument(hbs::Circuit &c,
     dirty(false),
     temporary(false)
 {
-  load_document_view(file_name, camera, pin_size);
+  identity=next_buffer_identity();
+  if(hbs::IsIntegratedCircuitFile(file_name)){
+    type=BufferType::IntegratedCircuit;circuit=NULL;timer=NULL;
+    integrated.reset(new silicon::Editor(silicon::Document::Load(file_name),file_name));
+  }else load_document_view(file_name, camera, pin_size);
 }
 
 LoopDocument::LoopDocument(const std::string &file,
@@ -259,11 +263,19 @@ LoopDocument::LoopDocument(const std::string &file,
     dirty(tmp),
     temporary(tmp)
 {
+  identity=next_buffer_identity();
   try
     {
-      circuit = new hbs::Circuit(*timer);
-      circuit->Load(file_name, create_if_missing);
-      load_document_view(file_name, camera, pin_size);
+      if(hbs::IsIntegratedCircuitFile(file_name)){
+        type=BufferType::IntegratedCircuit;delete timer;timer=NULL;
+        silicon::Document doc=std::filesystem::exists(file_name)?silicon::Document::Load(file_name):silicon::Document();
+        if(!create_if_missing && !std::filesystem::exists(file_name))throw std::runtime_error("Circuit integre introuvable");
+        integrated.reset(new silicon::Editor(doc,file_name));
+      }else{
+        circuit = new hbs::Circuit(*timer);
+        circuit->Load(file_name, create_if_missing);
+        load_document_view(file_name, camera, pin_size);
+      }
     }
   catch (...)
     {
@@ -275,8 +287,22 @@ LoopDocument::LoopDocument(const std::string &file,
     }
 }
 
+LoopDocument::LoopDocument(const std::string &file,BufferType kind,bool tmp)
+  :type(kind),file_name(canonical_filename(file)),timer(NULL),circuit(NULL),camera({0,0}),pin_size(PINSIZE_DEFAULT),owned(true),dirty(tmp),temporary(tmp){
+  identity=next_buffer_identity();
+  if(kind==BufferType::IntegratedCircuit){
+    silicon::Document doc=!file.empty() && std::filesystem::exists(file)?silicon::Document::Load(file):silicon::Document();
+    integrated.reset(new silicon::Editor(doc,file_name));
+    if(tmp)integrated->document.Save(file_name);
+  }else{
+    std::unique_ptr<hbs::Timer> t(new hbs::Timer);std::unique_ptr<hbs::Circuit> c(new hbs::Circuit(*t));c->Load(file_name,true);timer=t.release();circuit=c.release();
+  }
+}
+bool LoopDocument::Modified() const {return dirty || temporary || (integrated && integrated->Dirty());}
+
 LoopDocument::~LoopDocument(void)
 {
+  if(integrated && !integrated->read_only)silicon::Designs().Forget(file_name);
   if (owned)
     {
       delete circuit;
@@ -322,33 +348,37 @@ LoopData::~LoopData(void)
 bool			LoopData::HasDocument(void) const
 {
   return (!documents.empty() && active_document < documents.size() &&
-	  documents[active_document]->circuit != NULL && documents[active_document]->timer != NULL);
+	  ((documents[active_document]->type==BufferType::IntegratedCircuit && documents[active_document]->integrated) ||
+           (documents[active_document]->circuit != NULL && documents[active_document]->timer != NULL)));
 }
+bool LoopData::HasIntegratedCircuit() const {return HasDocument() && documents[active_document]->type==BufferType::IntegratedCircuit;}
+silicon::Editor &LoopData::CurrentIntegratedCircuit(){if(!HasIntegratedCircuit())throw std::runtime_error("Pas de buffer circuit integre actif");return *documents[active_document]->integrated;}
+const silicon::Editor &LoopData::CurrentIntegratedCircuit() const {if(!HasIntegratedCircuit())throw std::runtime_error("Pas de buffer circuit integre actif");return *documents[active_document]->integrated;}
 
 hbs::Circuit		&LoopData::CurrentCircuit(void)
 {
-  if (!HasDocument())
+  if (!HasDocument() || HasIntegratedCircuit())
     throw std::runtime_error("No active circuit.");
   return (*documents[active_document]->circuit);
 }
 
 hbs::Timer		&LoopData::CurrentTimer(void)
 {
-  if (!HasDocument())
+  if (!HasDocument() || HasIntegratedCircuit())
     throw std::runtime_error("No active circuit.");
   return (*documents[active_document]->timer);
 }
 
 const hbs::Circuit	&LoopData::CurrentCircuit(void) const
 {
-  if (!HasDocument())
+  if (!HasDocument() || HasIntegratedCircuit())
     throw std::runtime_error("No active circuit.");
   return (*documents[active_document]->circuit);
 }
 
 const hbs::Timer	&LoopData::CurrentTimer(void) const
 {
-  if (!HasDocument())
+  if (!HasDocument() || HasIntegratedCircuit())
     throw std::runtime_error("No active circuit.");
   return (*documents[active_document]->timer);
 }
@@ -363,8 +393,10 @@ void			LoopData::SaveActiveView(void)
 {
   if (!HasDocument())
     return ;
+  if(HasIntegratedCircuit()){PublishIntegratedDocument();return;}
   documents[active_document]->camera = screen.camera;
   documents[active_document]->pin_size = screen.pin_size;
+  documents[active_document]->running=screen.loopsim;
 }
 
 void			LoopData::ApplyActiveView(void)
@@ -375,10 +407,13 @@ void			LoopData::ApplyActiveView(void)
       reset_document_interaction(screen);
       return ;
     }
+  integrated_pixels.clear();component_menu.clear();dock_pressed=-1;dock_dragged=false;component_interface_press=false;pending_cell.clear();component_status.clear();
   screen.camera = documents[active_document]->camera;
   screen.pin_size = documents[active_document]->pin_size;
   screen.file_name = documents[active_document]->file_name;
   reset_document_interaction(screen);
+  screen.loopsim=documents[active_document]->running;
+  if(HasIntegratedCircuit()){auto &editor=CurrentIntegratedCircuit();bool first=!editor.embedded;editor.embedded=true;editor.width=screen.pic->buffer.width-2*hbs::ComponentDockWidth(screen);editor.height=screen.pic->buffer.height;editor.SyncObservation();if(first)editor.Fit();if(editor.read_only && !editor.document.origin.empty())try{editor.document.favorites=silicon::Designs().Read(editor.document.origin).favorites;}catch(const std::exception &){} }
 }
 
 bool			LoopData::SelectDocument(size_t index)
@@ -388,6 +423,7 @@ bool			LoopData::SelectDocument(size_t index)
   SaveActiveView();
   active_document = index;
   ApplyActiveView();
+  ReloadDefinitions();
   browser_error = "";
   return (true);
 }
@@ -397,7 +433,7 @@ bool			LoopData::OpenFile(const std::string &file)
   std::string		name = canonical_filename(file);
 
   for (size_t i = 0; i < documents.size(); ++i)
-    if (documents[i]->file_name == name)
+    if (documents[i]->file_name == name && (!documents[i]->integrated || !documents[i]->integrated->read_only))
       return (SelectDocument(i));
   try
     {
@@ -407,6 +443,7 @@ bool			LoopData::OpenFile(const std::string &file)
       documents.push_back(doc);
       active_document = documents.size() - 1;
       ApplyActiveView();
+      PublishIntegratedDocument();ReloadDefinitions();
       file_browser = false;
       file_browser_mode = FILE_BROWSER_OPEN;
       browser_error = "";
@@ -419,18 +456,19 @@ bool			LoopData::OpenFile(const std::string &file)
   return (true);
 }
 
-bool			LoopData::NewDocument(void)
+bool			LoopData::NewDocument(BufferType type)
 {
-  std::string		name = make_temporary_filename();
+  std::string		name = make_temporary_filename(type);
 
   try
     {
-      LoopDocument *doc = new LoopDocument(name, true, true);
+      LoopDocument *doc = type==BufferType::IntegratedCircuit?new LoopDocument(name,type,true):new LoopDocument(name,true,true);
 
       SaveActiveView();
       documents.push_back(doc);
       active_document = documents.size() - 1;
       ApplyActiveView();
+      PublishIntegratedDocument();
       file_browser = false;
       browser_error = "";
       browser_directory = parent_directory(name);
@@ -448,6 +486,7 @@ bool			LoopData::NewDocument(void)
 
 void			LoopData::BeginOpenFileBrowser(void)
 {
+  hbs::CloseComponentMenu(*this);
   file_browser = true;
   file_browser_mode = FILE_BROWSER_OPEN;
   browser_target = "";
@@ -482,11 +521,11 @@ void			LoopData::BeginSavePrompt(FileBrowserMode mode)
   file_browser_mode = mode;
   browser_directory = parent_directory(documents[active_document]->file_name);
   if (documents[active_document]->temporary)
-    browser_target = "untitled.rs";
+    browser_target = HasIntegratedCircuit()?"untitled.rsi":"untitled.rs";
   else if (mode == FILE_BROWSER_SAVE_COPY)
     {
       std::filesystem::path p(documents[active_document]->file_name);
-      browser_target = p.stem().string() + "-copy.rs";
+      browser_target = p.stem().string() + (HasIntegratedCircuit()?"-copy.rsi":"-copy.rs");
     }
   else
     browser_target = basename(documents[active_document]->file_name);
@@ -503,16 +542,22 @@ bool			LoopData::SaveCurrentDocumentAs(const std::string &file,
   if (!HasDocument() || name.empty())
     return (false);
   for (size_t i = 0; i < documents.size(); ++i)
-    if (i != active_document && documents[i]->file_name == name)
+    if (i != active_document && documents[i]->file_name == name && (!documents[i]->integrated || !documents[i]->integrated->read_only))
       {
         browser_error = "Ce fichier est deja ouvert dans un autre document.";
         return (false);
       }
   SaveActiveView();
-  if (!save_circuit_with_view(*documents[active_document]->circuit,
+  bool saved=false;
+  if(HasIntegratedCircuit()){
+    auto &editor=CurrentIntegratedCircuit();
+    if(editor.read_only){browser_error="Ouvrir la definition pour enregistrer les modifications";return false;}
+    try{editor.document.Save(name);saved=true;}catch(const std::exception &error){browser_error=error.what();return false;}
+  }else saved=save_circuit_with_view(*documents[active_document]->circuit,
 			      name,
 			      documents[active_document]->camera,
-			      documents[active_document]->pin_size))
+			      documents[active_document]->pin_size);
+  if (!saved)
     {
       browser_error = std::string("Cannot save ") + name;
       return (false);
@@ -525,6 +570,10 @@ bool			LoopData::SaveCurrentDocumentAs(const std::string &file,
       documents[active_document]->file_name = name;
       documents[active_document]->temporary = false;
       documents[active_document]->dirty = false;
+      if(HasIntegratedCircuit()){
+        silicon::Designs().Forget(documents[active_document]->integrated->path);
+        CurrentIntegratedCircuit().MarkSaved(name);documents[active_document]->published_snapshot.clear();PublishIntegratedDocument();
+      }
       screen.file_name = name;
       browser_directory = parent_directory(name);
       if (!old_tmp.empty() && old_tmp != name)
@@ -566,6 +615,7 @@ bool			LoopData::CompleteSavePrompt(bool discard)
 	    std::filesystem::remove(documents[active_document]->file_name);
 	  documents[active_document]->temporary = false;
 	  documents[active_document]->dirty = false;
+          if(HasIntegratedCircuit())CurrentIntegratedCircuit().MarkSaved(documents[active_document]->file_name);
 	  if (mode == FILE_BROWSER_SAVE_THEN_CLOSE)
 	    return (CloseCurrentDocument(true));
 	  return (RequestQuit());
@@ -599,7 +649,7 @@ bool			LoopData::CloseCurrentDocument(bool discard)
       BeginFileMenu();
       return (true);
     }
-  if (!discard && (documents[active_document]->dirty || documents[active_document]->temporary))
+  if (!discard && documents[active_document]->Modified())
     {
       BeginSavePrompt(FILE_BROWSER_SAVE_THEN_CLOSE);
       return (false);
@@ -633,7 +683,7 @@ bool			LoopData::RequestQuit(void)
 {
   if (!documents.empty())
     for (size_t i = 0; i < documents.size(); ++i)
-      if (documents[i]->dirty || documents[i]->temporary)
+      if (documents[i]->Modified())
 	{
 	  SelectDocument(i);
 	  BeginSavePrompt(FILE_BROWSER_SAVE_THEN_QUIT);

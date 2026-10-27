@@ -15,13 +15,13 @@ cxx = os.environ.get('CXX', 'g++')
 flags = ['-std=gnu++23', '-O1', '-g', '-Wall', '-Wextra',
          '-Wno-missing-field-initializers', '-fno-omit-frame-pointer',
          '-fsanitize=address,undefined,float-cast-overflow', '-D_GLIBCXX_ASSERTIONS',
-         '-Itests/support', '-Iinclude', '-Iinclude/stdcmp', '-Iinclude/vircmp', '-pthread']
+         '-Isilicon/include', '-Itests/support', '-Iinclude', '-Iinclude/stdcmp', '-Iinclude/vircmp', '-pthread']
 sources = sorted(p for folder in ('src', 'screen', 'stdcmp', 'vircmp')
                  for p in Path(folder).glob('*.cpp'))
 entries = [Path('main.cpp'), Path('tests/reliability.cpp'), Path('tests/w65c02.cpp'),
-           Path('tests/prototyping.cpp'), Path('tests/routing.cpp')]
+           Path('tests/prototyping.cpp'), Path('tests/routing.cpp'), Path('tests/integrated.cpp'), Path('tests/ux.cpp')]
 sources += entries
-headers = [p for folder in ('include', 'tests/support') for p in Path(folder).rglob('*') if p.is_file()]
+headers = [p for folder in ('include', 'tests/support','silicon/include') for p in Path(folder).rglob('*') if p.is_file()]
 flag_file = build / 'flags.txt'
 flag_text = '\n'.join([cxx, *flags])
 if not flag_file.exists() or flag_file.read_text() != flag_text:
@@ -29,10 +29,16 @@ if not flag_file.exists() or flag_file.read_text() != flag_text:
     for obj in build.glob('*.o'):
         obj.unlink()
 stamp = max(p.stat().st_mtime for p in headers)
+silicon_dependencies = [Path('silicon/include/Silicon.hpp'),
+                        Path('silicon/src/Document.cpp'), Path('silicon/src/Extract.cpp'),
+                        Path('silicon/src/Simulator.cpp'), Path('silicon/src/Hierarchy.cpp'),
+                        Path('silicon/include/Editor.hpp'), Path('silicon/src/Editor.cpp'), Path('silicon/src/Image.cpp'), Path('silicon/src/Examples.cpp'), Path('silicon/src/Main.cpp')]
+silicon_stamp = max(p.stat().st_mtime for p in silicon_dependencies)
 
 def compile_one(source):
     obj = build / (str(source).replace('/', '_') + '.o')
-    if not obj.exists() or obj.stat().st_size == 0 or obj.stat().st_mtime < max(stamp, source.stat().st_mtime):
+    dependency_stamp = silicon_stamp if source.name in ('SiliconEngine.cpp', 'SiliconEditor.cpp', 'SiliconChip.cpp', 'Create.cpp', 'Integrated.cpp', 'IntegratedWorkspace.cpp', 'Workspace.cpp') else 0
+    if not obj.exists() or obj.stat().st_size == 0 or obj.stat().st_mtime < max(stamp, dependency_stamp, source.stat().st_mtime):
         pending = obj.with_suffix('.pending')
         result = subprocess.run([cxx, *flags, '-c', str(source), '-o', str(pending)],
                                 text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -57,7 +63,9 @@ try:
             ('reliability', 'tests/reliability.cpp',
              ['-Wl,--wrap=write,--wrap=fsync,--wrap=close,--wrap=rename,--wrap=link']),
             ('prototyping', 'tests/prototyping.cpp', []),
-            ('routing', 'tests/routing.cpp', [])]:
+            ('routing', 'tests/routing.cpp', []),
+            ('integrated', 'tests/integrated.cpp', []),
+            ('ux', 'tests/ux.cpp', [])]:
         obj = objects[sources.index(Path(entry))]
         subprocess.run([cxx, *flags, '-no-pie', *common, str(obj), '-ldl', *extra,
                         '-o', str(build / name)], check=True)
@@ -77,8 +85,15 @@ try:
                    check=True, env=environment, timeout=120)
     subprocess.run([str(build / 'prototyping')], check=True, env=environment, timeout=120)
     subprocess.run([str(build / 'routing')], check=True, env=environment, timeout=120)
+    subprocess.run([str(build / 'integrated')], check=True, env=environment, timeout=120)
+    subprocess.run([str(build / 'ux')], check=True, env=environment, timeout=120)
     subprocess.run([str(build / 'reliability'), str(root), str(build / 'bcad')],
                    check=True, env=environment, timeout=120)
+    for scenario, circuit in [
+            ('silicon/examples/bcad-nmos.bcadtest', 'silicon/examples/bcad-nmos.rs'),
+            ('res/10_integrated/demo.bcadtest', 'res/10_integrated/demo.rs')]:
+        subprocess.run([str(build / 'bcad'), '--test', scenario, circuit],
+                       check=True, env=environment, timeout=120)
 except (RuntimeError, subprocess.SubprocessError) as error:
     print(error, file=sys.stderr)
     sys.exit(1)

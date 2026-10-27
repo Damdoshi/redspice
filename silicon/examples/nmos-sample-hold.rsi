@@ -1,0 +1,20 @@
+REDSILICON 1
+tech nmos
+title "Echantillonneur NMOS et charge conservee"
+item 1 shape active 0 0 11 3 0 0 10000 0 0 0 "" "M1"
+item 2 shape poly 5 -3 1 9 0 0 10000 0 0 0 "" "M1"
+item 3 shape metal1 0 1 1 1 0 0 10000 0 0 0 "" ""
+item 4 shape contact 0 1 1 1 0 0 10000 0 0 0 "" ""
+item 5 shape metal1 10 1 1 1 0 0 10000 0 0 0 "" ""
+item 6 shape contact 10 1 1 1 0 0 10000 0 0 0 "" ""
+item 7 shape metal1 5 -3 1 1 0 0 10000 0 0 0 "" ""
+item 8 shape contact 5 -3 1 1 0 0 10000 0 0 0 "" ""
+item 9 input metal1 5 -3 1 1 0 0 10000 0 1 0 "CLK" ""
+item 10 input metal1 0 1 1 1 0 0 10000 0 1 0 "D" ""
+item 11 output metal1 10 1 1 1 0 0 10000 0 1 0 "Q" ""
+item 12 shape metal1 10 1 1 1 0 0 10000 0 0 0 "" ""
+item 13 shape metal1 10 9 1 1 0 0 10000 0 0 0 "" ""
+item 14 capacitor metal1 10 1 1 1 10 9 1.0000000000000001e-09 0 0 0 "CHOLD" ""
+item 15 ground metal1 10 9 1 1 0 0 10000 0 0 0 "GND" ""
+item 16 note metal1 -4 -12 1 1 0 0 10000 0 0 0 "Le poly traverse l'actif : une grille NMOS est extraite" ""
+end 16

@@ -15,6 +15,7 @@
 #include                <limits>
 #include                <memory>
 #include                <cerrno>
+#include                <filesystem>
 #include                "SafeFile.hpp"
 #include		"Circuit.hpp"
 #include                "Prototype.hpp"
@@ -250,6 +251,15 @@ hbs::IComponent		*hbs::Circuit::CreateUserComponent(const std::string &type,
   else if (type == "wire" || type == "track")
     tracks[name] = dynamic_cast<hbs::Track*>(circuit[name]);
   return (circuit[name]);
+}
+
+hbs::IComponent *hbs::Circuit::CreateIntegratedCircuit(const std::string &file,const Position &pos){
+  size_t index=1;std::string name;do{name="silicon_"+std::to_string(index++);}while(circuit.count(name));
+  std::ostringstream position;position<<pos.x<<','<<pos.y;
+  std::unique_ptr<IComponent> part(Create("silicon",name,file,position.str()));circuit[name]=part.get();return part.release();
+}
+void hbs::Circuit::CollectComponents(std::vector<IComponent*> &out) const {
+  for(const auto &entry:circuit){out.push_back(entry.second);if(auto *child=dynamic_cast<Circuit*>(entry.second))child->CollectComponents(out);}
 }
 
 bool			hbs::Circuit::RenameComponent(hbs::IComponent *component,
@@ -1067,7 +1077,7 @@ bool			hbs::Circuit::ReadPackage(const std::string	&code,
   return (ReadPackageInside(code, i));
 }
 
-static bool			ReadMisc(const std::string &code, int &i)
+static bool ReadMisc(const std::string &code, int &i,bcad::ComponentDock &favorites,std::set<size_t> &seen)
 {
   if (ReadText(code, i, ".misc:") == false)
     return (false);
@@ -1076,8 +1086,10 @@ static bool			ReadMisc(const std::string &code, int &i)
       skip_spaces(code, i);
       if (i >= (int)code.size() || code[i] == '.')
 	break ;
-      while (i < (int)code.size() && code[i] != '\n')
-	i += 1;
+      size_t end=code.find('\n',i);if(end==std::string::npos)end=code.size();
+      std::istringstream row(code.substr(i,end-size_t(i)));std::string key;row>>key;
+      if(key=="favorite")favorites.Read(row,seen);
+      i=int(end);
     }
   return (true);
 }
@@ -1294,7 +1306,7 @@ size_t			hbs::Circuit::GetOutputNum(void) const
   return (outputs.size());
 }
 
-void hbs::Circuit::Serialize(std::ostream &os) const
+void hbs::Circuit::Serialize(std::ostream &os,const std::string &destination) const
 {
   os.imbue(std::locale::classic());
   os << std::setprecision(std::numeric_limits<double>::max_digits10);
@@ -1303,6 +1315,10 @@ void hbs::Circuit::Serialize(std::ostream &os) const
     if (!is_track(it->second))
       {
 	std::string value = it->second->GetDefinitionValue();
+	if(it->second->GetType()=="silicon" && !destination.empty()){
+          auto relative=std::filesystem::path(value).lexically_relative(std::filesystem::absolute(destination).parent_path());
+          if(!relative.empty())value=relative.generic_string();
+        }
 	hbs::Position pos = it->second->GetPosition();
 
 	os << file_type(*it->second) << " " << it->first;
@@ -1364,6 +1380,12 @@ void hbs::Circuit::Serialize(std::ostream &os) const
         os << "pin " << external_pins[i].name << " [" << external_pins[i].position.x
            << "," << external_pins[i].position.y << "]\n";
     }
+  bcad::ComponentDock dock=favorites;
+  for(auto &entry:dock.slots)if(entry.kind=="cell" && !destination.empty()){
+    auto relative=std::filesystem::path(entry.source).lexically_relative(std::filesystem::absolute(destination).parent_path());
+    if(!relative.empty())entry.source=relative.generic_string();
+  }
+  os<<"\n.misc:\n";dock.Write(os);
 }
 
 bool hbs::Circuit::Save(const std::string &file) const
@@ -1371,7 +1393,7 @@ bool hbs::Circuit::Save(const std::string &file) const
   try
     {
       std::ostringstream os;
-      Serialize(os);
+      Serialize(os,file);
       return (os.good() && hbs::AtomicWriteFile(file, os.str()));
     }
   catch (const std::exception &)
@@ -1386,7 +1408,7 @@ bool hbs::Circuit::Save(const std::string &file, const hbs::Position &camera,
   try
     {
       std::ostringstream os;
-      Serialize(os);
+      Serialize(os,file);
       os << "\n.misc:\ncamera [" << camera.x << "," << camera.y << "]\nzoom "
          << std::clamp(pin_size, PINSIZE_DEFAULT / 4, PINSIZE_DEFAULT * 10) << "\n";
       return (os.good() && hbs::AtomicWriteFile(file, os.str()));
@@ -1442,6 +1464,7 @@ bool			hbs::Circuit::Load(const std::string		&file,
     }
   // Parse into an isolated circuit: a rejected load leaves the current one usable.
   Circuit next(timer);
+  next.source_file=std::filesystem::absolute(file).string();
   next.LoadContents(content);
   circuit.swap(next.circuit);
   inputs.swap(next.inputs);
@@ -1453,6 +1476,8 @@ bool			hbs::Circuit::Load(const std::string		&file,
   package_lines.swap(next.package_lines);
   std::swap(package_defined, next.package_defined);
   std::swap(implicit_track_count, next.implicit_track_count);
+  source_file.swap(next.source_file);
+  std::swap(favorites,next.favorites);
   return (true);
 }
 
@@ -1460,21 +1485,22 @@ bool hbs::Circuit::LoadContents(const std::string &source)
 {
   std::string content = source;
   bool erase;
+  bool quoted=false,escaped=false;
+  std::set<size_t> favorite_slots;
   int i;
   if (content.find('\0') != std::string::npos)
     throw hbs::SyntaxError("NUL byte in circuit file.");
   if (content.empty())
     content = empty_circuit_file();
   for (i = 0, erase = false; i < (int)content.size(); ++i)
-    if (content[i] == '#')
-      {
-	erase = true;
-	content[i] = ' ';
-      }
-    else if (content[i] == '\n')
-      erase = false;
-    else if (erase)
-      content[i] = ' ';
+    {
+      char c=content[i];
+      if(c=='\n'){erase=false;quoted=false;escaped=false;}
+      else if(erase)content[i]=' ';
+      else if(quoted){if(escaped)escaped=false;else if(c=='\\')escaped=true;else if(c=='"')quoted=false;}
+      else if(c=='"')quoted=true;
+      else if(c=='#'){erase=true;content[i]=' ';}
+    }
   i = 0;
   ReadWhitespace(content, i);
   if (ReadChipsets(content, i) == false)
@@ -1495,7 +1521,7 @@ bool hbs::Circuit::LoadContents(const std::string &source)
 	  ReadWhitespace(content, i);
 	  consumed = true;
 	}
-      if (ReadMisc(content, i))
+      if (ReadMisc(content, i,favorites,favorite_slots))
 	{
 	  ReadWhitespace(content, i);
 	  consumed = true;
@@ -1505,6 +1531,11 @@ bool hbs::Circuit::LoadContents(const std::string &source)
     }
   if (i < (int)content.size())
     throw hbs::SyntaxError(std::string("Unexpected content after .links/.package/.misc: at ") + load_context(content, i));
+  for(auto &entry:favorites.slots)if(entry.kind=="cell"){
+    std::filesystem::path path(entry.source);if(path.is_relative())path=std::filesystem::path(source_file).parent_path()/path;
+    entry.source=std::filesystem::absolute(path).lexically_normal().string();
+  }
+  favorites.Validate();
   return (true);
 }
 

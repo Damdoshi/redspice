@@ -10,6 +10,7 @@
 # include				"Output.hpp"
 # include				"Track.hpp"
 # include                               "Router.hpp"
+# include                               "ComponentDock.hpp"
 # include				<list>
 # include				<set>
 # include				<string>
@@ -61,6 +62,8 @@ namespace				hbs
     hbs::Timer				&timer;
 
     std::string				component_type;
+    std::string source_file;
+    bcad::ComponentDock favorites;
     std::string				component_name;
     hbs::Position				component_position;
     bool				component_instance;
@@ -78,7 +81,7 @@ namespace				hbs
     size_t				implicit_track_count;
     size_t                              begun_tick = static_cast<size_t>(-1);
     size_t                              ended_tick = static_cast<size_t>(-1);
-    void Serialize(std::ostream &os) const;
+    void Serialize(std::ostream &os,const std::string &destination="") const;
     bool LoadContents(const std::string &content);
 
     bool				ReadChipsetsInside(const std::string	&code,
@@ -129,6 +132,8 @@ namespace				hbs
     void				UpdateExternalInputs(void);
 
   public:
+    bcad::ComponentDock &Favorites() { return favorites; }
+    const bcad::ComponentDock &Favorites() const { return favorites; }
     const std::string			&GetType(void) const;
     const std::string			&GetName(void) const;
     void				SetName(const std::string &name);
@@ -196,6 +201,8 @@ namespace				hbs
     const std::vector<std::string>	&GetCreatableTypes(void) const;
     hbs::IComponent			*CreateUserComponent(const std::string	&type,
 					     const hbs::Position	&pos);
+    hbs::IComponent *CreateIntegratedCircuit(const std::string &file,const hbs::Position &position);
+    void CollectComponents(std::vector<IComponent*> &components) const;
     bool				DeleteSelected(std::set<hbs::IComponent*> &components,
 					       std::set<hbs::Track*> &tracks);
     bool				RenameComponent(hbs::IComponent *component,

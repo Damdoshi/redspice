@@ -216,80 +216,49 @@ static void                             draw_search_box(hbs::Screen &screen,
   draw_fixed_text(screen, count_x, g.search_y + 9, {8, 13}, GRAY(180), count);
 }
 
-static void                             draw_component_menu(hbs::Screen &screen,
-                                                            const hbs::Circuit &c,
-                                                            const hbs::Screen &state)
+static void draw_component_menu(hbs::Screen &screen,const std::vector<LoopData::MenuEntry> &entries,const hbs::Screen &state)
 {
-  if (!state.search_panel)
-    return ;
-  hbs::Position oldcam = screen.camera;
-  int oldpinsize = screen.pin_size;
-  const std::vector<std::string> &types = c.GetCreatableTypes();
-  const t_bunny_position *mouse = bunny_get_mouse_position();
-  hbs::ComponentMenuGeometry g = hbs::GetComponentMenuGeometry(screen);
-  int seen = 0;
-  int row = 0;
-  int match_count = hbs::ComponentMatchCount(c, state.search_query);
-  std::string detail_type;
-
-  screen.pin_size = 1;
-  screen.camera = {0, 0};
-  screen.Square({(double)g.x - screen.pic->buffer.width / 2.0,
-                 (double)g.y - screen.pic->buffer.height / 2.0},
-                {(double)g.w, (double)g.h}, ALPHA(224, GRAY(32)), true);
-  screen.Square({(double)g.x - screen.pic->buffer.width / 2.0,
-                 (double)g.y - screen.pic->buffer.height / 2.0},
-                {(double)g.w, (double)g.h}, hbs::Screen::White, false);
-  draw_fixed_text(screen, g.x + 10, g.y + 8, {12, 18}, hbs::Screen::Yellow, "Ajouter un composant");
-  draw_fixed_text(screen, g.x + 220, g.y + 10, {8, 13}, GRAY(180),
-                  "Recherche multi-mots: nand quad, 74hc, compteur, ram, eeprom...");
-  draw_search_box(screen, g, match_count);
-
-  if (g.detail_w > 0)
-    draw_fixed_text(screen, g.x + g.list_w + 10, g.y + 64, {8, 13}, GRAY(180),
-                    "Apercu et fiche du composant survole.");
-  draw_fixed_text(screen, g.x + 18, g.y + 64, {8, 13}, GRAY(180), "reference");
-  draw_fixed_text(screen, g.x + 104, g.y + 64, {8, 13}, GRAY(180), "description courte");
-
-  for (size_t i = 0; i < types.size(); ++i)
-    {
-      if (!hbs::ComponentMatchesQuery(types[i], state.search_query))
-        continue ;
-      if (seen++ < state.search_offset)
-        continue ;
-      if (row >= g.rows)
-        break ;
-      int item_y = g.first_y + row * g.line;
-      bool hover = mouse->x >= g.x + 8 && mouse->x <= g.x + g.list_w - 8 &&
-        mouse->y >= item_y && mouse->y < item_y + g.line;
-      unsigned int col = (row == 0 || hover) ? hbs::Screen::Yellow : hbs::Screen::White;
-      std::string desc = hbs::ComponentShortDescription(types[i]);
-
-      if (detail_type.empty() || hover)
-        detail_type = types[i];
-      if (hover)
-        screen.Square({(double)g.x + 8 - screen.pic->buffer.width / 2.0,
-                       (double)item_y - screen.pic->buffer.height / 2.0},
-                      {(double)g.list_w - 16, (double)g.line}, ALPHA(80, GRAY(96)), true);
-      draw_fixed_text(screen, g.x + 18, item_y + 3, {10, 16}, col,
-                      truncate_to_width(screen, {10, 16}, 74, types[i]));
-      draw_fixed_text(screen, g.x + 104, item_y + 3, {10, 16}, col,
-                      truncate_to_width(screen, {10, 16}, g.list_w - 122, desc));
-      row += 1;
+  if(!state.search_panel)return;
+  auto oldcam=screen.camera;int oldscale=screen.pin_size;
+  auto g=hbs::GetComponentMenuGeometry(screen);auto mouse=*bunny_get_mouse_position();
+  std::vector<size_t> matches;for(size_t n=0;n<entries.size();++n)if(hbs::ComponentMenuMatches(entries[n],state.search_query))matches.push_back(n);
+  screen.search_offset=std::clamp(screen.search_offset,0,std::max(0,int(matches.size())-1));
+  screen.camera={0,0};screen.pin_size=1;
+  screen.Square({double(g.x)-screen.pic->buffer.width/2.,double(g.y)-screen.pic->buffer.height/2.},{double(g.w),double(g.h)},ALPHA(240,GRAY(28)),true);
+  screen.Square({double(g.x)-screen.pic->buffer.width/2.,double(g.y)-screen.pic->buffer.height/2.},{double(g.w),double(g.h)},hbs::Screen::White,false);
+  draw_fixed_text(screen,g.x+10,g.y+8,{12,18},hbs::Screen::Yellow,"Component");
+  draw_fixed_text(screen,g.x+180,g.y+10,{8,13},GRAY(180),"Ctrl+clic : ajouter aux favoris lateraux");
+  draw_search_box(screen,g,int(matches.size()));
+  draw_fixed_text(screen,g.x+18,g.y+64,{8,13},GRAY(180),"reference");
+  draw_fixed_text(screen,g.x+104,g.y+64,{8,13},GRAY(180),"description");
+  const LoopData::MenuEntry *detail=nullptr;
+  for(int row=0;row<g.rows && row+screen.search_offset<int(matches.size());++row){
+    const auto &entry=entries[matches[size_t(row+screen.search_offset)]];int y=g.first_y+row*g.line;
+    bool hover=mouse.x>=g.x+8 && mouse.x<g.x+g.list_w-8 && mouse.y>=y && mouse.y<y+g.line;
+    if(!detail || hover)detail=&entry;
+    auto color=row==0 || hover?hbs::Screen::Yellow:hbs::Screen::White;
+    if(hover)screen.Square({double(g.x+8)-screen.pic->buffer.width/2.,double(y)-screen.pic->buffer.height/2.},{double(g.list_w-16),double(g.line)},ALPHA(80,GRAY(96)),true);
+    draw_fixed_text(screen,g.x+18,y+3,{10,16},color,truncate_to_width(screen,{10,16},74,entry.label));
+    draw_fixed_text(screen,g.x+104,y+3,{10,16},color,truncate_to_width(screen,{10,16},g.list_w-122,entry.description));
+  }
+  if(!detail)draw_fixed_text(screen,g.x+18,g.first_y+8,{10,16},hbs::Screen::Red,"Aucun composant ne correspond a cette recherche.");
+  else if(g.detail_w>0){
+    if(detail->component.kind=="component")draw_component_detail(screen,g,detail->component.type);
+    else{
+      int x=g.x+g.list_w+10,w=g.detail_w-20;
+      draw_fixed_text(screen,x,g.first_y+8,{12,18},hbs::Screen::Yellow,truncate_to_width(screen,{12,18},w,detail->label));
+      draw_wrapped_text(screen,x,g.first_y+42,w,{9,14},hbs::Screen::White,detail->description);
+      if(detail->component.kind=="cell")draw_wrapped_text(screen,x,g.first_y+120,w,{8,13},hbs::Screen::Teal,detail->component.source.substr(0,220));
+      draw_wrapped_text(screen,x,g.first_y+240,w,{9,14},hbs::Screen::White,detail->browse?"Ouvrir le selecteur de fichiers.":"Clic : choisir ce composant. Ctrl+clic : le garder dans un bouton lateral.");
     }
-  if (g.detail_w > 0)
-    screen.Square({(double)g.x + g.list_w - screen.pic->buffer.width / 2.0,
-                   (double)g.first_y - screen.pic->buffer.height / 2.0},
-                  {1, (double)g.h - 126}, GRAY(100), true);
-  if (match_count == 0)
-    draw_fixed_text(screen, g.x + 18, g.first_y + 8, {10, 16}, hbs::Screen::Red,
-                    "Aucun composant ne correspond a cette recherche.");
-  else
-    draw_component_detail(screen, g, detail_type);
-  draw_fixed_text(screen, g.x + 10, g.y + g.h - 30, {8, 14}, hbs::Screen::White,
-                  "Tape: filtrer  Backspace: effacer  Entree/Clic: choisir  Molette/PageUp/PageDown: defiler  Echap: fermer");
-  screen.camera = oldcam;
-  screen.pin_size = oldpinsize;
+  }
+  draw_fixed_text(screen,g.x+10,g.y+g.h-28,{8,14},hbs::Screen::White,"Entree/Clic: choisir  Ctrl+clic: favori  Molette: defiler  Echap: retour");
+  screen.camera=oldcam;screen.pin_size=oldscale;
+}
+void hbs::DrawComponentMenu(LoopData &ld){
+  if(!ld.screen.search_panel)return;
+  if(ld.component_menu.empty())hbs::RefreshComponentMenu(ld);
+  draw_component_menu(ld.screen,ld.component_menu,ld.screen);
 }
 
 static void		draw_context_menu(hbs::Screen &screen)
@@ -334,7 +303,7 @@ static void		draw_rename_box(hbs::Screen &screen)
   screen.pin_size = oldpinsize;
 }
 
-bool			hbs::Screen::Draw(hbs::Circuit		&c)
+bool hbs::Screen::Draw(hbs::Circuit &c,LoopData *workspace)
 {
   double		x;
   double		y;
@@ -407,7 +376,7 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
 
   pin_size = 1;
   camera = {0, 0};
-  hbs::DrawShortcutBar(*this);
+  hbs::DrawShortcutBar(*this,workspace);
 
   Text(Position{0.5 * pic->buffer.width - TextSize({12, 15}, buffer).x - 6.0, pic->buffer.height - 24.0 - pic->buffer.height / 2}, {12, 15}, RED, buffer);
 
@@ -434,7 +403,8 @@ bool			hbs::Screen::Draw(hbs::Circuit		&c)
   camera = oldcam;
   pin_size = oldpinsize;
 
-  draw_component_menu(*this, c, *this);
+  if(workspace){hbs::DrawComponentDocks(*workspace);hbs::DrawComponentMenu(*workspace);}
+  else if(search_panel){std::vector<LoopData::MenuEntry> entries;for(const auto &type:c.GetCreatableTypes())entries.push_back({{"component",type,""},type,hbs::ComponentShortDescription(type),false});draw_component_menu(*this,entries,*this);}
   draw_context_menu(*this);
   draw_rename_box(*this);
   bunny_clear(&win->buffer, BLACK);

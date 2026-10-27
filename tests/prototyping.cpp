@@ -337,12 +337,15 @@ static void routing_gestures()
   CHECK(CurrentShortcutMode()==SHORTCUT_CONTROL_SHIFT);
   bunny_test_keys[BKS_LCONTROL]=false;
   CHECK(CurrentShortcutMode()==SHORTCUT_SHIFT);
-  click(BMB_LEFT); // Shift toolbar's F2: SAVE AS, with the route paused.
+  bunny_test_mouse={s.pic->buffer.width*7/(2*ShortcutBarCellCount),20};
+  bunny_test_keys[BKS_LCONTROL]=true;
+  click(BMB_LEFT); // Ctrl+Shift+F3: SAVE COPY, with the route paused.
   CHECK(ld.file_browser && ld.file_browser_mode==FILE_BROWSER_SAVE_COPY);
   CHECK(s.active_track==track && s.active_node==endpoint && track->GetNbrSteps()==2);
   screen_key(GO_UP,BKS_ESCAPE,ld);
   CHECK(!ld.file_browser && !ld.quit_requested);
   bunny_test_keys[BKS_LSHIFT]=false;
+  bunny_test_keys[BKS_LCONTROL]=false;
   bunny_test_keys[BKS_LCONTROL]=true;
   screen_key(GO_DOWN,BKS_S,ld);
   CHECK(!ld.documents[0]->dirty && s.active_track==track && s.active_node==endpoint);
@@ -416,7 +419,9 @@ static void routing_gestures()
   screen_click(GO_UP,BMB_LEFT,ld);
   CHECK(!s.panning && ld.documents.size()==1 && !ld.file_browser);
   CHECK(s.active_track==track && track->GetNbrSteps()==nodes && s.drawing_mode);
-  mouse(-5,-3);click(BMB_LEFT);
+  // Continue inside the canvas: after this long pan the former test position
+  // falls in the new favorites column at the left edge of the window.
+  bunny_test_mouse={s.pic->buffer.width/2,s.pic->buffer.height/2};click(BMB_LEFT);
   CHECK(track->GetNbrSteps()==nodes+1);
   click(BMB_RIGHT);
   CHECK(!s.active_track);
@@ -519,7 +524,7 @@ static void rotation_editor()
 
   // Page keys keep their original navigation role while a panel is open.
   s.search_panel=true;s.search_query="CAPACITOR";
-  screen_key(GO_DOWN,BKS_PAGEDOWN,ld);CHECK(s.search_offset==10 && gate.GetRotation()==3);
+  screen_key(GO_DOWN,BKS_PAGEDOWN,ld);CHECK(s.search_offset==0 && gate.GetRotation()==3); // One matching capacitor: stay on that row.
   screen_key(GO_DOWN,BKS_PAGEUP,ld);CHECK(s.search_offset==0);
   screen_key(GO_DOWN,BKS_RETURN,ld);
   CHECK(s.placing_component && s.component_to_place->GetType()=="CAPACITOR");

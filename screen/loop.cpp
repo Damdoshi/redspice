@@ -20,11 +20,11 @@ try
 
   if (ld.file_browser || !ld.HasDocument())
     return (GO_ON);
+  ld.AdvanceBackgroundSimulations();
+  if(ld.HasIntegratedCircuit())return GO_ON;
 
   if (ld.screen.search_panel)
     {
-      if (ld.screen.loopsim)
-	hbs::Simulate(ld.CurrentCircuit(), ld.CurrentTimer(), ld.screen.loop_ticks_per_frame);
       return (GO_ON);
     }
 
@@ -41,8 +41,6 @@ try
       ld.screen.context_menu = false;
       ld.MarkDirty();
     }
-  if (ld.screen.loopsim)
-    hbs::Simulate(ld.CurrentCircuit(), ld.CurrentTimer(), ld.screen.loop_ticks_per_frame);
   return (GO_ON);
 }
 catch (const std::exception &error)
